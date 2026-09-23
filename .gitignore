@@ -1,0 +1,14 @@
+*.iml
+.gradle/
+local.properties
+.idea/
+.DS_Store
+build/
+captures/
+.externalNativeBuild
+.cxx
+*.apk
+*.keystore
+.kotlin/
+# Local copy of app/src/main/assets/xoosh-pc.bat; the app serves the real one.
+/tools/xoosh-pc.bat

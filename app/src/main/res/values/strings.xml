@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">Xoosh</string>
+    <string name="channel_server_name">Xoosh server</string>
+    <string name="channel_server_desc">Shows the address while Xoosh is running.</string>
+</resources>

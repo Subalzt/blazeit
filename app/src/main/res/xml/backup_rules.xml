@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Nothing here should be backed up: the HMAC session key and paired devices are device-local
+     secrets, and in-flight tus uploads are meaningless off the device that owns them. -->
+<full-backup-content>
+    <exclude domain="sharedpref" path="." />
+    <exclude domain="file" path="." />
+</full-backup-content>
