@@ -6,39 +6,43 @@
 
 <p align="center">
   Your Android phone becomes a small, private server. Your laptop opens it in a browser.<br>
-  Clipboard, files, whole folders and your music library move between them, fast, and nothing ever leaves the room.
+  Clipboard, files and whole folders move between them at full Wi-Fi speed, and nothing ever leaves the room.
 </p>
 
 <p align="center">
-  <img src="docs/images/web-music-glass.png" width="760" alt="Xoosh in the browser, playing music on a spinning record">
+  <a href="../../releases/latest"><b>Download the app</b></a>
+</p>
+
+## ⚡ Speed
+
+| | Phone → laptop | Laptop → phone |
+| :--- | ---: | ---: |
+| **Xoosh, over the phone's hotspot** | **72 MB/s** | **69 MB/s** |
+| Xoosh, one connection | 60 MB/s | 44 MB/s |
+| Through a typical home router | ~10 MB/s | ~15 MB/s |
+
+Measured between a Xiaomi 15 and a Wi-Fi 7 laptop on 5 GHz. No cloud upload, no relay:
+the laptop talks to the phone directly, uploads and downloads run over **several
+connections at once**, and files stream straight to disk without passing through memory.
+A 4 GB video crosses in about a minute. Files of **up to 64 GB** are accepted
+(Setup → Speed → *Largest upload accepted*).
+
+<p align="center">
+  <img src="docs/images/web-send.png" width="760" alt="A folder uploading at 66.8 MB/s">
 </p>
 
 ---
 
 ## Contents
 
-1. [What it does](#what-it-does)
-2. [Features, one by one](#features-one-by-one)
-3. [Getting started](#getting-started)
-4. [Speed](#speed)
-5. [How it works](#how-it-works)
-6. [Security model](#security-model)
-7. [Building](#building)
-8. [Project layout](#project-layout)
-9. [Known limits](#known-limits)
-10. [Roadmap](#roadmap)
-
----
-
-## What it does
-
-The phone runs the server; the laptop needs nothing but a browser. There is no cloud,
-no account and no relay: the two devices talk directly over Wi-Fi (or the phone's own
-hotspot), so it works offline and is as fast as the radio allows.
-
-| On the laptop (browser) | On the phone (app) |
-| --- | --- |
-| <img src="docs/images/web-send.png" width="420"> | <img src="docs/images/phone-home.png" width="200"> |
+1. [Features, one by one](#features-one-by-one)
+2. [Getting started](#getting-started)
+3. [How it works](#how-it-works)
+4. [Security model](#security-model)
+5. [Building](#building)
+6. [Project layout](#project-layout)
+7. [Known limits](#known-limits)
+8. [Roadmap](#roadmap)
 
 ---
 
@@ -51,12 +55,14 @@ asking with a 4-digit code, and you tap **Allow**. No PIN to type, no account. T
 keeps a list of connected computers, shows which are live right now, and can remove any
 of them.
 
-<img src="docs/images/web-login.png" width="560" alt="Connect this computer">
+| On the laptop | On the phone |
+| --- | --- |
+| <img src="docs/images/web-login.png" width="420"> | <img src="docs/images/phone-home.png" width="200"> |
 
 ### 2. Shared clipboard
 
 Type or paste on either side and send it across. From the phone, **Paste** grabs what you
-last copied. When the page runs through the laptop helper (see 8), copying to and from the
+last copied. When the page runs through the laptop helper (see 6), copying to and from the
 laptop's own clipboard works directly.
 
 <img src="docs/images/web-clipboard.png" width="560" alt="Shared text">
@@ -67,10 +73,8 @@ Drop files **or folders** on the page, or use **Choose files** / **Choose a fold
 
 - A folder arrives as the same folder, subfolders included, inside the destination folder you picked on the phone.
 - Uploads are **resumable**: close the lid, walk out of range, come back; they continue where they stopped.
-- Large files go up over **several parallel connections** into one pre-allocated file, and nothing is ever held whole in memory on either side (files up to 12 GB).
-- A folder is one row with combined progress; its files go up a few at a time.
-
-<img src="docs/images/web-send.png" width="560" alt="A folder uploading">
+- Large files go up over **several parallel connections** into one pre-allocated file. Up to 64 GB per file.
+- A folder is one row with combined progress and speed; its files go up a few at a time.
 
 ### 4. Send files from the phone to the laptop
 
@@ -79,29 +83,7 @@ the **Send** tab. They appear under **Files on phone** in the browser, ready to 
 Downloads use byte ranges, so they can resume and, through the laptop helper, run over
 several connections at once.
 
-### 5. Stream your music library
-
-The **Music** tab lists every song on the phone, with search and an album view. Tracks
-stream straight from the phone with range requests: playback starts after the first few
-kilobytes, and seeking only fetches what you jump to. The next two tracks are loaded into
-the laptop's memory while the current one plays, so skipping is instant. FLAC, MP3, AAC,
-OGG, Opus and WAV all play. Media keys, the Windows media overlay, shuffle and repeat all
-work.
-
-The now-playing turntable uses the album cover as the record's label: the arm drops when
-you press play, the disc spins, and pausing freezes it exactly where it is.
-
-| Glass | Classic |
-| --- | --- |
-| <img src="docs/images/web-music-glass.png" width="420"> | <img src="docs/images/web-music-classic.png" width="420"> |
-
-### 6. Two looks: Classic and Glass
-
-A black-and-yellow, square-cornered design, in two materials. **Glass** puts frosted,
-translucent panels over a glowing backdrop. It is one shared setting: flip it on the phone
-or in the browser and every open page changes with it.
-
-### 7. The phone as the laptop's trackpad and keyboard
+### 5. The phone as the laptop's trackpad and keyboard
 
 The **Control** tab is one large trackpad with Windows gestures, plus the phone's own
 keyboard typing straight into the laptop.
@@ -122,7 +104,7 @@ speed is Slow, Normal or Fast.
 
 This needs the laptop helper, below.
 
-### 8. The laptop helper (one file, nothing installed)
+### 6. The laptop helper (one file, nothing installed)
 
 A browser tab is not allowed to move the cursor, and a page on plain `http://` is not
 allowed to use every connection for downloads or to touch the clipboard. The helper fixes
@@ -137,19 +119,34 @@ both. Download **xoosh-pc.bat** from the page's **Speed** tab and double-click i
 It is plain PowerShell and C# that Windows already has, so there is nothing to install and
 no admin rights are needed. Close its window to stop it.
 
-<img src="docs/images/web-speed.png" width="560" alt="Speed tab">
-
-### 9. Measure the link
+### 7. Measure the link
 
 The **Speed** tab measures the network alone for five seconds each way, with the phone
 generating and discarding the data so storage is out of the picture. Compare it with a
 real transfer: close means the network is the ceiling, far below means storage is.
 
+<img src="docs/images/web-speed.png" width="560" alt="Speed tab">
+
+### 8. Stream your music library
+
+The **Music** tab lists every song on the phone, with search and an album view. Tracks
+stream straight from the phone with range requests: playback starts after the first few
+kilobytes, and seeking only fetches what you jump to. The next two tracks are loaded into
+the laptop's memory while the current one plays, so skipping is instant. FLAC, MP3, AAC,
+OGG, Opus and WAV all play. Media keys, the Windows media overlay, shuffle and repeat all
+work.
+
+The now-playing turntable uses the album cover as the record's label: the arm drops when
+you press play, the disc spins, and pausing freezes it exactly where it is.
+
+<img src="docs/images/web-music-glass.png" width="560" alt="Music playing on the turntable">
+
 ---
 
 ## Getting started
 
-1. Install the app on the phone (Android 10 or later). See [Building](#building).
+1. Download the APK from [Releases](../../releases/latest) and install it on the phone
+   (Android 10 or later; allow installing from your browser or file manager when asked).
 2. Open **Xoosh**, go to **Setup** and pick a **destination folder** for received files.
    Allow notifications, and allow music access if you want the Music tab.
 3. Tap **Start**. The phone shows an address such as `http://192.168.1.11:8787/` and a QR code.
@@ -163,21 +160,6 @@ hotspot works with mobile data off, so Xoosh keeps working with no internet at a
 
 **Over USB:** `tools/xoosh-usb.bat` (or `.sh`) forwards the phone's port over a USB cable
 with `adb` and opens `http://localhost:8787`.
-
----
-
-## Speed
-
-Measured between a Xiaomi 15 and a Wi-Fi 7 laptop, both on 5 GHz with a 1201 Mbps link.
-
-| Path | Phone to laptop | Laptop to phone |
-| --- | --- | --- |
-| Through a home router | about 10 MB/s | about 15 MB/s |
-| Phone hotspot, 1 connection | 60 MB/s | 44 MB/s |
-| Phone hotspot, several connections | **72 MB/s** | **69 MB/s** |
-
-Wi-Fi is the ceiling: a phone's two antennas on a 5 GHz channel top out around this, and
-parallel connections are what get a real transfer close to it.
 
 ---
 
