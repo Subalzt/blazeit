@@ -1,0 +1,493 @@
+<# : Xoosh laptop helper. Double-click to run. The batch lines below hand this same file to PowerShell.
+@echo off
+title Xoosh laptop helper
+powershell -NoProfile -ExecutionPolicy Bypass -Command "$f='%~f0'; iex ([IO.File]::ReadAllText($f))"
+if errorlevel 1 pause
+exit /b
+#>
+
+# What this does, all on this laptop, nothing installed:
+#  1. Finds the phone running Xoosh on the network (and again whenever its address changes).
+#  2. Serves the Xoosh page at http://localhost:8787. Chrome treats localhost as secure, so
+#     downloads use every connection and the clipboard works without extra clicks.
+#  3. Turns the phone's Control tab into this laptop's trackpad and keyboard.
+# Close this window to stop all three.
+
+$ErrorActionPreference = 'Stop'
+$source = @'
+using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.IO;
+using System.Net;
+using System.Net.NetworkInformation;
+using System.Net.Sockets;
+using System.Runtime.InteropServices;
+using System.Text;
+using System.Text.RegularExpressions;
+using System.Threading;
+
+public static class XooshPc
+{
+    const int PhonePort = 8787;
+    const int DiscoveryPort = 8788;
+    /** Where the page is served on this laptop; the first free of 8787, 8797, 8807. */
+    static int localPort = 8787;
+    static readonly ManualResetEvent relayReady = new ManualResetEvent(false);
+
+    static volatile string phone;
+    static readonly string Dir = Path.Combine(
+        Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Xoosh");
+    static readonly string Ua = "XooshPC/1 (" + Environment.MachineName + ")";
+
+    public static void Run()
+    {
+        Directory.CreateDirectory(Dir);
+        Say("Xoosh laptop helper. Keep this window open; close it to stop.");
+        FindPhone(true);
+
+        Thread relay = new Thread(RelayLoop);
+        relay.IsBackground = true;
+        relay.Start();
+
+        ControlLoop();
+    }
+
+    static void Say(string s)
+    {
+        Console.WriteLine(DateTime.Now.ToString("HH:mm:ss") + "  " + s);
+    }
+
+    // ------------------------------------------------------------------ finding the phone
+
+    static bool Ping(string host)
+    {
+        try
+        {
+            HttpWebRequest r = (HttpWebRequest)WebRequest.Create("http://" + host + ":" + PhonePort + "/api/ping");
+            r.Proxy = null;
+            r.Timeout = 1500;
+            r.ReadWriteTimeout = 1500;
+            r.KeepAlive = false;
+            using (WebResponse resp = r.GetResponse())
+            using (StreamReader rd = new StreamReader(resp.GetResponseStream()))
+            {
+                return rd.ReadToEnd().Contains("\"ok\":true");
+            }
+        }
+        catch { return false; }
+    }
+
+    static List<string> Candidates()
+    {
+        List<string> list = new List<string>();
+        string saved = Path.Combine(Dir, "phone.txt");
+        if (File.Exists(saved)) list.Add(File.ReadAllText(saved).Trim());
+
+        // On the phone's hotspot, the phone *is* the gateway.
+        foreach (NetworkInterface ni in NetworkInterface.GetAllNetworkInterfaces())
+        {
+            if (ni.OperationalStatus != OperationalStatus.Up) continue;
+            foreach (GatewayIPAddressInformation g in ni.GetIPProperties().GatewayAddresses)
+            {
+                if (g.Address.AddressFamily == AddressFamily.InterNetwork && !list.Contains(g.Address.ToString()))
+                    list.Add(g.Address.ToString());
+            }
+        }
+
+        // Otherwise ask the network: the phone answers "XOOSH?" on UDP 8788.
+        try
+        {
+            using (UdpClient u = new UdpClient(0))
+            {
+                u.EnableBroadcast = true;
+                byte[] ask = Encoding.ASCII.GetBytes("XOOSH?");
+                u.Send(ask, ask.Length, new IPEndPoint(IPAddress.Broadcast, DiscoveryPort));
+                foreach (NetworkInterface ni in NetworkInterface.GetAllNetworkInterfaces())
+                {
+                    if (ni.OperationalStatus != OperationalStatus.Up) continue;
+                    foreach (UnicastIPAddressInformation a in ni.GetIPProperties().UnicastAddresses)
+                    {
+                        if (a.Address.AddressFamily != AddressFamily.InterNetwork || a.IPv4Mask == null) continue;
+                        byte[] ip = a.Address.GetAddressBytes(), mask = a.IPv4Mask.GetAddressBytes();
+                        for (int i = 0; i < 4; i++) ip[i] = (byte)(ip[i] | ~mask[i]);
+                        try { u.Send(ask, ask.Length, new IPEndPoint(new IPAddress(ip), DiscoveryPort)); } catch { }
+                    }
+                }
+                u.Client.ReceiveTimeout = 1200;
+                DateTime until = DateTime.Now.AddMilliseconds(1200);
+                while (DateTime.Now < until)
+                {
+                    IPEndPoint from = new IPEndPoint(IPAddress.Any, 0);
+                    byte[] got;
+                    try { got = u.Receive(ref from); } catch { break; }
+                    if (Encoding.UTF8.GetString(got).StartsWith("XOOSH ") && !list.Contains(from.Address.ToString()))
+                        list.Add(from.Address.ToString());
+                }
+            }
+        }
+        catch { }
+        return list;
+    }
+
+    static void FindPhone(bool firstTime)
+    {
+        bool told = false;
+        while (true)
+        {
+            foreach (string c in Candidates())
+            {
+                if (c.Length > 0 && Ping(c))
+                {
+                    if (phone != c) Say("Found the phone at " + c + ".");
+                    phone = c;
+                    File.WriteAllText(Path.Combine(Dir, "phone.txt"), c);
+                    return;
+                }
+            }
+            if (firstTime)
+            {
+                Console.Write("Could not find the phone. Is Xoosh started? Type the address it shows (or press Enter to search again): ");
+                string typed = (Console.ReadLine() ?? "").Trim();
+                Match m = Regex.Match(typed, @"(\d{1,3}(\.\d{1,3}){3})");
+                if (m.Success && Ping(m.Groups[1].Value))
+                {
+                    phone = m.Groups[1].Value;
+                    File.WriteAllText(Path.Combine(Dir, "phone.txt"), phone);
+                    Say("Connected to " + phone + ".");
+                    return;
+                }
+            }
+            else if (!told)
+            {
+                Say("Waiting for the phone. Start Xoosh on it, or check both are on the same Wi-Fi.");
+                told = true;
+            }
+            Thread.Sleep(2000);
+        }
+    }
+
+    // ------------------------------------------------------------------ pairing
+
+    static HttpWebResponse Http(string method, string path, string cookie, int timeoutMs)
+    {
+        HttpWebRequest r = (HttpWebRequest)WebRequest.Create("http://" + phone + ":" + PhonePort + path);
+        r.Method = method;
+        r.Proxy = null;
+        r.UserAgent = Ua;
+        r.Timeout = timeoutMs;
+        r.ReadWriteTimeout = timeoutMs;
+        r.KeepAlive = false;
+        if (cookie != null) r.Headers["Cookie"] = cookie;
+        if (method == "POST") r.ContentLength = 0;
+        try { return (HttpWebResponse)r.GetResponse(); }
+        catch (WebException e)
+        {
+            if (e.Response != null) return (HttpWebResponse)e.Response;
+            throw;
+        }
+    }
+
+    static string Body(HttpWebResponse r)
+    {
+        using (StreamReader rd = new StreamReader(r.GetResponseStream())) return rd.ReadToEnd();
+    }
+
+    static string Pair()
+    {
+        while (true)
+        {
+            string id, code;
+            using (HttpWebResponse r = Http("POST", "/api/pair", null, 5000))
+            {
+                string b = Body(r);
+                if ((int)r.StatusCode == 429) { Say("The phone is busy with other requests; trying again shortly."); Thread.Sleep(5000); continue; }
+                id = Regex.Match(b, "\"id\":\"([^\"]+)\"").Groups[1].Value;
+                code = Regex.Match(b, "\"code\":\"([^\"]+)\"").Groups[1].Value;
+            }
+            Say("On the phone, allow \"Laptop control on " + Environment.MachineName + "\". Code: " + code);
+            for (int i = 0; i < 125; i++)
+            {
+                Thread.Sleep(1000);
+                using (HttpWebResponse r = Http("GET", "/api/pair/" + id, null, 5000))
+                {
+                    string b = Body(r);
+                    if (b.Contains("APPROVED"))
+                    {
+                        string set = r.Headers["Set-Cookie"] ?? "";
+                        Match m = Regex.Match(set, "xoosh_session=([^;,\\s]+)");
+                        if (!m.Success) throw new Exception("the phone approved but sent no session");
+                        string cookie = "xoosh_session=" + m.Groups[1].Value;
+                        File.WriteAllText(Path.Combine(Dir, "session.txt"), cookie);
+                        Say("Allowed. This laptop will not need to ask again.");
+                        return cookie;
+                    }
+                    if (b.Contains("DENIED"))
+                    {
+                        Say("The phone said no. Press Enter to ask again.");
+                        Console.ReadLine();
+                        break;
+                    }
+                    if (b.Contains("EXPIRED")) break;
+                }
+            }
+        }
+    }
+
+    // ------------------------------------------------------------------ trackpad and keyboard
+
+    static void ControlLoop()
+    {
+        string file = Path.Combine(Dir, "session.txt");
+        string cookie = File.Exists(file) ? File.ReadAllText(file).Trim() : null;
+        bool announced = false;
+        while (true)
+        {
+            try
+            {
+                if (cookie == null) cookie = Pair();
+                HttpWebRequest r = (HttpWebRequest)WebRequest.Create("http://" + phone + ":" + PhonePort + "/api/control/stream");
+                r.Proxy = null;
+                r.UserAgent = Ua;
+                r.Timeout = 5000;
+                // The phone sends a keep-alive every 3 s, so silence this long means it is gone.
+                r.ReadWriteTimeout = 10000;
+                r.Headers["Cookie"] = cookie;
+                HttpWebResponse resp;
+                try { resp = (HttpWebResponse)r.GetResponse(); }
+                catch (WebException e)
+                {
+                    HttpWebResponse er = e.Response as HttpWebResponse;
+                    if (er != null && (int)er.StatusCode == 401)
+                    {
+                        er.Close();
+                        Say("The phone no longer knows this laptop; asking again.");
+                        cookie = null;
+                        try { File.Delete(file); } catch { }
+                        continue;
+                    }
+                    throw;
+                }
+                using (resp)
+                using (StreamReader rd = new StreamReader(resp.GetResponseStream(), Encoding.UTF8))
+                {
+                    if (!announced)
+                    {
+                        Say("Ready. The phone's Control tab now drives this laptop.");
+                        relayReady.WaitOne(3000);
+                        if (localPort > 0)
+                        {
+                            Say("Opening the Xoosh page at http://localhost:" + localPort + "/ for full-speed transfers.");
+                            try { Process.Start("http://localhost:" + localPort + "/"); } catch { }
+                        }
+                        announced = true;
+                    }
+                    else Say("Reconnected.");
+                    string line;
+                    while ((line = rd.ReadLine()) != null)
+                    {
+                        try { Handle(line); } catch { }
+                    }
+                }
+                Say("The phone closed the connection.");
+            }
+            catch (Exception e)
+            {
+                Say("Lost the phone (" + e.Message + ").");
+            }
+            Thread.Sleep(800);
+            if (phone == null || !Ping(phone)) FindPhone(false);
+        }
+    }
+
+    static void Handle(string line)
+    {
+        string[] a = line.Split(' ');
+        switch (a[0])
+        {
+            case "m": Mouse(MOVE, int.Parse(a[1]), int.Parse(a[2]), 0); break;
+            case "b": Button(a[1], a[2] == "d"); break;
+            case "c": Button(a[1], true); Button(a[1], false); break;
+            case "w":
+                int wy = int.Parse(a[1]), wx = int.Parse(a[2]);
+                if (wy != 0) Mouse(WHEEL, 0, 0, wy);
+                if (wx != 0) Mouse(HWHEEL, 0, 0, wx);
+                break;
+            case "z":
+                Key("ctrl", true);
+                Mouse(WHEEL, 0, 0, 120 * int.Parse(a[1]));
+                Key("ctrl", false);
+                break;
+            case "kd": Key(a[1], true); break;
+            case "ku": Key(a[1], false); break;
+            case "k": Key(a[1], true); Key(a[1], false); break;
+            case "h":
+                string[] keys = a[1].Split('+');
+                foreach (string k in keys) Key(k, true);
+                for (int i = keys.Length - 1; i >= 0; i--) Key(keys[i], false);
+                break;
+            case "t": Type(Uri.UnescapeDataString(line.Substring(2))); break;
+        }
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    struct MOUSEINPUT { public int dx; public int dy; public int mouseData; public uint dwFlags; public uint time; public IntPtr dwExtraInfo; }
+
+    [StructLayout(LayoutKind.Sequential)]
+    struct KEYBDINPUT { public ushort wVk; public ushort wScan; public uint dwFlags; public uint time; public IntPtr dwExtraInfo; }
+
+    [StructLayout(LayoutKind.Explicit)]
+    struct InputUnion { [FieldOffset(0)] public MOUSEINPUT mi; [FieldOffset(0)] public KEYBDINPUT ki; }
+
+    [StructLayout(LayoutKind.Sequential)]
+    struct INPUT { public uint type; public InputUnion u; }
+
+    [DllImport("user32.dll", SetLastError = true)]
+    static extern uint SendInput(uint count, INPUT[] inputs, int size);
+
+    const uint MOVE = 0x0001, LEFTDOWN = 0x0002, LEFTUP = 0x0004, RIGHTDOWN = 0x0008, RIGHTUP = 0x0010,
+        MIDDLEDOWN = 0x0020, MIDDLEUP = 0x0040, WHEEL = 0x0800, HWHEEL = 0x1000;
+    const uint KEY_EXTENDED = 0x0001, KEY_UP = 0x0002, KEY_UNICODE = 0x0004;
+
+    static void Send(INPUT i)
+    {
+        SendInput(1, new INPUT[] { i }, Marshal.SizeOf(typeof(INPUT)));
+    }
+
+    static void Mouse(uint flags, int dx, int dy, int data)
+    {
+        INPUT i = new INPUT();
+        i.type = 0;
+        i.u.mi.dx = dx;
+        i.u.mi.dy = dy;
+        i.u.mi.mouseData = data;
+        i.u.mi.dwFlags = flags;
+        Send(i);
+    }
+
+    static void Button(string which, bool down)
+    {
+        uint f = which == "r" ? (down ? RIGHTDOWN : RIGHTUP)
+            : which == "m" ? (down ? MIDDLEDOWN : MIDDLEUP)
+            : (down ? LEFTDOWN : LEFTUP);
+        Mouse(f, 0, 0, 0);
+    }
+
+    static readonly Dictionary<string, ushort> Vk = new Dictionary<string, ushort>
+    {
+        { "enter", 0x0D }, { "back", 0x08 }, { "tab", 0x09 }, { "esc", 0x1B }, { "space", 0x20 },
+        { "left", 0x25 }, { "up", 0x26 }, { "right", 0x27 }, { "down", 0x28 },
+        { "del", 0x2E }, { "insert", 0x2D }, { "home", 0x24 }, { "end", 0x23 }, { "pgup", 0x21 }, { "pgdn", 0x22 },
+        { "win", 0x5B }, { "ctrl", 0x11 }, { "alt", 0x12 }, { "shift", 0x10 },
+        { "f1", 0x70 }, { "f2", 0x71 }, { "f3", 0x72 }, { "f4", 0x73 }, { "f5", 0x74 }, { "f6", 0x75 },
+        { "f7", 0x76 }, { "f8", 0x77 }, { "f9", 0x78 }, { "f10", 0x79 }, { "f11", 0x7A }, { "f12", 0x7B },
+    };
+
+    static readonly HashSet<string> Extended = new HashSet<string>
+    {
+        "left", "up", "right", "down", "del", "insert", "home", "end", "pgup", "pgdn", "win",
+    };
+
+    static void Key(string name, bool down)
+    {
+        ushort vk;
+        if (!Vk.TryGetValue(name, out vk))
+        {
+            // Single letters and digits, for shortcuts such as Ctrl+C.
+            if (name.Length != 1 || !char.IsLetterOrDigit(name[0])) return;
+            vk = (ushort)char.ToUpperInvariant(name[0]);
+        }
+        INPUT i = new INPUT();
+        i.type = 1;
+        i.u.ki.wVk = vk;
+        i.u.ki.dwFlags = (down ? 0 : KEY_UP) | (Extended.Contains(name) ? KEY_EXTENDED : 0);
+        Send(i);
+    }
+
+    static void Type(string text)
+    {
+        foreach (char ch in text)
+        {
+            INPUT i = new INPUT();
+            i.type = 1;
+            i.u.ki.wScan = ch;
+            i.u.ki.dwFlags = KEY_UNICODE;
+            Send(i);
+            i.u.ki.dwFlags = KEY_UNICODE | KEY_UP;
+            Send(i);
+        }
+    }
+
+    // ------------------------------------------------------------------ localhost relay
+
+    static void RelayLoop()
+    {
+        TcpListener l = null;
+        foreach (int port in new int[] { 8787, 8797, 8807 })
+        {
+            try
+            {
+                l = new TcpListener(IPAddress.Loopback, port);
+                l.Start();
+                localPort = port;
+                break;
+            }
+            catch (SocketException) { l = null; }
+        }
+        if (l == null)
+        {
+            localPort = 0;
+            Say("Could not serve the page on this laptop (ports 8787, 8797 and 8807 are all busy). The trackpad still works.");
+        }
+        relayReady.Set();
+        if (l == null) return;
+        while (true)
+        {
+            TcpClient c = l.AcceptTcpClient();
+            Thread t = new Thread(delegate () { Bridge(c); });
+            t.IsBackground = true;
+            t.Start();
+        }
+    }
+
+    static void Bridge(TcpClient browser)
+    {
+        TcpClient toPhone = new TcpClient();
+        try
+        {
+            browser.NoDelay = true;
+            toPhone.NoDelay = true;
+            browser.ReceiveBufferSize = browser.SendBufferSize = 4 << 20;
+            toPhone.ReceiveBufferSize = toPhone.SendBufferSize = 4 << 20;
+            toPhone.Connect(phone, PhonePort);
+            NetworkStream a = browser.GetStream(), b = toPhone.GetStream();
+            Thread up = new Thread(delegate () { Pump(a, b, toPhone.Client); });
+            up.IsBackground = true;
+            up.Start();
+            Pump(b, a, browser.Client);
+            up.Join();
+        }
+        catch { }
+        finally
+        {
+            browser.Close();
+            toPhone.Close();
+        }
+    }
+
+    static void Pump(NetworkStream from, NetworkStream to, Socket toSocket)
+    {
+        byte[] buf = new byte[1 << 20];
+        try
+        {
+            int n;
+            while ((n = from.Read(buf, 0, buf.Length)) > 0) to.Write(buf, 0, n);
+        }
+        catch { }
+        try { toSocket.Shutdown(SocketShutdown.Send); } catch { }
+    }
+}
+'@
+
+Add-Type -TypeDefinition $source -Language CSharp
+[XooshPc]::Run()

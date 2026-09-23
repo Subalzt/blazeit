@@ -1,0 +1,608 @@
+package dev.periy.bridge.ui
+
+import android.content.Context
+import android.net.wifi.WifiManager
+import android.os.SystemClock
+import android.text.InputType
+import android.view.HapticFeedbackConstants
+import android.view.KeyEvent
+import android.view.View
+import android.view.inputmethod.BaseInputConnection
+import android.view.inputmethod.EditorInfo
+import android.view.inputmethod.InputConnection
+import android.view.inputmethod.InputMethodManager
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.foundation.gestures.waitForUpOrCancellation
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.isImeVisible
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.ime
+import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.union
+import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.systemGestureExclusion
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.withFrameMillis
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.input.pointer.PointerInputChange
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.input.pointer.util.VelocityTracker
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.viewinterop.AndroidView
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import dev.periy.bridge.server.Control
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.launch
+import java.net.URLEncoder
+import kotlin.math.abs
+import kotlin.math.exp
+import kotlin.math.hypot
+import kotlin.math.ln
+import kotlin.math.min
+
+/**
+ * The phone as the laptop's trackpad and keyboard.
+ *
+ * Gestures follow a Windows precision touchpad, and the helper turns each one into what
+ * Windows itself does for that gesture:
+ *
+ *   1 finger       move          tap = click, tap then drag = drag, hold = drag
+ *   2 fingers      scroll (with momentum), pinch = zoom, tap = right click
+ *   3 fingers      up = Task View, down = desktop, sideways = switch apps
+ *   4 fingers      sideways = switch desktops, up / down as 3
+ */
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+fun ControlPane(running: Boolean, onStart: () -> Unit, modifier: Modifier = Modifier) {
+    val ctx = LocalContext.current
+    val view = LocalView.current
+    val laptops by Control.connected.collectAsStateWithLifecycle()
+    val pad = remember { PadState(ctx) }
+
+    // While this screen is open: keep the display on, and ask Wi-Fi for low latency --
+    // power-save naps in the radio are what make a remote pointer feel sticky.
+    DisposableEffect(Unit) {
+        view.keepScreenOn = true
+        @Suppress("DEPRECATION")
+        val lock = runCatching {
+            ctx.applicationContext.getSystemService(WifiManager::class.java)
+                ?.createWifiLock(WifiManager.WIFI_MODE_FULL_LOW_LATENCY, "xoosh-control")
+                ?.apply { setReferenceCounted(false); acquire() }
+        }.getOrNull()
+        onDispose {
+            view.keepScreenOn = false
+            runCatching { lock?.takeIf { it.isHeld }?.release() }
+        }
+    }
+
+    // Whichever is taller, the keyboard or the navigation bar, and never both stacked.
+    Column(modifier.windowInsetsPadding(WindowInsets.ime.union(WindowInsets.navigationBars))) {
+        SectionBar(
+            when {
+                !running -> "Xoosh is off"
+                laptops.isEmpty() -> "No laptop listening"
+                else -> "Controlling " + laptops.first().removePrefix("Laptop control on ")
+            }
+        ) {
+            listOf("Slow" to 0.6f, "Normal" to 1f, "Fast" to 1.6f).forEach { (label, k) ->
+                val on = abs(pad.speed - k) < 0.01f
+                Text(
+                    label.uppercase(),
+                    style = LabelStyle,
+                    color = if (on) Bridge.OnYellow else Bridge.OnBar,
+                    modifier = Modifier
+                        .padding(start = 4.dp)
+                        .background(if (on) Bridge.Yellow else androidx.compose.ui.graphics.Color.Transparent)
+                        .clickable { pad.chooseSpeed(k) }
+                        .padding(horizontal = 8.dp, vertical = 4.dp),
+                )
+            }
+        }
+
+        if (!running || laptops.isEmpty()) {
+            Column(Modifier.fillMaxWidth().panel().padding(14.dp)) {
+                if (!running) {
+                    Text("Start Xoosh, then run the helper on the laptop.", style = BodyStyle, color = Bridge.Text)
+                    BridgeButton("Start", Modifier.padding(top = 10.dp), onClick = onStart)
+                } else {
+                    Text(
+                        "On the laptop, run xoosh-pc.bat (the Xoosh page has it under Laptop control). " +
+                            "It finds this phone by itself and asks you to allow it here once.",
+                        style = BodyStyle, color = Bridge.Text,
+                    )
+                }
+            }
+        }
+
+        Trackpad(pad, Modifier.weight(1f).fillMaxWidth())
+
+        // With the keyboard up, the keys sit directly on top of it and the mouse buttons
+        // move above them. The key row keeps its place in the tree either way: rebuilding
+        // it would recreate the view the keyboard is typing into, and the keyboard would close.
+        val imeUp = WindowInsets.isImeVisible
+        if (imeUp) MouseButtons(pad)
+        KeyRow(pad, imeUp)
+        if (!imeUp) MouseButtons(pad)
+    }
+}
+
+// -------------------------------------------------------------------- state
+
+/** Pointer speed, sticky modifier keys, and the send path. */
+private class PadState(private val ctx: Context) {
+    private val prefs = ctx.getSharedPreferences("xoosh_control", Context.MODE_PRIVATE)
+    var speed by mutableFloatStateOf(prefs.getFloat("speed", 1f))
+        private set
+    /** Modifier keys tapped on the key row, held for the next key, character or click. */
+    val mods = mutableStateListOf<String>()
+
+    fun chooseSpeed(k: Float) { speed = k; prefs.edit().putFloat("speed", k).apply() }
+
+    fun send(line: String) = Control.send(line)
+
+    fun toggleMod(name: String) { if (name in mods) mods.remove(name) else mods.add(name) }
+
+    /** Run [block] with the sticky modifiers held, then release them. */
+    fun withMods(block: () -> Unit) {
+        val held = mods.toList()
+        held.forEach { send("kd $it") }
+        block()
+        held.asReversed().forEach { send("ku $it") }
+        mods.clear()
+    }
+
+    fun key(name: String) = withMods { send("k $name") }
+    fun click(button: String) = withMods { send("c $button") }
+
+    fun type(text: String) {
+        if (text.isEmpty()) return
+        // With Ctrl or Alt held, a letter is a shortcut (Ctrl+C), not a character.
+        if (mods.isNotEmpty() && text.length == 1 && text[0].isLetterOrDigit()) {
+            key(text.lowercase())
+            return
+        }
+        val parts = text.split('\n')
+        parts.forEachIndexed { i, part ->
+            if (part.isNotEmpty()) {
+                send("t " + URLEncoder.encode(part, "UTF-8").replace("+", "%20"))
+            }
+            if (i < parts.lastIndex) key("enter")
+        }
+    }
+}
+
+// -------------------------------------------------------------------- trackpad
+
+private enum class Mode { UNDECIDED, POINT, DRAG, SCROLL, PINCH, SWIPE3, SWITCHER, SWIPE4, DONE }
+
+@Composable
+private fun Trackpad(pad: PadState, modifier: Modifier) {
+    val view = LocalView.current
+    val scope = rememberCoroutineScope()
+    var fling by remember { mutableStateOf<Job?>(null) }
+    var lastTapAt by remember { mutableStateOf(0L) }
+    var lastTapPos by remember { mutableStateOf(Offset.Zero) }
+
+    Box(
+        modifier
+            .padding(8.dp)
+            .panel()
+            // Keep Android's back gesture from eating swipes that start near the edges.
+            .systemGestureExclusion()
+            .pointerInput(Unit) {
+                val slop = viewConfiguration.touchSlop
+                val swipeDist = 48.dp.toPx()
+                val switchStep = 64.dp.toPx()
+                val dragRadius = 48.dp.toPx()
+
+                awaitEachGesture {
+                    val first = awaitFirstDown(requireUnconsumed = false)
+                    fling?.cancel()
+                    val t0 = first.uptimeMillis
+                    val dragArmed = t0 - lastTapAt < DOUBLE_TAP_MS &&
+                        (first.position - lastTapPos).getDistance() < dragRadius
+
+                    var mode = Mode.UNDECIDED
+                    var maxFingers = 1
+                    var travel = 0f
+                    var acc = Offset.Zero          // centroid movement since the mode began
+                    var spanLog = 0f               // pinch: accumulated log(span ratio)
+                    var carry = Offset.Zero        // sub-count remainders for move / wheel
+                    val velocity = VelocityTracker()
+                    var centroid = first.position
+
+                    fun reset() { acc = Offset.Zero; spanLog = 0f; carry = Offset.Zero; velocity.resetTracking() }
+
+                    while (true) {
+                        val event = if (mode == Mode.UNDECIDED && maxFingers == 1) {
+                            // Waking up without an event is how a still finger becomes a hold.
+                            val left = HOLD_MS - (SystemClock.uptimeMillis() - t0)
+                            withTimeoutOrNull(left.coerceAtLeast(1)) { awaitPointerEvent() }
+                        } else awaitPointerEvent()
+
+                        if (event == null) {
+                            if (travel < slop) {
+                                mode = Mode.DRAG
+                                pad.send("b l d")
+                                view.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS)
+                            }
+                            continue
+                        }
+
+                        val pressed = event.changes.filter { it.pressed }
+                        if (pressed.isEmpty()) break
+                        val fingers = pressed.size
+                        if (fingers > maxFingers) {
+                            maxFingers = fingers
+                            // A second finger landing after the pointer started moving means
+                            // "now scroll", exactly as on a laptop trackpad.
+                            if (mode == Mode.POINT) { mode = Mode.UNDECIDED; reset() }
+                        }
+
+                        val moving = pressed.filter { it.previousPressed }
+                        val delta = if (moving.isEmpty()) Offset.Zero
+                        else moving.fold(Offset.Zero) { a, c -> a + (c.position - c.previousPosition) } / moving.size.toFloat()
+                        travel += delta.getDistance()
+                        acc += delta
+                        centroid = pressed.fold(Offset.Zero) { a, c -> a + c.position } / fingers.toFloat()
+                        velocity.addPosition(event.changes.first().uptimeMillis, centroid)
+                        if (fingers == 2 && moving.size == 2) spanLog += spanChange(moving)
+
+                        if (mode == Mode.UNDECIDED && travel > slop) {
+                            mode = when {
+                                fingers == 1 && dragArmed -> Mode.DRAG.also { pad.send("b l d") }
+                                fingers == 1 -> Mode.POINT
+                                fingers == 2 -> if (abs(spanLog) > 0.12f && abs(spanLog) * 400f > acc.getDistance()) Mode.PINCH else Mode.SCROLL
+                                fingers == 3 -> Mode.SWIPE3
+                                else -> Mode.SWIPE4
+                            }
+                            if (mode == Mode.PINCH || mode == Mode.SCROLL) { acc = Offset.Zero; spanLog = 0f }
+                        }
+
+                        when (mode) {
+                            Mode.POINT, Mode.DRAG -> {
+                                val dt = (event.changes.first().uptimeMillis - event.changes.first().previousUptimeMillis).coerceAtLeast(1)
+                                val v = delta.getDistance() / dt
+                                val k = POINTER_K * pad.speed * (1f + ACCEL * min(v, 4f))
+                                carry += delta * k
+                                val dx = carry.x.toInt(); val dy = carry.y.toInt()
+                                if (dx != 0 || dy != 0) {
+                                    pad.send("m $dx $dy")
+                                    carry = Offset(carry.x - dx, carry.y - dy)
+                                }
+                            }
+                            Mode.SCROLL -> {
+                                // Content follows the fingers, as Windows does by default.
+                                carry += Offset(-delta.x, delta.y) * WHEEL_K
+                                val wx = carry.x.toInt(); val wy = carry.y.toInt()
+                                if (wx != 0 || wy != 0) {
+                                    pad.send("w $wy $wx")
+                                    carry = Offset(carry.x - wx, carry.y - wy)
+                                }
+                            }
+                            Mode.PINCH -> {
+                                while (spanLog > PINCH_STEP) { pad.send("z 1"); spanLog -= PINCH_STEP }
+                                while (spanLog < -PINCH_STEP) { pad.send("z -1"); spanLog += PINCH_STEP }
+                            }
+                            Mode.SWIPE3 -> if (acc.getDistance() > swipeDist) {
+                                if (abs(acc.y) > abs(acc.x)) {
+                                    pad.send(if (acc.y < 0) "h win+tab" else "h win+d")
+                                    mode = Mode.DONE
+                                } else {
+                                    // Hold Alt and step through the app switcher, like the real gesture.
+                                    pad.send("kd alt")
+                                    pad.send(if (acc.x > 0) "k tab" else "h shift+tab")
+                                    mode = Mode.SWITCHER
+                                    acc = Offset.Zero
+                                }
+                                view.performHapticFeedback(HapticFeedbackConstants.CLOCK_TICK)
+                            }
+                            Mode.SWITCHER -> while (abs(acc.x) > switchStep) {
+                                pad.send(if (acc.x > 0) "k tab" else "h shift+tab")
+                                acc = Offset(acc.x - switchStep * if (acc.x > 0) 1 else -1, acc.y)
+                                view.performHapticFeedback(HapticFeedbackConstants.CLOCK_TICK)
+                            }
+                            Mode.SWIPE4 -> if (acc.getDistance() > swipeDist) {
+                                pad.send(
+                                    when {
+                                        abs(acc.y) > abs(acc.x) -> if (acc.y < 0) "h win+tab" else "h win+d"
+                                        acc.x < 0 -> "h ctrl+win+right"
+                                        else -> "h ctrl+win+left"
+                                    }
+                                )
+                                view.performHapticFeedback(HapticFeedbackConstants.CLOCK_TICK)
+                                mode = Mode.DONE
+                            }
+                            else -> Unit
+                        }
+                        event.changes.forEach(PointerInputChange::consume)
+                    }
+
+                    when (mode) {
+                        Mode.UNDECIDED -> {
+                            view.performHapticFeedback(HapticFeedbackConstants.CONTEXT_CLICK)
+                            when (maxFingers) {
+                                1 -> {
+                                    pad.click("l")
+                                    lastTapAt = SystemClock.uptimeMillis()
+                                    lastTapPos = first.position
+                                }
+                                2 -> pad.click("r")
+                                else -> Unit
+                            }
+                        }
+                        Mode.DRAG -> pad.send("b l u")
+                        Mode.SWITCHER -> pad.send("ku alt")
+                        Mode.SCROLL -> {
+                            val v = velocity.calculateVelocity()
+                            val vx = -v.x * WHEEL_K / 1000f
+                            val vy = v.y * WHEEL_K / 1000f
+                            if (hypot(vx, vy) > FLING_MIN) fling = scope.launch { momentum(pad, vx, vy) }
+                        }
+                        else -> Unit
+                    }
+                    if (mode != Mode.UNDECIDED || maxFingers != 1) lastTapAt = 0L
+                }
+            },
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(
+            "Move with one finger · tap to click\nTwo fingers scroll · pinch zooms · tap for right click\n" +
+                "Three fingers: up Task View · down desktop · sideways switch apps\n" +
+                "Four fingers sideways switch desktops",
+            style = BodyStyle,
+            color = Bridge.Muted,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.padding(24.dp),
+        )
+    }
+}
+
+/** Log of how much the two fingers moved apart since the previous event. */
+private fun spanChange(two: List<PointerInputChange>): Float {
+    val a = two[0]; val b = two[1]
+    val now = (a.position - b.position).getDistance()
+    val before = (a.previousPosition - b.previousPosition).getDistance()
+    if (now < 1f || before < 1f) return 0f
+    return ln(now / before)
+}
+
+/** Scrolling that keeps going after the fingers lift, slowing like a real trackpad. */
+private suspend fun momentum(pad: PadState, startX: Float, startY: Float) {
+    var vx = startX; var vy = startY          // wheel units per ms
+    var cx = 0f; var cy = 0f
+    var last = withFrameMillis { it }
+    while (hypot(vx, vy) > FLING_STOP) {
+        val now = withFrameMillis { it }
+        val dt = (now - last).coerceIn(1, 50).toFloat()
+        last = now
+        cx += vx * dt; cy += vy * dt
+        val wx = cx.toInt(); val wy = cy.toInt()
+        if (wx != 0 || wy != 0) { pad.send("w $wy $wx"); cx -= wx; cy -= wy }
+        val decay = exp(-dt / FLING_TAU)
+        vx *= decay; vy *= decay
+    }
+}
+
+// -------------------------------------------------------------------- keys
+
+@Composable
+private fun MouseButtons(pad: PadState) {
+    Row(Modifier.fillMaxWidth().height(56.dp)) {
+        HoldButton("Left", Modifier.weight(1f).fillMaxSize(), pad, "l")
+        HoldButton("Right", Modifier.weight(1f).fillMaxSize(), pad, "r")
+    }
+}
+
+@Composable
+private fun KeyRow(pad: PadState, imeUp: Boolean) {
+    val ctx = LocalContext.current
+    var catcher by remember { mutableStateOf<KeyCatcher?>(null) }
+
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .background(Bridge.Bar)
+            .padding(horizontal = 6.dp, vertical = 6.dp),
+        horizontalArrangement = Arrangement.spacedBy(4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        // The phone's own keyboard, typing straight into the laptop.
+        AndroidView(
+            factory = { KeyCatcher(it, onText = pad::type, onKey = pad::key).also { v -> catcher = v } },
+            modifier = Modifier.size(1.dp),
+        )
+        KeyChip("Keyboard", Modifier.weight(1.6f), on = imeUp) {
+            val v = catcher ?: return@KeyChip
+            val imm = ctx.getSystemService(InputMethodManager::class.java)
+            if (imeUp) {
+                imm?.hideSoftInputFromWindow(v.windowToken, 0)
+                v.clearFocus()
+            } else {
+                v.requestFocus()
+                imm?.showSoftInput(v, InputMethodManager.SHOW_IMPLICIT)
+            }
+        }
+        KeyChip("Ctrl", Modifier.weight(1f), on = "ctrl" in pad.mods) { pad.toggleMod("ctrl") }
+        KeyChip("Win", Modifier.weight(1f), on = "win" in pad.mods) {
+            // Tapped twice with nothing in between, Win opens Start, as the real key does.
+            if ("win" in pad.mods) { pad.mods.remove("win"); pad.key("win") } else pad.toggleMod("win")
+        }
+        KeyChip("Esc", Modifier.weight(1f)) { pad.key("esc") }
+    }
+}
+
+@Composable
+private fun KeyChip(label: String, modifier: Modifier = Modifier, on: Boolean = false, onClick: () -> Unit) {
+    val view = LocalView.current
+    Box(
+        modifier
+            .widthIn(min = 44.dp)
+            .height(38.dp)
+            .background(if (on) Bridge.Yellow else Bridge.Chip)
+            .clickable {
+                view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+                onClick()
+            }
+            .padding(horizontal = 10.dp),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(label.uppercase(), style = LabelStyle, color = if (on) Bridge.OnYellow else Bridge.Text)
+    }
+}
+
+/** A mouse button: pressed while your finger is on it, so it can hold for a drag. */
+@Composable
+private fun HoldButton(label: String, modifier: Modifier, pad: PadState, button: String) {
+    val view = LocalView.current
+    var down by remember { mutableStateOf(false) }
+    Box(
+        modifier
+            .background(if (down) Bridge.Yellow else Bridge.Paper)
+            .border(BorderStroke(1.dp, Bridge.Outline))
+            .pointerInput(button) {
+                awaitEachGesture {
+                    awaitFirstDown()
+                    down = true
+                    view.performHapticFeedback(HapticFeedbackConstants.CONTEXT_CLICK)
+                    val held = pad.mods.toList()
+                    held.forEach { pad.send("kd $it") }
+                    pad.send("b $button d")
+                    waitForUpOrCancellation()
+                    pad.send("b $button u")
+                    held.asReversed().forEach { pad.send("ku $it") }
+                    pad.mods.clear()
+                    down = false
+                }
+            },
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(label.uppercase(), style = LabelStyle, color = if (down) Bridge.OnYellow else Bridge.Text)
+    }
+}
+
+/**
+ * An invisible view the phone's keyboard types into. It keeps no text of its own: every
+ * character is passed straight on, and suggestions are turned off so each key arrives as
+ * it is pressed rather than as a word the keyboard rewrites later.
+ */
+private class KeyCatcher(
+    ctx: Context,
+    private val onText: (String) -> Unit,
+    private val onKey: (String) -> Unit,
+) : View(ctx) {
+    init {
+        isFocusable = true
+        isFocusableInTouchMode = true
+    }
+
+    override fun onCheckIsTextEditor() = true
+
+    override fun onCreateInputConnection(out: EditorInfo): InputConnection {
+        out.inputType = InputType.TYPE_CLASS_TEXT or
+            InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD or
+            InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS
+        out.imeOptions = EditorInfo.IME_FLAG_NO_EXTRACT_UI or
+            EditorInfo.IME_FLAG_NO_FULLSCREEN or
+            EditorInfo.IME_ACTION_NONE
+        return object : BaseInputConnection(this, false) {
+            /** Text the keyboard is still composing, already sent to the laptop. */
+            private var composing = ""
+
+            private fun replaceComposing(next: String) {
+                val common = composing.commonPrefixWith(next).length
+                repeat(composing.length - common) { onKey("back") }
+                if (next.length > common) onText(next.substring(common))
+                composing = next
+            }
+
+            override fun commitText(text: CharSequence?, newCursorPosition: Int): Boolean {
+                replaceComposing(text?.toString().orEmpty())
+                composing = ""
+                return true
+            }
+
+            override fun setComposingText(text: CharSequence?, newCursorPosition: Int): Boolean {
+                replaceComposing(text?.toString().orEmpty())
+                return true
+            }
+
+            override fun finishComposingText(): Boolean {
+                composing = ""
+                return true
+            }
+
+            override fun deleteSurroundingText(beforeLength: Int, afterLength: Int): Boolean {
+                repeat(beforeLength) { onKey("back") }
+                repeat(afterLength) { onKey("del") }
+                return true
+            }
+
+            override fun performEditorAction(actionCode: Int): Boolean {
+                onKey("enter")
+                return true
+            }
+
+            override fun sendKeyEvent(event: KeyEvent): Boolean {
+                if (event.action != KeyEvent.ACTION_DOWN) return true
+                when (event.keyCode) {
+                    KeyEvent.KEYCODE_DEL -> onKey("back")
+                    KeyEvent.KEYCODE_FORWARD_DEL -> onKey("del")
+                    KeyEvent.KEYCODE_ENTER, KeyEvent.KEYCODE_NUMPAD_ENTER -> onKey("enter")
+                    KeyEvent.KEYCODE_TAB -> onKey("tab")
+                    KeyEvent.KEYCODE_ESCAPE -> onKey("esc")
+                    KeyEvent.KEYCODE_DPAD_LEFT -> onKey("left")
+                    KeyEvent.KEYCODE_DPAD_RIGHT -> onKey("right")
+                    KeyEvent.KEYCODE_DPAD_UP -> onKey("up")
+                    KeyEvent.KEYCODE_DPAD_DOWN -> onKey("down")
+                    else -> {
+                        val ch = event.unicodeChar
+                        if (ch != 0) onText(String(Character.toChars(ch)))
+                    }
+                }
+                return true
+            }
+        }
+    }
+}
+
+private const val DOUBLE_TAP_MS = 300L
+private const val HOLD_MS = 450L
+/** Laptop pixels per phone pixel at "Normal", before acceleration. */
+private const val POINTER_K = 0.85f
+private const val ACCEL = 0.55f
+/** Wheel units (120 = one notch) per phone pixel of two-finger travel. */
+private const val WHEEL_K = 1.6f
+private const val PINCH_STEP = 0.16f
+private const val FLING_MIN = 0.6f
+private const val FLING_STOP = 0.02f
+private const val FLING_TAU = 325f
