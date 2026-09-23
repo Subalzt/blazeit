@@ -1,0 +1,115 @@
+package dev.periy.bridge.server
+
+import kotlinx.serialization.Serializable
+
+/** Where a file came from. Drives the icon in the browser list, nothing more. */
+enum class Origin { PC, PHONE }
+
+@Serializable
+data class FileEntry(
+    val id: String,
+    val name: String,
+    val mime: String,
+    val size: Long,
+    val addedAt: Long,
+    /** SAF document URI (content://) once finalised into the user's chosen folder. */
+    val uri: String,
+    val origin: String,
+    /**
+     * Real filesystem path, when one could be derived. Used only to hand the media
+     * scanner something to index -- we never open it ourselves, because on API 29+
+     * without storage permission we would not be allowed to.
+     */
+    val scanPath: String? = null,
+    /**
+     * True when this app created the file, so removing it from the list should delete it.
+     * False for a file the user merely pointed us at -- deleting that would destroy their
+     * own photo, which is never what "remove from the list" should mean.
+     */
+    val owned: Boolean = true,
+)
+
+@Serializable
+data class StateDto(
+    val clipboard: String,
+    val files: List<FileEntry>,
+    val maxUploadSize: Long,
+    val deviceName: String,
+    /** How many parallel connections the page should open. See TusStore's class comment. */
+    val uploadStreams: Int = 4,
+    /** Shared theme: flipping it on the phone or on any computer changes all of them. */
+    val glass: Boolean = false,
+    /** Smallest file worth splitting; below this the round trips cost more than they save. */
+    val parallelThreshold: Long = 16L * 1024 * 1024,
+)
+
+@Serializable data class ClipboardRequest(val text: String = "")
+@Serializable data class ApiResult(val ok: Boolean, val message: String? = null, val retryAfterMs: Long = 0)
+
+/**
+ * Everything the HTTP layer needs to know.
+ *
+ * `sessionKey` is a provider rather than a snapshot on purpose. Unpairing every
+ * computer has to take effect on the very next request -- a
+ * revocation that only applies after the user remembers to restart the server is not a
+ * revocation. `port` is a plain value because changing it genuinely does require
+ * rebinding the socket.
+ */
+class ServerConfig(
+    val port: Int,
+    val sessionKey: () -> ByteArray,
+    val uploadStreams: () -> Int,
+    val glass: () -> Boolean,
+    val setGlass: (Boolean) -> Unit,
+    val sessionTtlMs: Long = 30L * 24 * 60 * 60 * 1000,
+    val deviceName: String,
+)
+
+/**
+ * Unauthenticated probe the page calls before showing anything, to decide between the
+ * pairing screen and the main UI. Deliberately reveals nothing but whether this browser is
+ * already paired and what device it is talking to.
+ */
+@Serializable
+data class PingDto(val ok: Boolean, val paired: Boolean, val device: String)
+
+/** One offset window of a parallel upload, as handed to the browser. */
+@Serializable
+data class StreamDto(
+    val url: String,
+    val base: Long,
+    val length: Long,
+    val offset: Long,
+)
+
+/**
+ * Response to a parallel upload creation. Each stream is an ordinary tus upload URL --
+ * HEAD and PATCH work on it exactly as the spec says -- but all of them write into
+ * disjoint windows of one already-preallocated file, so there is no concatenation step.
+ */
+@Serializable
+data class ParallelUploadDto(
+    val groupId: String,
+    val total: Long,
+    val streams: List<StreamDto>,
+)
+
+/** A network interface the PC could reach this phone on, with a speed expectation. */
+@Serializable
+data class LinkDto(
+    val iface: String,
+    val url: String,
+    val kind: String,
+    val hint: String,
+    val preferred: Boolean,
+)
+
+/** Returned when a computer asks to connect: the code it should display. */
+@Serializable
+data class PairStartDto(val id: String, val code: String, val name: String)
+
+/** PENDING, APPROVED, DENIED or EXPIRED. */
+@Serializable
+data class PairStatusDto(val state: String)
+
+@Serializable data class ThemeRequest(val glass: Boolean = false)
