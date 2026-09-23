@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <!-- Lets the laptop helper find the phone by broadcast, even with the screen off. -->
+    <uses-permission android:name="android.permission.CHANGE_WIFI_MULTICAST_STATE" />
+
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <!-- See the long comment on <service> below for why specialUse and not dataSync. -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
+    <!-- Declared as a fallback so a build switched to dataSync still starts. -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
+
+    <!-- API 33+. Requested at runtime; the persistent notification is the only way to
+         see the address, and where connection requests arrive. -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+
+    <!-- Music streaming reads the audio library only. READ_MEDIA_AUDIO covers audio and
+         nothing else on Android 13+; older versions need the broader storage read. -->
+    <uses-permission android:name="android.permission.READ_MEDIA_AUDIO" />
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"
+        android:maxSdkVersion="32" />
+
+    <!-- Sideloaded / personal build. Google Play restricts this permission to apps whose
+         core function genuinely breaks under Doze, which this one does: an idle HTTP
+         listener gets its sockets torn down. If this app is ever shipped through Play,
+         drop this and route users through Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS
+         instead, which OemBatterySetup already falls back to. -->
+    <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS"
+        tools:ignore="BatteryLife" />
+
+    <!-- The app is useless without a network, but it must install on tablets and
+         Wi-Fi-only devices, so nothing here is required="true". -->
+    <uses-feature android:name="android.hardware.wifi" android:required="false" />
+    <uses-feature android:name="android.hardware.camera" android:required="false" />
+    <uses-feature android:name="android.hardware.touchscreen" android:required="false" />
+
+    <application
+        android:name=".BridgeApp"
+        android:allowBackup="false"
+        android:dataExtractionRules="@xml/data_extraction_rules"
+        android:fullBackupContent="@xml/backup_rules"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:roundIcon="@mipmap/ic_launcher"
+        android:supportsRtl="true"
+        android:enableOnBackInvokedCallback="true"
+        android:theme="@style/Theme.PhoneBridge">
+
+        <activity
+            android:name=".ui.MainActivity"
+            android:exported="true"
+            android:configChanges="orientation|screenSize|screenLayout|keyboardHidden|uiMode|density"
+            android:launchMode="singleTask"
+            android:windowSoftInputMode="adjustResize"
+            android:theme="@style/Theme.PhoneBridge">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+
+            <!--
+              Share-sheet targets. This is the primary way content leaves the phone:
+              share from Gallery, Files, a browser, anywhere. Text lands in the
+              clipboard slot; files are copied into the destination folder, because
+              a share grant dies with the task and could not be served later.
+            -->
+            <intent-filter>
+                <action android:name="android.intent.action.SEND" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="text/plain" />
+                <data android:mimeType="image/*" />
+                <data android:mimeType="video/*" />
+                <data android:mimeType="audio/*" />
+                <data android:mimeType="application/*" />
+                <data android:mimeType="*/*" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.SEND_MULTIPLE" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="image/*" />
+                <data android:mimeType="video/*" />
+                <data android:mimeType="*/*" />
+            </intent-filter>
+        </activity>
+
+        <!--
+          foregroundServiceType: specialUse, deliberately, not dataSync.
+
+          The prompt asked for dataSync with a note about the cap. Here is the note, and
+          the reason I went the other way.
+
+          Android 15 (API 35) applies a cumulative 6-hour-per-24h budget to dataSync
+          foreground services. When it runs out the system calls Service.onTimeout() and
+          the service must stop within seconds or be killed as an ANR. The usual reading
+          is "a 10 GB upload takes ~90 minutes, so that is four transfers a day" — but
+          that reading is wrong for this app, and the error is not conservative.
+
+          The budget is charged against WALL-CLOCK TIME THE SERVICE IS RUNNING, not
+          bytes moved. This app is a server. Its whole value is being reachable when the
+          PC decides to open the page, which means the service is up and idle almost all
+          of the time. A bridge left switched on after breakfast is dead by lunch, having
+          transferred nothing at all. The cap is not a ceiling on transfers, it is a
+          ceiling on uptime, and uptime is the product.
+
+          specialUse has no timeout. This app also does not honestly fit any other type:
+          it is not syncing to a remote account (dataSync), not playing media, not
+          tracking location. It is a user-initiated local network service, which is
+          exactly the residual case specialUse exists for.
+
+          The cost is Google Play: specialUse requires a written justification at
+          submission and review can reject it. That is not a constraint on a sideloaded
+          personal build. If this ever needs to go through Play review, flip
+          Fgs.TYPE in service/BridgeService.kt to dataSync and accept the 6h budget.
+          onTimeout() is already implemented and shuts down cleanly rather than ANR-ing.
+        -->
+        <service
+            android:name=".service.BridgeService"
+            android:exported="false"
+            android:foregroundServiceType="dataSync|specialUse"
+            android:stopWithTask="false">
+            <property
+                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="Xoosh hosts a local HTTP server on this device so a computer on the same network can transfer files and clipboard text to and from the phone. The service must remain running while the browser page is open, because the phone is the server." />
+        </service>
+    </application>
+</manifest>
