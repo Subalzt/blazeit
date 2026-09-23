@@ -1,0 +1,101 @@
+package dev.periy.bridge.server
+
+import android.util.Base64
+import java.security.SecureRandom
+import javax.crypto.Mac
+import javax.crypto.spec.SecretKeySpec
+import kotlin.math.min
+
+const val SESSION_COOKIE = "xoosh_session"
+
+/**
+ * Signed session cookie: `base64(payload).base64(hmacSha256(key, payload))`, where the
+ * payload is `expiry:deviceId:nonce`.
+ *
+ * The device id is what makes per-computer control possible. The signature proves the
+ * cookie was issued by this phone; the id says *to which computer*, so the phone can list
+ * every paired computer and revoke any one of them without logging out the rest.
+ * Revocation works by deleting the device from [DeviceRegistry] -- the cookie still
+ * verifies, but it now points at nobody, and is refused.
+ *
+ * Rotating the key revokes everything at once, which is what "unpair all" does.
+ */
+object Session {
+
+    private val rng = SecureRandom()
+
+    fun issue(key: ByteArray, ttlMs: Long, deviceId: String): String {
+        val payload = "${System.currentTimeMillis() + ttlMs}:$deviceId:${randomB64(12)}"
+        val bytes = payload.toByteArray()
+        return "${b64(bytes)}.${b64(hmac(key, bytes))}"
+    }
+
+    /** The device the cookie was issued to, or null if it is forged, malformed or expired. */
+    fun verify(key: ByteArray, token: String?): String? {
+        if (token.isNullOrEmpty()) return null
+        val dot = token.indexOf('.')
+        if (dot <= 0 || dot == token.length - 1) return null
+
+        val payload = runCatching { Base64.decode(token.substring(0, dot), B64) }.getOrNull() ?: return null
+        val sig = runCatching { Base64.decode(token.substring(dot + 1), B64) }.getOrNull() ?: return null
+
+        // Check the signature before parsing anything, so a forged token never gets to
+        // influence more than this one comparison.
+        if (!constantTimeEquals(sig, hmac(key, payload))) return null
+
+        val parts = String(payload).split(':')
+        if (parts.size != 3) return null
+        val exp = parts[0].toLongOrNull() ?: return null
+        if (exp <= System.currentTimeMillis()) return null
+        return parts[1].takeIf { it.isNotEmpty() }
+    }
+
+    private fun hmac(key: ByteArray, data: ByteArray): ByteArray =
+        Mac.getInstance("HmacSHA256").apply { init(SecretKeySpec(key, "HmacSHA256")) }.doFinal(data)
+
+    private fun b64(b: ByteArray) = Base64.encodeToString(b, B64)
+    private fun randomB64(n: Int) = b64(ByteArray(n).also(rng::nextBytes))
+
+    private const val B64 = Base64.URL_SAFE or Base64.NO_WRAP or Base64.NO_PADDING
+}
+
+/**
+ * Comparison whose running time depends on the lengths of the inputs but not on their
+ * contents.
+ */
+fun constantTimeEquals(a: ByteArray, b: ByteArray): Boolean {
+    if (a.isEmpty() || b.isEmpty()) return a.isEmpty() && b.isEmpty()
+    var diff = a.size xor b.size
+    for (i in a.indices) diff = diff or (a[i].toInt() xor b[min(i, b.size - 1)].toInt())
+    return diff == 0
+}
+
+/**
+ * A short human-readable name for a browser, from its User-Agent -- "Chrome on Windows".
+ *
+ * Order matters: Edge and Opera also claim to be Chrome, Android also claims to be Linux,
+ * and iPads claim to be Macs, so the more specific tokens are checked first.
+ */
+fun describeUserAgent(ua: String?): String {
+    if (ua.isNullOrBlank()) return "Browser"
+    // The laptop helper names itself: "XooshPC/1 (DESKTOP-ABC)".
+    Regex("""XooshPC/\S+ \((.+)\)""").find(ua)?.let { return "Laptop control on " + it.groupValues[1] }
+    val browser = when {
+        "Edg/" in ua -> "Edge"
+        "OPR/" in ua -> "Opera"
+        "Firefox/" in ua -> "Firefox"
+        "Chrome/" in ua -> "Chrome"
+        "Safari/" in ua -> "Safari"
+        else -> "Browser"
+    }
+    val os = when {
+        "Windows" in ua -> "Windows"
+        "Android" in ua -> "Android"
+        "iPhone" in ua || "iPad" in ua -> "iOS"
+        "Mac OS X" in ua -> "Mac"
+        "CrOS" in ua -> "ChromeOS"
+        "Linux" in ua -> "Linux"
+        else -> ""
+    }
+    return if (os.isEmpty()) browser else "$browser on $os"
+}
