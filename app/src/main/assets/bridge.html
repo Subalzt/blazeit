@@ -1,0 +1,2277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Xoosh</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='16 16 76 76'%3E%3Crect x='16' y='16' width='76' height='76' rx='12' fill='%230A0A0A'/%3E%3Cg transform='translate(108 0) scale(-1 1)'%3E%3Cg fill='none' stroke='%23FFE500' stroke-width='3.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M86 48L80.5 46.5C80.5 42.5 77.5 40.5 74.5 41C71 41.5 69 44 69.5 47C64 50 57 52 48 55L28 50Q23 57.5 28 65L45 62.5C51 70 66 71 74 65C79.5 61 82.5 56 81.5 51Z'/%3E%3Cpath d='M63 49C61 38 53 29 40 25Q39 31 44 33Q42 38 47 40Q46 45 51 46Q50 50 54 51.5'/%3E%3Cpath d='M57 68L53 75'/%3E%3Cpath d='M43 75L51 75A3 3 0 0 1 51 81L43 81A3 3 0 0 1 43 75Z'/%3E%3Cpath d='M40 78a3 3 0 1 0 6 0a3 3 0 1 0 -6 0'/%3E%3C/g%3E%3Ccircle cx='75.5' cy='45' r='1.7' fill='%23FFE500'/%3E%3C/g%3E%3C/svg%3E">
+<style>
+  :root {
+    --yellow: #FFE500;
+    --yellow-dim: #E6CE00;
+    --ink: #0A0A0A;
+    --ink-soft: #2A2A2A;
+    --paper: #FFFFFF;
+    --row: #F0F0F0;
+    --row-alt: #E6E6E6;
+    --chip: #D2D2D2;
+    --muted: #5C5C5C;
+    --line: #CFCFCF;
+    --danger: #C62828;
+    --good: #1B7F3B;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--row-alt);
+    color: var(--ink);
+    font: 15px/1.55 system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+    padding-bottom: 76px;
+  }
+  .shell { max-width: 1000px; margin: 0 auto; background: var(--paper); min-height: 100vh; }
+
+  /* ---------------------------------------------------------------- masthead */
+  .mast {
+    background: var(--ink); color: var(--paper);
+    display: flex; align-items: center; gap: 10px;
+    padding: 14px 18px;
+  }
+  .logo { font-size: 26px; font-weight: 900; letter-spacing: -0.5px; }
+  .logo b { color: var(--yellow); font-weight: 900; }
+  .grow { flex: 1 1 auto; min-width: 0; }
+  .dot { width: 11px; height: 11px; background: var(--muted); border-radius: 1px; }
+  .dot.on { background: var(--yellow); }
+  .hazard {
+    height: 10px;
+    background: repeating-linear-gradient(45deg, var(--ink) 0 9px, var(--yellow) 9px 18px);
+  }
+
+  /* ---------------------------------------------------------------- hero */
+  .hero { background: var(--yellow); padding: 18px; }
+  .hero h1 { margin: 0; font-size: 25px; font-weight: 900; letter-spacing: -0.4px; }
+  .hero p { margin: 6px 0 0; font-size: 13.5px; color: var(--ink-soft); max-width: 70ch; }
+
+  /* ---------------------------------------------------------------- tabs */
+  .tabs { display: flex; background: var(--ink); }
+  .tabs button {
+    flex: 1 1 0; border: 0; cursor: pointer;
+    background: var(--ink); color: var(--paper);
+    font: inherit; font-size: 11.5px; font-weight: 800;
+    letter-spacing: 1.4px; text-transform: uppercase;
+    padding: 13px 6px;
+  }
+  .tabs button.on { background: var(--yellow); color: var(--ink); }
+  .tabs button:hover:not(.on) { background: var(--ink-soft); }
+
+  /* ---------------------------------------------------------------- sections */
+  .bar {
+    background: var(--ink); color: var(--yellow);
+    font-size: 11.5px; font-weight: 800; letter-spacing: 1.4px; text-transform: uppercase;
+    padding: 10px 18px; display: flex; align-items: center; gap: 10px;
+  }
+  .bar .act { color: var(--paper); cursor: pointer; text-decoration: underline; }
+  .pad { padding: 18px; }
+  .note { font-size: 13px; color: var(--muted); margin: 8px 0 0; max-width: 78ch; }
+  .note.warn { color: var(--danger); }
+
+  /* ---------------------------------------------------------------- controls */
+  button.btn, a.btn {
+    display: inline-block; text-decoration: none;
+    font: inherit; font-size: 11.5px; font-weight: 800;
+    letter-spacing: 1.3px; text-transform: uppercase;
+    padding: 11px 18px; border-radius: 2px; cursor: pointer;
+    background: var(--yellow); color: var(--ink); border: 2px solid var(--yellow);
+  }
+  a.btn:hover, button.btn:hover:not(:disabled) { background: var(--yellow-dim); border-color: var(--yellow-dim); }
+  button.btn.ghost { background: var(--paper); border: 2px solid var(--ink); color: var(--ink); }
+  button.btn.ghost:hover:not(:disabled) { background: var(--row); }
+  button.btn.danger { background: var(--paper); border-color: var(--danger); color: var(--danger); }
+  button.btn:disabled { opacity: .4; cursor: default; }
+  button.btn.sm { padding: 7px 12px; font-size: 10.5px; }
+  .actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+
+  textarea {
+    width: 100%; font: inherit; font-size: 14px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    min-height: 150px; resize: vertical;
+    padding: 12px; border: 2px solid var(--ink); border-radius: 2px;
+    background: var(--paper); color: var(--ink);
+  }
+  textarea:focus { outline: 3px solid var(--yellow); outline-offset: -1px; }
+
+  .seg { display: inline-flex; border: 2px solid var(--ink); border-radius: 2px; overflow: hidden; }
+  .seg button {
+    border: 0; background: var(--paper); color: var(--ink); cursor: pointer;
+    font: inherit; font-size: 11.5px; font-weight: 800; letter-spacing: 1px;
+    padding: 9px 15px;
+  }
+  .seg button.on { background: var(--ink); color: var(--yellow); }
+
+  /* ---------------------------------------------------------------- rows */
+  .row {
+    background: var(--row); margin-bottom: 3px;
+    padding: 12px 14px; display: flex; gap: 12px; align-items: flex-start;
+  }
+  .row.accent { background: var(--yellow); }
+  .glyph {
+    width: 34px; height: 34px; flex: 0 0 34px;
+    background: var(--chip); border-radius: 2px;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 900; font-size: 15px;
+  }
+  .row.accent .glyph { background: var(--ink); color: var(--yellow); }
+  .row .body { flex: 1 1 auto; min-width: 0; }
+  .row .title {
+    font-weight: 800; font-size: 15px; letter-spacing: .1px;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .row .meta { font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .row.accent .meta { color: var(--ink-soft); }
+
+  .track { height: 8px; background: var(--chip); margin-top: 8px; }
+  .track > i { display: block; height: 100%; background: var(--ink); width: 0; transition: width .25s linear; }
+  .lanes { display: flex; gap: 2px; margin-top: 3px; }
+  .lanes > i { flex: 1 1 0; height: 4px; background: var(--chip); }
+  .lanes > i > b { display: block; height: 100%; background: var(--ink); width: 0; opacity: .55; }
+
+  /* ---------------------------------------------------------------- drop */
+  .drop {
+    border: 3px dashed var(--ink); background: var(--row);
+    padding: 44px 18px; text-align: center; cursor: pointer;
+  }
+  .drop.over { background: var(--yellow); }
+  .drop .big { font-size: 19px; font-weight: 900; text-transform: uppercase; letter-spacing: .5px; }
+
+  /* ---------------------------------------------------------------- dock */
+  .dock {
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 30;
+    background: var(--ink); color: var(--paper);
+    border-top: 4px solid var(--yellow);
+  }
+  .dock .head {
+    display: flex; align-items: center; gap: 12px; padding: 12px 18px; cursor: pointer;
+    max-width: 1000px; margin: 0 auto;
+  }
+  .dock .rate { font-size: 19px; font-weight: 900; color: var(--yellow); font-variant-numeric: tabular-nums; }
+  .dock .lbl { font-size: 11.5px; font-weight: 800; letter-spacing: 1.3px; text-transform: uppercase; }
+  .dock .list { max-height: 46vh; overflow-y: auto; background: var(--paper); color: var(--ink); }
+  .dock .list .inner { max-width: 1000px; margin: 0 auto; padding: 3px 0; }
+
+  /* ---------------------------------------------------------------- login */
+  #login { max-width: 420px; margin: 9vh auto; background: var(--paper); }
+  .code {
+    font-size: 46px; letter-spacing: 14px; text-align: center;
+    font-family: ui-monospace, monospace; font-weight: 900;
+    padding: 16px; margin: 12px 0 8px; background: var(--yellow); color: var(--ink);
+  }
+  .banner {
+    padding: 12px 14px; font-size: 13px; font-weight: 600;
+    background: var(--yellow); border-left: 6px solid var(--ink);
+  }
+  .banner.bad { background: #FFE0E0; border-left-color: var(--danger); color: var(--danger); }
+  .empty { color: var(--muted); font-size: 14px; }
+
+  /* ---------------------------------------------------------------- theme toggle */
+  .theme-toggle {
+    border: 2px solid rgba(255,255,255,.45); background: transparent; color: #fff; cursor: pointer;
+    font: inherit; font-size: 10.5px; font-weight: 800; letter-spacing: 1.3px;
+    padding: 5px 9px; border-radius: 0; margin-right: 6px;
+  }
+  .theme-toggle.on { background: var(--yellow); border-color: var(--yellow); color: var(--ink); }
+
+  /* ---------------------------------------------------------------- music */
+  .music-tools { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 12px; }
+  input[type=search] {
+    flex: 1 1 260px; min-width: 0; font: inherit; font-size: 14px; color: var(--ink);
+    padding: 10px 12px; border: 2px solid var(--ink); border-radius: 0; background: var(--paper);
+  }
+  input[type=search]:focus { outline: 3px solid var(--yellow); outline-offset: -1px; }
+  .cover {
+    width: 44px; height: 44px; flex: 0 0 44px; background: var(--chip);
+    display: flex; align-items: center; justify-content: center; font-weight: 900; overflow: hidden;
+  }
+  .cover img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  /* The note sits under the cover and shows until (or unless) the image arrives. */
+  .has-glyph { position: relative; }
+  .has-glyph > img { position: absolute; inset: 0; }
+  .song { cursor: pointer; align-items: center; }
+  .song:hover { outline: 2px solid var(--ink); outline-offset: -2px; }
+  .song .dur { font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
+  /* The playing row is yellow; its cover chip goes black so the note glyph still reads. */
+  .row.accent .cover, body.glass .row.accent .cover { background: var(--ink); color: var(--yellow); }
+  .badge {
+    font-size: 9.5px; font-weight: 900; letter-spacing: 1px; padding: 2px 5px;
+    background: var(--ink); color: var(--yellow); margin-left: 6px; vertical-align: 1px;
+  }
+  .albums { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 3px; }
+  .album { cursor: pointer; background: var(--row); }
+  .album:hover { outline: 2px solid var(--ink); outline-offset: -2px; }
+  .album .art { aspect-ratio: 1 / 1; background: var(--chip); display: flex; align-items: center;
+    justify-content: center; font-size: 34px; font-weight: 900; overflow: hidden; }
+  .album .art img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .album .cap { padding: 8px 10px; }
+  .album .cap .t { font-weight: 800; font-size: 13.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .album .cap .a { font-size: 12px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+  /* ---------------------------------------------------------------- turntable
+     Ported from the Vinyl Glass widget: the same 1000-unit design square, record,
+     sheen and tonearm. Only the label turns (the grooves look the same at any angle),
+     so pausing freezes it exactly where it is and playing carries on from there. */
+  .deck {
+    position: relative; overflow: hidden; display: flex; align-items: center; gap: 22px;
+    background: var(--ink); color: var(--paper); padding: 18px; margin-bottom: 12px;
+  }
+  .deck-bg { position: absolute; inset: -40px; background-size: cover; background-position: center;
+    filter: blur(40px) saturate(150%); opacity: 0; transition: opacity .6s; pointer-events: none; }
+  .tt { position: relative; flex: 0 0 auto; width: min(300px, 44vw); aspect-ratio: 1 / 1; cursor: pointer; }
+  .tt > * { position: absolute; display: block; }
+  .tt-label {
+    left: 18.5%; top: 19%; width: 56%; height: 56%; border-radius: 50%; overflow: hidden;
+    background: var(--yellow); color: var(--ink); display: flex; align-items: center; justify-content: center;
+    font-weight: 900; letter-spacing: 3px; font-size: clamp(11px, 2.4vw, 17px);
+    animation: tt-spin 5.28s linear infinite; animation-play-state: paused;
+  }
+  .tt-label img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .tt.spin .tt-label { animation-play-state: running; }
+  @keyframes tt-spin { to { transform: rotate(360deg); } }
+  .tt-record, .tt-sheen { left: 2.5%; top: 3%; width: 88%; height: 88%; pointer-events: none; }
+  .tt-arm { left: 0; top: 0; width: 100%; height: 100%; pointer-events: none; overflow: visible; }
+  /* Swing timings are the widget's: 900 ms down, 750 ms up, both fast-out-slow-in. */
+  #tt-arm { transform-origin: 915px 75px; transform: rotate(-5deg);
+    transition: transform 750ms cubic-bezier(.4, 0, .2, 1); }
+  .tt.arm #tt-arm { transform: rotate(17deg); transition-duration: 900ms; }
+  .deck-meta { position: relative; flex: 1 1 auto; min-width: 0; }
+  .deck-kicker { display: inline-block; background: var(--yellow); color: var(--ink); font-size: 11px;
+    font-weight: 900; letter-spacing: 2px; padding: 3px 7px; margin-bottom: 12px; }
+  .deck-title { font-size: clamp(20px, 3.4vw, 32px); font-weight: 900; line-height: 1.1; letter-spacing: -.5px;
+    overflow-wrap: anywhere; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+  .deck-artist { font-size: 16px; font-weight: 700; margin-top: 8px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .deck-album { font-size: 13px; color: #aaa; margin-top: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .deck-next { font-size: 12px; color: #aaa; margin-top: 16px; padding-top: 10px; border-top: 1px solid #333;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .deck-next b { color: var(--yellow); letter-spacing: 1px; font-size: 11px; margin-right: 6px; }
+  .deck .badge { background: var(--yellow); color: var(--ink); }
+  .pl-row .cover { cursor: pointer; }
+  @media (max-width: 560px) {
+    .deck { flex-direction: column; align-items: stretch; }
+    .tt { width: min(300px, 80vw); align-self: center; }
+  }
+
+  /* ---------------------------------------------------------------- player */
+  .player {
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 32;
+    background: var(--ink); color: var(--paper); border-top: 4px solid var(--yellow);
+  }
+  .player .inner { max-width: 1000px; margin: 0 auto; }
+  #pl-seek {
+    -webkit-appearance: none; appearance: none; display: block; width: 100%; height: 8px;
+    margin: 0; cursor: pointer; background: #333; border-radius: 0;
+  }
+  #pl-seek::-webkit-slider-thumb { -webkit-appearance: none; width: 12px; height: 18px; background: var(--yellow); border: 0; border-radius: 0; }
+  #pl-seek::-moz-range-thumb { width: 12px; height: 18px; background: var(--yellow); border: 0; border-radius: 0; }
+  .pl-row { display: flex; align-items: center; gap: 12px; padding: 10px 18px; }
+  .pl-row .cover { width: 48px; height: 48px; flex-basis: 48px; background: #222; color: var(--yellow); }
+  .pl-meta { flex: 1 1 auto; min-width: 0; }
+  .pl-title { font-weight: 800; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .pl-sub { font-size: 12px; color: #aaa; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .pl-time { font-size: 12px; color: #aaa; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .pl-btn {
+    background: transparent; color: #fff; border: 2px solid #444; border-radius: 0; cursor: pointer;
+    font: inherit; font-size: 12px; font-weight: 900; letter-spacing: 1px; padding: 8px 10px; min-width: 40px;
+  }
+  .pl-btn:hover { border-color: var(--yellow); }
+  .pl-btn.on { background: var(--yellow); color: var(--ink); border-color: var(--yellow); }
+  .pl-btn.play { background: var(--yellow); color: var(--ink); border-color: var(--yellow); min-width: 52px; font-size: 14px; }
+  .dock { bottom: var(--player-h, 0px); }
+  @media (max-width: 640px) { .pl-time, #pl-shuffle, #pl-repeat { display: none; } }
+
+  /* ================================================================ glass ======
+     Dark frosted panels over a glowing backdrop, with a real blur behind each sheet.
+     Still square everywhere: the brief was the material, not the rounded corners. */
+  body.glass {
+    color: #f5f5f5;
+    background:
+      radial-gradient(60vmax 60vmax at 8% 4%, rgba(255,229,0,.42), transparent 62%),
+      radial-gradient(55vmax 55vmax at 100% 45%, rgba(255,159,28,.32), transparent 62%),
+      radial-gradient(55vmax 55vmax at 85% 105%, rgba(61,90,254,.22), transparent 62%),
+      radial-gradient(45vmax 45vmax at 0% 100%, rgba(255,244,194,.10), transparent 62%),
+      #07070a;
+    background-attachment: fixed;
+  }
+  body.glass .shell, body.glass #login { background: transparent; }
+  body.glass .mast, body.glass .tabs, body.glass .bar, body.glass .dock .head, body.glass .player {
+    background: rgba(0,0,0,.52);
+    -webkit-backdrop-filter: blur(24px) saturate(160%); backdrop-filter: blur(24px) saturate(160%);
+  }
+  body.glass .tabs button { background: transparent; color: #fff; }
+  body.glass .tabs button.on { background: var(--yellow); color: var(--ink); }
+  body.glass .tabs button:hover:not(.on) { background: rgba(255,255,255,.08); }
+  /* The hero stays yellow, so its text must stay black -- it would otherwise inherit the
+     glass theme's white and vanish. */
+  body.glass .hero { background: rgba(255,229,0,.86); color: var(--ink);
+    -webkit-backdrop-filter: blur(20px); backdrop-filter: blur(20px); }
+  body.glass .pad {
+    background: rgba(255,255,255,.055); border: 1px solid rgba(255,255,255,.13); border-top: 0;
+    -webkit-backdrop-filter: blur(28px) saturate(170%); backdrop-filter: blur(28px) saturate(170%);
+  }
+  body.glass .row, body.glass .album { background: rgba(255,255,255,.075); border: 1px solid rgba(255,255,255,.11); }
+  body.glass .row.accent { background: var(--yellow); color: var(--ink); border-color: transparent; }
+  body.glass .glyph, body.glass .cover, body.glass .album .art { background: rgba(255,255,255,.13); color: #fff; }
+  body.glass .row .meta, body.glass .note, body.glass .hint, body.glass .empty,
+  body.glass .song .dur, body.glass .album .cap .a { color: rgba(255,255,255,.64); }
+  body.glass .row.accent .meta, body.glass .row.accent .dur { color: var(--ink-soft); }
+  body.glass textarea, body.glass input[type=search] {
+    background: rgba(255,255,255,.06); color: #fff; border-color: rgba(255,255,255,.4);
+  }
+  body.glass button.btn.ghost { background: rgba(255,255,255,.06); border-color: rgba(255,255,255,.55); color: #fff; }
+  body.glass button.btn.ghost.danger { border-color: #ff8a80; color: #ff8a80; }
+  body.glass .track, body.glass .lanes > i { background: rgba(255,255,255,.14); }
+  body.glass .track > i, body.glass .lanes > i > b { background: #fff; }
+  body.glass .drop { border-color: rgba(255,255,255,.5); background: rgba(255,255,255,.04); }
+  body.glass .drop.over { background: rgba(255,229,0,.22); }
+  body.glass .seg { border-color: rgba(255,255,255,.4); }
+  body.glass .seg button { background: transparent; color: #fff; }
+  body.glass .seg button.on { background: var(--yellow); color: var(--ink); }
+  body.glass .song:hover, body.glass .album:hover { outline-color: rgba(255,255,255,.7); }
+  body.glass .dock .list { background: rgba(10,10,10,.6); color: #fff;
+    -webkit-backdrop-filter: blur(24px); backdrop-filter: blur(24px); }
+  /* A yellow banner keeps black text; glass would otherwise turn it white on yellow. */
+  body.glass .banner { color: var(--ink); }
+  body.glass .banner.bad { background: rgba(255,138,128,.16); color: #ff8a80; }
+  body.glass #pl-seek { background: rgba(255,255,255,.18); }
+  body.glass .pl-btn { border-color: rgba(255,255,255,.28); }
+  body.glass a { color: var(--yellow); }
+  body.glass a.btn { color: var(--ink); }
+  /* Glass turntable: the album's own colours, blurred, behind a smoked sheet. */
+  body.glass .deck { background: rgba(0,0,0,.34); border: 1px solid rgba(255,255,255,.13);
+    -webkit-backdrop-filter: blur(28px) saturate(170%); backdrop-filter: blur(28px) saturate(170%); }
+  body.glass .deck-bg.on { opacity: .55; }
+  body.glass .deck-album, body.glass .deck-next { color: rgba(255,255,255,.66); }
+  body.glass .deck-next { border-top-color: rgba(255,255,255,.16); }
+  [hidden] { display: none !important; }
+  .kv { font-family: ui-monospace, monospace; font-weight: 700; }
+</style>
+</head>
+<body>
+
+<!-- ------------------------------------------------------------------ login -->
+<section id="login" hidden>
+  <div class="mast"><span class="logo">XOO<b>SH</b></span></div>
+  <div class="hazard"></div>
+  <div class="hero">
+    <h1>CONNECT THIS COMPUTER</h1>
+    <p id="login-device">The phone will ask you to allow it.</p>
+  </div>
+  <div class="pad">
+    <div id="login-error" class="banner bad" hidden></div>
+    <div id="pair-idle">
+      <div class="actions"><button id="pair" class="btn" style="flex:1">Ask to connect</button></div>
+    </div>
+    <div id="pair-wait" hidden>
+      <p class="note" style="margin-top:0">Tap <b>Allow</b> on your phone. Only allow it if the phone shows this same code:</p>
+      <div class="code" id="pair-code">----</div>
+      <div class="meta" id="pair-status">Waiting for the phone...</div>
+      <div class="actions"><button id="pair-cancel" class="btn ghost">Cancel</button></div>
+    </div>
+  </div>
+</section>
+
+<!-- -------------------------------------------------------------------- app -->
+<div class="shell" id="app" hidden>
+  <div class="mast">
+    <span class="logo">XOO<b>SH</b></span>
+    <span class="grow"></span>
+    <button class="theme-toggle" id="theme-toggle" title="Switch appearance on the phone and every open page">GLASS</button>
+    <span class="dot" id="dot"></span>
+    <span class="lbl" id="conn" style="font-size:11.5px;font-weight:800;letter-spacing:1.3px">CONNECTING</span>
+  </div>
+  <div class="hazard"></div>
+
+  <div class="hero">
+    <h1 id="hero-title">CONNECTED</h1>
+    <p id="hero-sub"></p>
+  </div>
+
+  <nav class="tabs" id="tabs"></nav>
+
+  <!-- ---------------------------------------------------------- clipboard -->
+  <section data-panel="clip" hidden>
+    <div class="bar">Shared text</div>
+    <div class="pad">
+      <textarea id="clip" placeholder="Type or paste text here, then send it to the phone."></textarea>
+      <div class="actions">
+        <button id="clip-send" class="btn">Send to phone</button>
+        <button id="clip-copy" class="btn ghost">Copy to my clipboard</button>
+        <button id="clip-clear" class="btn ghost danger">Clear</button>
+        <span class="grow"></span>
+        <span class="meta" id="clip-status" style="align-self:center"></span>
+      </div>
+      <p class="note" id="clip-note"></p>
+    </div>
+
+    <div class="bar">Sending text the other way</div>
+    <div class="pad">
+      <div class="row">
+        <div class="glyph">1</div>
+        <div class="body">
+          <div class="title">Copy something on the phone</div>
+          <div class="meta">Any app - a browser, a message, a note.</div>
+        </div>
+      </div>
+      <div class="row">
+        <div class="glyph">2</div>
+        <div class="body">
+          <div class="title">Open Xoosh on the phone and tap PASTE</div>
+          <div class="meta">
+            It appears here within a moment. It has to be a button on the phone:
+            since Android 10 an app may only read the clipboard while it is on screen,
+            so tapping is what makes the read legal.
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ---------------------------------------------------------- music -->
+  <section data-panel="music" hidden>
+    <div class="bar">Music on the phone <span class="grow"></span><span class="act" id="music-rescan">RESCAN</span></div>
+    <div class="pad">
+      <div class="deck" id="deck" hidden>
+        <div class="deck-bg" id="deck-bg"></div>
+        <div class="tt" id="tt" title="Play / pause">
+          <div class="tt-label" id="tt-label">XOOSH</div>
+          <img class="tt-record" src="/api/music/vinyl/record.png" alt="">
+          <img class="tt-sheen" src="/api/music/vinyl/sheen.png" alt="">
+          <svg class="tt-arm" viewBox="0 0 1000 1000" aria-hidden="true">
+            <g id="tt-arm">
+              <g transform="translate(10 12)" fill="#000" fill-opacity=".4">
+                <path d="M915,75 A9,9 0 0 1 924,84 L924,386 A9,9 0 0 1 915,395 A9,9 0 0 1 906,386 L906,84 A9,9 0 0 1 915,75 Z"/>
+                <path d="M901,379 L929,379 A10,10 0 0 1 939,389 L939,443 A10,10 0 0 1 929,453 L901,453 A10,10 0 0 1 891,443 L891,389 A10,10 0 0 1 901,379 Z"/>
+              </g>
+              <path fill="#E9E9EC" d="M915,75 A9,9 0 0 1 924,84 L924,386 A9,9 0 0 1 915,395 A9,9 0 0 1 906,386 L906,84 A9,9 0 0 1 915,75 Z"/>
+              <path fill="#fff" fill-opacity=".7" d="M910.5,95 A2,2 0 0 1 912.5,97 L912.5,387 A2,2 0 0 1 910.5,389 A2,2 0 0 1 908.5,387 L908.5,97 A2,2 0 0 1 910.5,95 Z"/>
+              <path fill="#F4F4F6" d="M901,379 L929,379 A10,10 0 0 1 939,389 L939,443 A10,10 0 0 1 929,453 L901,453 A10,10 0 0 1 891,443 L891,389 A10,10 0 0 1 901,379 Z"/>
+              <path fill="#C9C9CF" d="M901,429 L929,429 A10,10 0 0 1 939,439 L939,443 A10,10 0 0 1 929,453 L901,453 A10,10 0 0 1 891,443 L891,439 A10,10 0 0 1 901,429 Z"/>
+              <path fill="#2A2A2E" d="M912,449 L918,449 A3,3 0 0 1 921,452 L921,460 A3,3 0 0 1 918,463 L912,463 A3,3 0 0 1 909,460 L909,452 A3,3 0 0 1 912,449 Z"/>
+              <circle cx="915" cy="75" r="36" fill="#26262A" stroke="#4A4A50" stroke-width="3"/>
+              <circle cx="915" cy="75" r="24" fill="#ECECEF"/>
+              <circle cx="915" cy="75" r="9" fill="#B8B8BE"/>
+            </g>
+          </svg>
+        </div>
+        <div class="deck-meta">
+          <div class="deck-kicker" id="deck-state">NOW PLAYING</div>
+          <div class="deck-title" id="deck-title"></div>
+          <div class="deck-artist" id="deck-artist"></div>
+          <div class="deck-album" id="deck-album"></div>
+          <div class="deck-next" id="deck-next" hidden></div>
+        </div>
+      </div>
+      <div id="music-perm" class="banner" hidden>
+        Xoosh needs permission to read your music. On the phone: Setup &rarr; Music &rarr; Allow music access.
+      </div>
+      <div class="music-tools">
+        <input id="music-search" type="search" placeholder="Search songs, artists, albums" autocomplete="off">
+        <div class="seg" id="music-view">
+          <button data-v="songs" class="on">Songs</button>
+          <button data-v="albums">Albums</button>
+        </div>
+      </div>
+      <div id="music-crumb" class="actions" style="margin:0 0 10px" hidden></div>
+      <div id="music-list"><p class="empty">Loading your library...</p></div>
+      <div id="music-more" class="actions"></div>
+    </div>
+  </section>
+
+  <!-- ---------------------------------------------------------- send -->
+  <section data-panel="send" hidden>
+    <div class="bar">Send files to the phone</div>
+    <div class="pad">
+      <div id="drop" class="drop">
+        <div class="big">Drop files or folders here</div>
+        <div class="meta" style="margin-top:6px">or click to choose files</div>
+      </div>
+      <div class="actions" style="margin-top:10px">
+        <button class="btn sm ghost" id="pick-files">Choose files</button>
+        <button class="btn sm ghost" id="pick-folder">Choose a folder</button>
+      </div>
+      <input id="file-input" type="file" multiple hidden>
+      <input id="folder-input" type="file" webkitdirectory multiple hidden>
+      <p class="note">A folder arrives on the phone as the same folder, subfolders included, inside the destination folder.</p>
+      <p class="note" id="limit"></p>
+    </div>
+  </section>
+
+  <!-- ---------------------------------------------------------- files -->
+  <section data-panel="files" hidden>
+    <div class="bar">Files on the phone</div>
+    <div class="pad" id="files"><p class="empty">Nothing here yet.</p></div>
+  </section>
+
+  <!-- ---------------------------------------------------------- speed -->
+  <section data-panel="speed" hidden>
+    <div class="bar">Full speed and laptop control</div>
+    <div class="pad">
+      <div class="banner" id="helper-state"></div>
+      <div class="actions"><a class="btn" href="/xoosh-pc.bat" download="xoosh-pc.bat">Get the laptop helper</a></div>
+      <p class="note">
+        Double-click <b>xoosh-pc.bat</b> on this laptop (Windows may ask you to confirm once). It finds the
+        phone by itself, asks you to allow it on the phone, and opens this page at
+        <span class="kv">http://localhost:8787</span>. From there downloads use every connection, the
+        clipboard works directly, and the phone's <b>Control</b> tab becomes this laptop's trackpad and keyboard.
+        Nothing is installed; close its window to stop it.
+      </p>
+      <p class="note">
+        For the most speed, join this laptop to the phone's own hotspot. Through a home router every byte
+        crosses the air twice and shares the router's time, which roughly halves the rate at best.
+      </p>
+    </div>
+
+    <div class="bar">Parallel connections</div>
+    <div class="pad">
+      <div class="seg" id="streams-seg"></div>
+      <p class="note">
+        One connection rarely fills a Wi-Fi link: loss keeps shrinking its window, so it
+        spends much of its time recovering rather than sending. Several connections
+        stumble at different moments, so the total stays near capacity. Four is the usual
+        sweet spot. On a USB cable one or two is already enough.
+      </p>
+    </div>
+
+    <div class="bar">Measure the link</div>
+    <div class="pad">
+      <button id="measure" class="btn">Measure now</button>
+      <p class="note" id="bench-result">
+        This moves bytes the phone generates and discards, so storage is taken out of the
+        picture. Compare it against a real transfer: close to this number means the
+        network is the ceiling, far below it means storage is.
+      </p>
+    </div>
+  </section>
+</div>
+
+<!-- ------------------------------------------------------------------ dock -->
+<div class="dock" id="dock" hidden>
+  <div class="head" id="dock-head">
+    <span class="rate" id="dock-rate">-</span>
+    <span class="lbl" id="dock-label">IDLE</span>
+    <span class="grow"></span>
+    <span class="lbl" id="dock-toggle">SHOW</span>
+  </div>
+  <div class="list" id="dock-list" hidden><div class="inner" id="transfers"></div></div>
+</div>
+
+<!-- ------------------------------------------------------------------ player -->
+<div class="player" id="player" hidden>
+  <input id="pl-seek" type="range" min="0" max="1000" value="0" aria-label="Seek">
+  <div class="inner">
+    <div class="pl-row">
+      <div class="cover" id="pl-art">&#9834;</div>
+      <div class="pl-meta">
+        <div class="pl-title" id="pl-title"></div>
+        <div class="pl-sub" id="pl-sub"></div>
+      </div>
+      <span class="pl-time" id="pl-time">0:00 / 0:00</span>
+      <button class="pl-btn" id="pl-shuffle" title="Shuffle">SHUF</button>
+      <button class="pl-btn" id="pl-prev" title="Previous">&#9664;&#9664;</button>
+      <button class="pl-btn play" id="pl-play" title="Play / pause (space)">&#9654;</button>
+      <button class="pl-btn" id="pl-next" title="Next">&#9654;&#9654;</button>
+      <button class="pl-btn" id="pl-repeat" title="Repeat">RPT</button>
+    </div>
+  </div>
+</div>
+<audio id="audio" preload="auto"></audio>
+
+<script>
+"use strict";
+
+// ===========================================================================
+// MAX_PATCH is not a resume granularity. The server commits its offset to disk
+// every couple of seconds *while* a PATCH is streaming, so an interrupted
+// request resumes from wherever it actually reached. This only bounds how much
+// work one request represents, which matters for retry behaviour and nothing
+// else -- hence a large value.
+// ===========================================================================
+var MAX_PATCH = 256 * 1024 * 1024;
+var MAX_TRIES = 8;
+var STORE_KEY = "bridge.uploads.v2";
+var BLOB_DOWNLOAD_LIMIT = 256 * 1024 * 1024;
+
+var state = { files: [], maxUpload: 0, device: "", streams: 4, parallelThreshold: 16 * 1024 * 1024 };
+var transfers = [];
+var events = null;
+var ticker = null;
+var TABS = [
+  { id: "clip", label: "Clipboard" },
+  { id: "music", label: "Music" },
+  { id: "send", label: "Send files" },
+  { id: "files", label: "Files on phone" },
+  { id: "speed", label: "Speed" },
+];
+
+function $(id) { return document.getElementById(id); }
+
+function bytes(n) {
+  if (n === null || n === undefined) return "-";
+  if (n < 1024) return n + " B";
+  if (n < 1048576) return (n / 1024).toFixed(0) + " KB";
+  if (n < 1073741824) return (n / 1048576).toFixed(1) + " MB";
+  return (n / 1073741824).toFixed(2) + " GB";
+}
+function rate(bps) {
+  if (!bps || bps < 1) return "-";
+  if (bps < 1048576) return (bps / 1024).toFixed(0) + " KB/s";
+  return (bps / 1048576).toFixed(1) + " MB/s";
+}
+function eta(remaining, bps) {
+  if (!bps || bps < 1) return "";
+  var s = Math.round(remaining / bps);
+  if (s < 60) return s + "s left";
+  if (s < 3600) return Math.round(s / 60) + "m left";
+  return (s / 3600).toFixed(1) + "h left";
+}
+function b64(str) {
+  var u = new TextEncoder().encode(str), s = "";
+  for (var i = 0; i < u.length; i++) s += String.fromCharCode(u[i]);
+  return btoa(s);
+}
+function fingerprint(f) { return f.name + ":" + f.size + ":" + f.lastModified; }
+function uid() { return Math.random().toString(36).slice(2) + Date.now().toString(36); }
+function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
+function serverMessage(xhr) { try { return JSON.parse(xhr.responseText).message; } catch (e) { return null; } }
+
+async function api(path, opts) {
+  var res = await fetch(path, Object.assign({ credentials: "same-origin" }, opts || {}));
+  if (res.status === 401) { showLogin(); throw new Error("not paired"); }
+  return res;
+}
+
+// ------------------------------------------------------------------ tabs
+
+function buildTabs() {
+  var host = $("tabs");
+  host.innerHTML = "";
+  TABS.forEach(function (t, i) {
+    var b = document.createElement("button");
+    b.textContent = t.label;
+    b.dataset.tab = t.id;
+    b.addEventListener("click", function () { selectTab(t.id); });
+    host.appendChild(b);
+  });
+  selectTab(TABS[0].id);
+  renderHelperState();
+}
+
+function selectTab(id) {
+  Array.prototype.forEach.call($("tabs").children, function (b) {
+    b.classList.toggle("on", b.dataset.tab === id);
+  });
+  Array.prototype.forEach.call(document.querySelectorAll("[data-panel]"), function (p) {
+    p.hidden = p.dataset.panel !== id;
+  });
+  if (id === "music") musicOpen();
+}
+
+// ------------------------------------------------------------------ clipboard
+//
+// navigator.clipboard is gated on a secure context. Over plain HTTP on a LAN IP
+// the API is simply absent -- not an error you can catch, an undefined property.
+// localhost is exempt, which is why this survives local testing and only breaks
+// on the phone.
+//
+// Copy falls back to a throwaway textarea plus execCommand: deprecated,
+// universally implemented, and works without a secure context. Reading has no
+// equivalent and should not: instead the page listens for a real paste event,
+// which carries the data because the user initiated it.
+
+function secureClipboard() {
+  return !!(window.isSecureContext && navigator.clipboard && navigator.clipboard.writeText);
+}
+
+function copyText(text) {
+  if (secureClipboard()) return navigator.clipboard.writeText(text);
+  return new Promise(function (resolve, reject) {
+    var ta = document.createElement("textarea");
+    ta.value = text;
+    ta.setAttribute("readonly", "");
+    ta.style.position = "fixed"; ta.style.opacity = "0"; ta.style.top = "0";
+    document.body.appendChild(ta);
+    ta.select(); ta.setSelectionRange(0, ta.value.length);
+    var ok = false;
+    try { ok = document.execCommand("copy"); } catch (e) { ok = false; }
+    document.body.removeChild(ta);
+    ok ? resolve() : reject(new Error("copy blocked"));
+  });
+}
+
+function setupClipboard() {
+  $("clip-note").textContent = window.isSecureContext
+    ? "Text appears on the phone straight away, and is put on the phone's clipboard ready to paste."
+    : "Served over plain HTTP, so the browser will not grant clipboard access. Copy uses a " +
+      "fallback, and to paste into the box you have to press Ctrl+V yourself. Downloads are " +
+      "also limited to one connection here. All of it lifts as soon as this page is served over HTTPS.";
+
+  $("clip-send").addEventListener("click", async function () {
+    var res = await api("/api/clipboard", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text: $("clip").value }),
+    });
+    flash(res.ok ? "Sent to the phone" : "Too long to send");
+  });
+
+  $("clip-copy").addEventListener("click", function () {
+    copyText($("clip").value).then(
+      function () { flash("Copied"); },
+      function () { flash("The browser blocked the copy"); }
+    );
+  });
+
+  $("clip-clear").addEventListener("click", async function () {
+    $("clip").value = "";
+    await api("/api/clipboard", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text: "" }),
+    });
+    flash("Cleared");
+  });
+
+  // A real paste event carries its data regardless of secure context, and also
+  // carries files -- so pasting a screenshot uploads it.
+  document.addEventListener("paste", function (e) {
+    if (!e.clipboardData) return;
+    var files = e.clipboardData.files;
+    if (files && files.length) { e.preventDefault(); addFiles(files); selectTab("send"); return; }
+    if (document.activeElement !== $("clip")) {
+      var t = e.clipboardData.getData("text");
+      if (t) { $("clip").value = t; selectTab("clip"); flash("Pasted, not yet sent"); }
+    }
+  });
+}
+
+function flash(msg) {
+  var el = $("clip-status");
+  el.textContent = msg;
+  setTimeout(function () { if (el.textContent === msg) el.textContent = ""; }, 2600);
+}
+
+// ------------------------------------------------------------------ store
+
+function loadStore() { try { return JSON.parse(localStorage.getItem(STORE_KEY) || "{}"); } catch (e) { return {}; } }
+function saveStore(s) { try { localStorage.setItem(STORE_KEY, JSON.stringify(s)); } catch (e) {} }
+function remember(row) {
+  if (!row.file || row.inFolder) return;
+  var s = loadStore();
+  s[fingerprint(row.file)] = {
+    name: row.name, size: row.size, at: Date.now(),
+    streams: row.streams.map(function (x) { return { url: x.url, base: x.base, length: x.length }; }),
+  };
+  saveStore(s);
+}
+function forget(row) {
+  if (!row.file || row.inFolder) return;
+  var s = loadStore(); delete s[fingerprint(row.file)]; saveStore(s);
+}
+
+// ------------------------------------------------------------------ uploads
+
+function addFiles(list) {
+  Array.prototype.slice.call(list).forEach(function (f) {
+    if (state.maxUpload && f.size > state.maxUpload) {
+      transfers.unshift({
+        id: uid(), dir: "up", name: f.name, size: f.size, transferred: 0, streams: [],
+        state: "error", status: "larger than the phone accepts (" + bytes(state.maxUpload) + " limit)",
+      });
+      return;
+    }
+    var row = {
+      id: uid(), dir: "up", file: f, name: f.name, size: f.size,
+      transferred: 0, bps: 0, streams: [], state: "active", status: "starting",
+    };
+    transfers.unshift(row);
+    pump(row);
+  });
+  renderTransfers();
+  ensureTicker();
+}
+
+async function createStreams(file, relDir) {
+  var n = (file.size >= state.parallelThreshold) ? state.streams : 1;
+  var meta = "filename " + b64(file.name) + ",filetype " + b64(file.type || "application/octet-stream");
+  // Which folder it goes in on the phone, when it is part of an uploaded folder.
+  if (relDir) meta += ",relativepath " + b64(relDir);
+
+  if (n > 1) {
+    var res = await fetch("/tus/parallel", {
+      method: "POST", credentials: "same-origin",
+      headers: {
+        "Tus-Resumable": "1.0.0",
+        "Upload-Length": String(file.size),
+        "Upload-Metadata": meta,
+        "Bridge-Streams": String(n),
+      },
+    });
+    if (res.status === 401) { showLogin(); throw new Error("not paired"); }
+    if (res.ok) {
+      var body = await res.json();
+      return body.streams.map(function (s) {
+        return { url: s.url, base: s.base, length: s.length, offset: s.offset || 0, live: 0, tries: 0 };
+      });
+    }
+    if (res.status !== 404) {
+      var msg = ""; try { msg = (await res.json()).message; } catch (e) {}
+      throw new Error(msg || ("upload refused (" + res.status + ")"));
+    }
+  }
+
+  var one = await fetch("/tus", {
+    method: "POST", credentials: "same-origin",
+    headers: { "Tus-Resumable": "1.0.0", "Upload-Length": String(file.size), "Upload-Metadata": meta },
+  });
+  if (one.status === 401) { showLogin(); throw new Error("not paired"); }
+  if (!one.ok) {
+    var m = ""; try { m = (await one.json()).message; } catch (e) {}
+    throw new Error(m || ("upload refused (" + one.status + ")"));
+  }
+  var loc = one.headers.get("Location");
+  if (!loc) throw new Error("server did not return a Location");
+  return [{ url: loc, base: 0, length: file.size, offset: 0, live: 0, tries: 0 }];
+}
+
+function headOffset(url) {
+  return new Promise(function (resolve, reject) {
+    var x = new XMLHttpRequest();
+    x.open("HEAD", url, true);
+    x.withCredentials = true;
+    x.setRequestHeader("Tus-Resumable", "1.0.0");
+    x.onload = function () {
+      if (x.status === 404 || x.status === 410) { resolve(null); return; }
+      if (x.status < 200 || x.status >= 300) { reject(new Error("HEAD " + x.status)); return; }
+      var o = x.getResponseHeader("Upload-Offset");
+      resolve(o === null ? 0 : parseInt(o, 10));
+    };
+    x.onerror = function () { reject(new Error("network error")); };
+    x.send();
+  });
+}
+
+async function syncOffsets(row) {
+  await Promise.all(row.streams.map(async function (s) {
+    var o = await headOffset(s.url);
+    if (o === null) throw new Error("the phone no longer has this upload");
+    s.offset = o; s.live = o;
+  }));
+}
+
+async function pump(row) {
+  try {
+    if (!row.streams.length) {
+      var known = row.file && !row.inFolder ? loadStore()[fingerprint(row.file)] : null;
+      if (known && known.streams && known.streams.length) {
+        row.streams = known.streams.map(function (s) {
+          return { url: s.url, base: s.base, length: s.length, offset: 0, live: 0, tries: 0 };
+        });
+        row.status = "checking what the phone already has";
+        renderTransfers();
+      } else {
+        row.streams = await createStreams(row.file, row.relDir);
+        remember(row);
+      }
+    }
+
+    try { await syncOffsets(row); }
+    catch (e) { forget(row); row.streams = []; return pump(row); }
+
+    row.status = row.streams.length > 1 ? row.streams.length + " parallel connections" : "";
+    renderTransfers();
+
+    await Promise.all(row.streams.map(function (s) { return runStream(row, s); }));
+
+    if (row.state !== "active") return;
+    row.state = "done"; row.status = "done"; row.bps = 0; row.transferred = row.size;
+    forget(row);
+    renderTransfers();
+  } catch (err) {
+    if (row.state === "paused") { renderTransfers(); return; }
+    row.state = "paused";
+    row.status = "interrupted - " + (err && err.message ? err.message : "network error");
+    row.bps = 0;
+    renderTransfers();
+  }
+}
+
+/**
+ * Transient failures are retried here with backoff rather than handed to the user.
+ * On a real Wi-Fi link brief stalls are routine, and a transfer that needs a click
+ * every time one happens is slower in practice than one that just gets on with it.
+ */
+async function runStream(row, s) {
+  while (s.offset < s.length) {
+    if (row.state !== "active") return;
+    var end = Math.min(s.offset + MAX_PATCH, s.length);
+    try {
+      var before = s.offset;
+      s.offset = await patch(row, s, s.offset, end);
+      if (s.offset > before) s.tries = 0;
+    } catch (e) {
+      if (row.state !== "active") return;
+      s.tries++;
+      if (s.tries > MAX_TRIES) throw e;
+      await sleep(Math.min(8000, 500 * Math.pow(2, s.tries - 1)));
+      if (row.state !== "active") return;
+      var o = await headOffset(s.url);
+      if (o === null) throw new Error("the phone no longer has this upload");
+      s.offset = o; s.live = o;
+    }
+  }
+}
+
+function patch(row, s, from, to) {
+  return new Promise(function (resolve, reject) {
+    var x = new XMLHttpRequest();
+    s.xhr = x;
+    x.open("PATCH", s.url, true);
+    x.withCredentials = true;
+    x.setRequestHeader("Tus-Resumable", "1.0.0");
+    x.setRequestHeader("Content-Type", "application/offset+octet-stream");
+    x.setRequestHeader("Upload-Offset", String(from));
+    x.upload.onprogress = function (e) { s.live = from + e.loaded; };
+    x.onload = function () {
+      s.xhr = null;
+      if (x.status === 204) {
+        var o = x.getResponseHeader("Upload-Offset");
+        var next = o === null ? to : parseInt(o, 10);
+        s.live = next; resolve(next);
+      } else if (x.status === 409) {
+        var c = x.getResponseHeader("Upload-Offset");
+        if (c === null) { reject(new Error("offset conflict")); return; }
+        s.live = parseInt(c, 10); resolve(s.live);
+      } else if (x.status === 401) {
+        showLogin(); reject(new Error("not paired"));
+      } else {
+        reject(new Error(serverMessage(x) || ("PATCH " + x.status)));
+      }
+    };
+    x.onerror = function () { s.xhr = null; reject(new Error("connection lost")); };
+    x.onabort = function () { s.xhr = null; reject(new Error("paused")); };
+    // file.slice is a view, not a copy: the browser streams it off disk, so a
+    // 10 GB file never lands in memory on this side either.
+    x.send(row.file.slice(s.base + from, s.base + to));
+  });
+}
+
+function pauseRow(row) {
+  if (row.kind === "folder") { pauseFolder(row); return; }
+  row.state = "paused"; row.status = "paused"; row.bps = 0;
+  row.streams.forEach(function (s) { if (s.xhr) s.xhr.abort(); if (s.abort) s.abort.abort(); });
+  renderTransfers();
+}
+function resumeRow(row) {
+  if (row.kind === "folder") { resumeFolder(row); return; }
+  if (row.dir === "up" && !row.file) return;
+  row.state = "active"; row.status = "resuming";
+  row.streams.forEach(function (s) { s.tries = 0; });
+  renderTransfers(); ensureTicker();
+  if (row.dir === "up") pump(row); else startDownload(row.entry, row);
+}
+function cancelRow(row) {
+  if (row.kind === "folder") { cancelFolder(row); return; }
+  row.state = "cancelled";
+  row.streams.forEach(function (s) { if (s.xhr) s.xhr.abort(); if (s.abort) s.abort.abort(); });
+  if (row.dir === "up" && row.streams[0]) {
+    fetch(row.streams[0].url, {
+      method: "DELETE", credentials: "same-origin", headers: { "Tus-Resumable": "1.0.0" },
+    }).catch(function () {});
+  }
+  forget(row);
+  transfers = transfers.filter(function (r) { return r !== row; });
+  renderTransfers();
+}
+
+/**
+ * Uploads left over from a previous page load. The bytes are still on the phone
+ * and the offsets are still valid, but the File object is gone -- a page cannot
+ * re-open a file the user chose before a reload, and no browser will ever let it.
+ */
+function renderPending() {
+  var s = loadStore();
+  Object.keys(s).forEach(function (fp) {
+    var rec = s[fp];
+    if (transfers.some(function (r) { return r.file && fingerprint(r.file) === fp; })) return;
+    transfers.push({
+      id: uid(), dir: "up", file: null, name: rec.name, size: rec.size,
+      transferred: 0, bps: 0, state: "needs-file", status: "choose this file again to carry on",
+      streams: (rec.streams || []).map(function (x) {
+        return { url: x.url, base: x.base, length: x.length, offset: 0, live: 0, tries: 0 };
+      }),
+    });
+  });
+  renderTransfers();
+}
+
+function rechoose(row) {
+  var input = document.createElement("input");
+  input.type = "file";
+  input.addEventListener("change", function () {
+    var f = input.files && input.files[0];
+    if (!f) return;
+    if (f.name !== row.name || f.size !== row.size) {
+      row.status = "that is a different file - pick " + row.name + " (" + bytes(row.size) + ")";
+      renderTransfers();
+      return;
+    }
+    row.file = f; row.state = "active"; row.status = "resuming";
+    renderTransfers(); ensureTicker(); pump(row);
+  });
+  input.click();
+}
+
+// ------------------------------------------------------------------ folders
+//
+// A folder is one row. Its files go up a few at a time -- all at once would open
+// hundreds of connections and finish nothing sooner -- and each carries the folder it
+// sits in, so the phone rebuilds the same tree inside the destination folder.
+
+var FOLDER_PARALLEL = 3;
+/** Files Windows and macOS drop into folders by themselves; nobody means to send these. */
+var FOLDER_SKIP = { "thumbs.db": 1, "desktop.ini": 1, ".ds_store": 1 };
+
+/** items: [{ file, dir }], dir being the folder the file sits in, top folder included. */
+function addFolder(name, items) {
+  items = items.filter(function (it) { return !FOLDER_SKIP[it.file.name.toLowerCase()]; });
+  if (!items.length) return;
+  var folder = {
+    id: uid(), dir: "up", kind: "folder", name: name, size: 0, transferred: 0, bps: 0,
+    streams: [], state: "active", status: "", cursor: 0,
+    children: items.map(function (it) {
+      var tooBig = state.maxUpload && it.file.size > state.maxUpload;
+      return {
+        id: uid(), dir: "up", inFolder: true, file: it.file, relDir: it.dir, name: it.file.name,
+        size: it.file.size, transferred: 0, bps: 0, streams: [],
+        state: tooBig ? "error" : "queued", status: tooBig ? "larger than the phone accepts" : "",
+      };
+    }),
+  };
+  folder.size = folder.children.reduce(function (a, c) { return a + c.size; }, 0);
+  transfers.unshift(folder);
+  renderTransfers();
+  ensureTicker();
+  runFolder(folder);
+}
+
+async function runFolder(folder) {
+  if (folder.running) return;
+  folder.running = true;
+  var list = folder.children;
+  async function worker() {
+    while (folder.state === "active") {
+      while (folder.cursor < list.length && list[folder.cursor].state !== "queued") folder.cursor++;
+      if (folder.cursor >= list.length) return;
+      var child = list[folder.cursor++];
+      child.state = "active";
+      await pump(child);
+    }
+  }
+  await Promise.all(new Array(FOLDER_PARALLEL).fill(0).map(worker));
+  folder.running = false;
+  if (folder.state !== "active") return;
+  var left = list.filter(function (c) { return c.state !== "done"; }).length;
+  if (left) {
+    folder.state = "paused";
+    folder.status = left + (left === 1 ? " file" : " files") + " did not arrive - Resume tries again";
+  } else {
+    folder.state = "done";
+    folder.status = "done";
+  }
+  renderTransfers();
+}
+
+function pauseFolder(folder) {
+  folder.state = "paused"; folder.status = "paused"; folder.bps = 0;
+  folder.children.forEach(function (c) { if (c.state === "active") pauseRow(c); });
+  renderTransfers();
+}
+
+function resumeFolder(folder) {
+  folder.children.forEach(function (c) {
+    if (c.state === "paused") { c.state = "queued"; c.status = ""; c.streams.forEach(function (s) { s.tries = 0; }); }
+  });
+  folder.state = "active"; folder.status = ""; folder.cursor = 0;
+  renderTransfers(); ensureTicker();
+  runFolder(folder);
+}
+
+function cancelFolder(folder) {
+  folder.state = "cancelled";
+  folder.children.forEach(function (c) { if (c.state !== "done" && c.state !== "error") cancelRow(c); });
+  transfers = transfers.filter(function (r) { return r !== folder; });
+  renderTransfers();
+}
+
+function folderSummary(folder) {
+  var done = 0;
+  folder.children.forEach(function (c) { if (c.state === "done") done++; });
+  return done + " of " + folder.children.length + " files";
+}
+
+/** Everything under a dropped folder, depth first. */
+function readBatch(reader) { return new Promise(function (res, rej) { reader.readEntries(res, rej); }); }
+function entryFile(entry) { return new Promise(function (res, rej) { entry.file(res, rej); }); }
+async function walkEntry(dir, path, out) {
+  var reader = dir.createReader();
+  for (;;) {
+    // readEntries hands back at most ~100 at a time; keep asking until it returns none.
+    var batch = await readBatch(reader);
+    if (!batch.length) return;
+    for (var i = 0; i < batch.length; i++) {
+      var e = batch[i];
+      if (e.isFile) out.push({ file: await entryFile(e), dir: path });
+      else if (e.isDirectory) await walkEntry(e, path + "/" + e.name, out);
+    }
+  }
+}
+
+/**
+ * A drop can mix folders and loose files. The entries have to be taken from the event
+ * synchronously -- they are gone once the handler returns -- and read afterwards.
+ */
+function takeDrop(dt) {
+  var entries = [];
+  if (dt.items) {
+    for (var i = 0; i < dt.items.length; i++) {
+      var it = dt.items[i];
+      var en = it.kind === "file" && it.webkitGetAsEntry ? it.webkitGetAsEntry() : null;
+      if (en) entries.push(en);
+    }
+  }
+  var files = Array.prototype.slice.call(dt.files || []);
+  if (!entries.some(function (e) { return e.isDirectory; })) {
+    if (files.length) addFiles(files);
+    return;
+  }
+  (async function () {
+    var loose = [];
+    for (var j = 0; j < entries.length; j++) {
+      var e = entries[j];
+      try {
+        if (e.isDirectory) {
+          var items = [];
+          await walkEntry(e, e.name, items);
+          addFolder(e.name, items);
+        } else {
+          loose.push(await entryFile(e));
+        }
+      } catch (err) { /* an unreadable entry is skipped; the rest still go */ }
+    }
+    if (loose.length) addFiles(loose);
+  })();
+}
+
+/** From the folder picker: every file, with its path under the chosen folder. */
+function addPickedFolder(fileList) {
+  var byTop = {};
+  Array.prototype.forEach.call(fileList, function (f) {
+    var path = f.webkitRelativePath || f.name;
+    var parts = path.split("/");
+    var top = parts.length > 1 ? parts[0] : "Folder";
+    (byTop[top] = byTop[top] || []).push({ file: f, dir: parts.slice(0, -1).join("/") || top });
+  });
+  Object.keys(byTop).forEach(function (top) { addFolder(top, byTop[top]); });
+}
+
+// ------------------------------------------------------------------ downloads
+//
+// Three backends, picked by what the browser will allow.
+//  1. File System Access -- parallel ranges written straight into the chosen file
+//     at their own offsets. Any size, no extra copy. Needs a secure context.
+//  2. In-memory assembly -- same parallel speedup, but the file passes through
+//     the tab, so it is capped well below anything large.
+//  3. The browser's own download manager -- one connection, any size.
+
+function downloadMode(size) {
+  if (window.showSaveFilePicker && window.isSecureContext) return "fsa";
+  if (size <= BLOB_DOWNLOAD_LIMIT && state.streams > 1) return "blob";
+  return "native";
+}
+
+function splitRanges(size, n) {
+  var align = 1048576;
+  if (n <= 1 || size < n * align) return [{ start: 0, end: size - 1 }];
+  var step = Math.max(align, Math.floor(size / n / align) * align);
+  var out = [], pos = 0;
+  for (var i = 0; i < n; i++) {
+    var last = (i === n - 1) ? size - 1 : Math.min(size - 1, pos + step - 1);
+    if (pos > last) break;
+    out.push({ start: pos, end: last });
+    pos = last + 1;
+    if (pos >= size) break;
+  }
+  return out;
+}
+
+function nativeDownload(entry) {
+  var a = document.createElement("a");
+  a.href = "/api/files/" + encodeURIComponent(entry.id);
+  a.setAttribute("download", entry.name);
+  document.body.appendChild(a); a.click(); a.remove();
+}
+
+async function startDownload(entry, existingRow) {
+  var mode = (existingRow && existingRow.mode) ? existingRow.mode : downloadMode(entry.size);
+  if (mode === "native") { nativeDownload(entry); return; }
+
+  var row = existingRow || {
+    id: uid(), dir: "down", entry: entry, name: entry.name, size: entry.size,
+    transferred: 0, bps: 0, state: "active", status: "", mode: mode, streams: [], handle: null,
+  };
+
+  // The picker is shown once per row. Reusing the handle is what lets a large
+  // download resume rather than start over.
+  if (mode === "fsa" && !row.handle) {
+    try { row.handle = await window.showSaveFilePicker({ suggestedName: entry.name }); }
+    catch (e) {
+      if (!existingRow) return;
+      row.state = "paused"; row.status = "cancelled at the save dialog"; renderTransfers(); return;
+    }
+  }
+  if (!existingRow) transfers.unshift(row);
+  row.state = "active";
+
+  if (!row.streams.length || mode === "blob") {
+    row.streams = splitRanges(entry.size, Math.max(1, state.streams)).map(function (r) {
+      return { base: r.start, length: r.end - r.start + 1, offset: 0, live: 0, tries: 0 };
+    });
+  }
+  row.status = (mode === "blob" ? "assembling in memory - " : "") +
+    (row.streams.length > 1 ? row.streams.length + " parallel connections" : "single connection");
+  renderTransfers(); ensureTicker();
+
+  var writable = row.handle ? await row.handle.createWritable({ keepExistingData: true }) : null;
+  var parts = new Array(row.streams.length);
+
+  try {
+    await Promise.all(row.streams.map(async function (s, i) {
+      if (s.live >= s.length) return;
+      var controller = new AbortController();
+      s.abort = controller;
+      var from = s.base + s.live;
+      var res = await fetch("/api/files/" + encodeURIComponent(entry.id), {
+        credentials: "same-origin", signal: controller.signal,
+        headers: { Range: "bytes=" + from + "-" + (s.base + s.length - 1) },
+      });
+      if (res.status === 401) { showLogin(); throw new Error("not paired"); }
+      if (!res.ok && res.status !== 206) throw new Error("download failed (" + res.status + ")");
+
+      var reader = res.body.getReader();
+      var chunks = writable ? null : [];
+      var pos = from;
+      while (true) {
+        var step = await reader.read();
+        if (step.done) break;
+        if (row.state !== "active") { reader.cancel(); return; }
+        if (writable) await writable.write({ type: "write", position: pos, data: step.value });
+        else chunks.push(step.value);
+        pos += step.value.length;
+        s.live = pos - s.base;
+      }
+      s.offset = s.live;
+      if (chunks) parts[i] = new Blob(chunks);
+    }));
+
+    if (row.state !== "active") { if (writable) await writable.abort(); return; }
+
+    if (writable) {
+      await writable.close();
+    } else {
+      var blob = new Blob(parts, { type: entry.mime || "application/octet-stream" });
+      var url = URL.createObjectURL(blob);
+      var link = document.createElement("a");
+      link.href = url; link.setAttribute("download", entry.name);
+      document.body.appendChild(link); link.click(); link.remove();
+      setTimeout(function () { URL.revokeObjectURL(url); }, 60000);
+    }
+    row.state = "done"; row.status = "saved"; row.transferred = row.size; row.bps = 0;
+  } catch (err) {
+    if (writable) { try { await writable.abort(); } catch (e) {} }
+    row.state = "paused";
+    row.status = "interrupted - " + (err && err.message ? err.message : "network error");
+    row.bps = 0;
+  }
+  renderTransfers();
+}
+
+// ------------------------------------------------------------------ progress
+
+function rowBytes(row) {
+  if (row.kind === "folder") {
+    var sum = 0;
+    for (var k = 0; k < row.children.length; k++) {
+      var c = row.children[k];
+      sum += c.state === "done" ? c.size : rowBytes(c);
+    }
+    return sum;
+  }
+  if (!row.streams || !row.streams.length) return row.transferred || 0;
+  var t = 0;
+  for (var i = 0; i < row.streams.length; i++) t += (row.streams[i].live || 0);
+  return t;
+}
+
+/**
+ * One timer drives every rate figure and every repaint. Recomputing on each XHR
+ * progress event means four streams repainting the list dozens of times a second
+ * during the exact window when the tab should be doing nothing but moving bytes.
+ */
+function ensureTicker() {
+  if (ticker) return;
+  ticker = setInterval(function () {
+    var active = 0, totalBps = 0, now = performance.now();
+    transfers.forEach(function (row) {
+      var t = rowBytes(row);
+      row.transferred = t;
+      if (row.state === "active") {
+        active++;
+        if (row._at) {
+          var dt = (now - row._at) / 1000;
+          if (dt >= 0.25) {
+            var inst = (t - row._bytes) / dt;
+            row.bps = row.bps ? row.bps + 0.3 * (inst - row.bps) : inst;
+            row._at = now; row._bytes = t;
+          }
+        } else { row._at = now; row._bytes = t; }
+        totalBps += row.bps || 0;
+      }
+    });
+    updateDock(active, totalBps);
+    renderTransfers();
+    if (!active) { clearInterval(ticker); ticker = null; updateDock(0, 0); }
+  }, 500);
+}
+
+function updateDock(active, totalBps) {
+  var dock = $("dock");
+  dock.hidden = transfers.length === 0;
+  $("dock-rate").textContent = active ? rate(totalBps) : "-";
+  $("dock-label").textContent = active
+    ? (active + (active === 1 ? " TRANSFER" : " TRANSFERS"))
+    : (transfers.length ? "IDLE" : "");
+}
+
+// ------------------------------------------------------------------ rendering
+
+function btn(label, fn, cls) {
+  var b = document.createElement("button");
+  b.className = "btn sm " + (cls || "ghost");
+  b.textContent = label;
+  b.addEventListener("click", fn);
+  return b;
+}
+
+function renderTransfers() {
+  var host = $("transfers");
+  if (!transfers.length) { host.innerHTML = ""; $("dock").hidden = true; return; }
+  $("dock").hidden = false;
+  host.innerHTML = "";
+  transfers.forEach(function (row) {
+    var pct = row.size ? Math.min(100, (row.transferred / row.size) * 100) : 0;
+
+    var d = document.createElement("div");
+    d.className = "row";
+
+    var g = document.createElement("div");
+    g.className = "glyph";
+    g.textContent = row.kind === "folder" ? "▤" : row.dir === "up" ? "↑" : "↓";
+    d.appendChild(g);
+
+    var body = document.createElement("div");
+    body.className = "body";
+
+    var t = document.createElement("div");
+    t.className = "title";
+    t.textContent = row.name;
+    body.appendChild(t);
+
+    var m = document.createElement("div");
+    m.className = "meta";
+    m.textContent = bytes(row.transferred) + " / " + bytes(row.size) +
+      (row.bps ? "   " + rate(row.bps) + "   " + eta(row.size - row.transferred, row.bps) : "") +
+      (row.kind === "folder" ? "   " + folderSummary(row) : "") +
+      (row.status && !(row.kind === "folder" && row.status === "done") ? "   " + row.status : "");
+    if (row.state === "paused" || row.state === "error") m.style.color = "var(--danger)";
+    if (row.state === "done") m.style.color = "var(--good)";
+    body.appendChild(m);
+
+    var track = document.createElement("div");
+    track.className = "track";
+    var fill = document.createElement("i");
+    fill.style.width = pct + "%";
+    track.appendChild(fill);
+    body.appendChild(track);
+
+    if (row.streams && row.streams.length > 1) {
+      var lanes = document.createElement("div");
+      lanes.className = "lanes";
+      row.streams.forEach(function (s) {
+        var o = document.createElement("i"), inner = document.createElement("b");
+        inner.style.width = (s.length ? Math.min(100, (s.live / s.length) * 100) : 0) + "%";
+        o.appendChild(inner); lanes.appendChild(o);
+      });
+      body.appendChild(lanes);
+    }
+
+    var acts = document.createElement("div");
+    acts.className = "actions";
+    acts.style.marginTop = "10px";
+    if (row.state === "active") acts.appendChild(btn("Pause", function () { pauseRow(row); }));
+    if (row.state === "paused") acts.appendChild(btn("Resume", function () { resumeRow(row); }, ""));
+    if (row.state === "needs-file") acts.appendChild(btn("Choose file", function () { rechoose(row); }, ""));
+    if (row.state === "done") {
+      acts.appendChild(btn("Clear", function () {
+        transfers = transfers.filter(function (r) { return r !== row; });
+        renderTransfers();
+      }));
+    } else {
+      acts.appendChild(btn("Cancel", function () { cancelRow(row); }, "ghost danger"));
+    }
+    body.appendChild(acts);
+
+    d.appendChild(body);
+    host.appendChild(d);
+  });
+}
+
+function renderFiles() {
+  var host = $("files");
+  if (!state.files.length) { host.innerHTML = '<p class="empty">Nothing here yet. Files you send from the phone, and files the phone receives, appear here.</p>'; return; }
+  host.innerHTML = "";
+  state.files.forEach(function (f) {
+    var d = document.createElement("div");
+    d.className = "row";
+
+    var g = document.createElement("div");
+    g.className = "glyph";
+    g.textContent = (f.mime || "").indexOf("image/") === 0 ? "▣"
+      : (f.mime || "").indexOf("video/") === 0 ? "▶" : "▬";
+    d.appendChild(g);
+
+    var body = document.createElement("div");
+    body.className = "body";
+    var t = document.createElement("div");
+    t.className = "title"; t.textContent = f.name;
+    var m = document.createElement("div");
+    m.className = "meta";
+    m.textContent = bytes(f.size) + (f.origin === "PHONE" ? "   from the phone" : "   from this computer");
+    body.appendChild(t); body.appendChild(m);
+
+    var acts = document.createElement("div");
+    acts.className = "actions";
+    var mode = downloadMode(f.size);
+    acts.appendChild(btn(
+      mode === "native" ? "Download" : "Download (" + state.streams + " streams)",
+      function () { startDownload(f); }, ""
+    ));
+    if (mode !== "native") acts.appendChild(btn("Plain download", function () { nativeDownload(f); }));
+    acts.appendChild(btn("Delete", async function () {
+      await api("/api/files/" + encodeURIComponent(f.id), { method: "DELETE" });
+      refreshState();
+    }, "ghost danger"));
+    body.appendChild(acts);
+
+    d.appendChild(body);
+    host.appendChild(d);
+  });
+}
+
+function renderStreams() {
+  var seg = $("streams-seg");
+  seg.innerHTML = "";
+  [1, 2, 4, 8].forEach(function (n) {
+    var b = document.createElement("button");
+    b.textContent = n;
+    if (n === state.streams) b.className = "on";
+    b.addEventListener("click", function () {
+      state.streams = n;
+      try { localStorage.setItem("bridge.streams", String(n)); } catch (e) {}
+      renderStreams(); renderFiles();
+    });
+    seg.appendChild(b);
+  });
+}
+
+// ------------------------------------------------------------------ benchmark
+
+/**
+ * Each direction runs for a fixed time rather than a fixed size. A short burst flatters the
+ * link (it ends before Wi-Fi settles into its real rate); a fixed size takes minutes on a
+ * slow one. Five seconds of whatever the link can do is honest either way.
+ */
+var MEASURE_MS = 5000;
+
+function renderHelperState() {
+  var el = $("helper-state");
+  var local = location.hostname === "localhost" || location.hostname === "127.0.0.1";
+  el.className = "banner" + (local ? "" : " bad");
+  el.textContent = local
+    ? "You are on the fast path: this page is running through the laptop helper."
+    : "This page is on plain HTTP, so large downloads from the phone are limited to one connection. " +
+      "The laptop helper removes that limit.";
+}
+
+async function measure() {
+  var b = $("measure"); b.disabled = true;
+  var out = $("bench-result");
+  var n = Math.max(1, state.streams);
+  try {
+    out.textContent = "Measuring download over " + n + " connection(s) for 5 seconds...";
+    var got = 0, stop = new AbortController();
+    var t0 = performance.now();
+    var timer = setTimeout(function () { stop.abort(); }, MEASURE_MS);
+    await Promise.all(new Array(n).fill(0).map(async function () {
+      try {
+        var res = await fetch("/api/bench/download?bytes=" + (4 * 1024 * 1024 * 1024 - 1),
+          { credentials: "same-origin", cache: "no-store", signal: stop.signal });
+        var r = res.body.getReader();
+        while (true) { var s = await r.read(); if (s.done) break; got += s.value.length; }
+      } catch (e) { if (!stop.signal.aborted) throw e; }
+    }));
+    clearTimeout(timer);
+    var down = got / ((performance.now() - t0) / 1000);
+
+    out.textContent = "Measuring upload for 5 seconds...";
+    // One 16 MB buffer referenced many times: the blob is 1 GB of content but only
+    // 16 MB is ever held as a typed array.
+    var unit = new Uint8Array(16 * 1024 * 1024);
+    var blob = new Blob(new Array(64).fill(unit));
+    var sent = new Array(n).fill(0), xhrs = [];
+    var t1 = performance.now();
+    await new Promise(function (resolve) {
+      var left = n;
+      for (var i = 0; i < n; i++) (function (k) {
+        var x = new XMLHttpRequest();
+        xhrs.push(x);
+        x.open("POST", "/api/bench/upload", true);
+        x.withCredentials = true;
+        x.upload.onprogress = function (e) { sent[k] = e.loaded; };
+        x.onloadend = function () { if (--left === 0) resolve(); };
+        x.send(blob);
+      })(i);
+      setTimeout(function () { xhrs.forEach(function (x) { x.abort(); }); }, MEASURE_MS);
+    });
+    var up = sent.reduce(function (a, v) { return a + v; }, 0) / ((performance.now() - t1) / 1000);
+
+    out.innerHTML = "Network only, " + n + " connection(s): <b>down " + rate(down) +
+      "</b>, <b>up " + rate(up) + "</b>. A real transfer close to these numbers is " +
+      "network-limited; much slower means storage is the ceiling.";
+  } catch (e) {
+    out.textContent = "Measurement failed: " + (e && e.message ? e.message : "unknown");
+  }
+  b.disabled = false;
+}
+
+// ------------------------------------------------------------------ live
+
+function connectEvents() {
+  if (events) events.close();
+  events = new EventSource("/events", { withCredentials: true });
+  function live() { $("conn").textContent = "LIVE"; $("dot").classList.add("on"); }
+  events.addEventListener("open", live);
+  events.addEventListener("ping", live);
+  events.addEventListener("error", function () {
+    $("conn").textContent = "RECONNECTING"; $("dot").classList.remove("on");
+  });
+  events.addEventListener("theme", function (e) { applyTheme(e.data === "glass"); });
+  events.addEventListener("files", function (e) {
+    try { state.files = JSON.parse(e.data); renderFiles(); } catch (err) {}
+  });
+  events.addEventListener("clipboard", function (e) {
+    if (document.activeElement !== $("clip")) {
+      $("clip").value = e.data;
+      if (e.data) flash("New text from the phone");
+    }
+  });
+}
+
+async function refreshState() {
+  var res = await api("/api/state");
+  if (!res.ok) return;
+  var s = await res.json();
+  state.files = s.files || [];
+  state.maxUpload = s.maxUploadSize || 0;
+  state.device = s.deviceName || "";
+  applyTheme(!!s.glass);
+  state.parallelThreshold = s.parallelThreshold || state.parallelThreshold;
+
+  var saved = null;
+  try { saved = localStorage.getItem("bridge.streams"); } catch (e) {}
+  state.streams = saved ? parseInt(saved, 10) : (s.uploadStreams || 4);
+
+  $("hero-title").textContent = (state.device || "PHONE").toUpperCase();
+  $("hero-sub").textContent =
+    "Move text and files between this computer and the phone. The phone is the server; " +
+    "nothing is installed here, and nothing leaves your network.";
+  $("limit").textContent = state.maxUpload
+    ? "Up to " + bytes(state.maxUpload) + " per file. Transfers resume by themselves if the connection drops, and survive a reload."
+    : "";
+  if (document.activeElement !== $("clip") && !$("clip").value) $("clip").value = s.clipboard || "";
+  renderStreams();
+  renderFiles();
+}
+
+// ------------------------------------------------------------------ theme
+//
+// One shared setting, owned by the phone. Flipping it here, on the phone, or on any
+// other computer changes all of them live. The last value is also kept locally, only so
+// the page does not flash the wrong theme for a frame while it loads.
+
+function applyTheme(glass) {
+  document.body.classList.toggle("glass", glass);
+  var t = $("theme-toggle");
+  if (t) t.classList.toggle("on", glass);
+  try { localStorage.setItem("xoosh.glass", glass ? "1" : "0"); } catch (e) {}
+}
+
+async function toggleTheme() {
+  var next = !document.body.classList.contains("glass");
+  applyTheme(next);
+  try {
+    await api("/api/theme", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ glass: next }),
+    });
+  } catch (e) {}
+}
+
+// ------------------------------------------------------------------ music
+//
+// Why this starts faster than a streaming service: Spotify fetches from a data centre
+// over the internet; this fetches from a phone a metre away. A FLAC track is 25-40 MB,
+// and on a good local link the whole thing arrives in well under a second.
+//
+// Two tricks make it feel instant rather than merely fast:
+//  1. The current track streams with byte ranges. The phone flushes the first 64 KB
+//     immediately, so playback starts before the rest has arrived, and seeking fetches
+//     only the part you jump to.
+//  2. The next tracks are pulled whole into memory while the current one plays. Skipping
+//     then plays from RAM -- no network round trip at all. Only a couple are kept, so
+//     memory stays around a hundred megabytes.
+
+var PREFETCH_AHEAD = 2;
+var PREFETCH_MAX_BYTES = 250 * 1024 * 1024;
+var MUSIC_PAGE = 300;
+
+var music = { tracks: [], granted: true, loaded: false, loading: false,
+              view: "songs", album: null, filter: "", shown: MUSIC_PAGE };
+var player = { queue: [], order: [], pos: -1, shuffle: false, repeat: "off",
+               blobs: {}, prefetchCtl: null, prefetchTimer: null };
+
+function fmtTime(sec) {
+  if (!isFinite(sec) || sec < 0) sec = 0;
+  var m = Math.floor(sec / 60), s = Math.floor(sec % 60);
+  return m + ":" + (s < 10 ? "0" : "") + s;
+}
+function streamUrl(id) { return "/api/music/stream/" + id; }
+function artUrl(albumId) { return "/api/music/art/" + albumId; }
+function formatBadge(mime) {
+  mime = (mime || "").toLowerCase();
+  if (mime.indexOf("flac") >= 0) return "FLAC";
+  if (mime.indexOf("mpeg") >= 0 || mime.indexOf("mp3") >= 0) return "MP3";
+  if (mime.indexOf("wav") >= 0) return "WAV";
+  if (mime.indexOf("ogg") >= 0) return "OGG";
+  if (mime.indexOf("opus") >= 0) return "OPUS";
+  if (mime.indexOf("mp4") >= 0 || mime.indexOf("aac") >= 0 || mime.indexOf("m4a") >= 0) return "AAC";
+  return "";
+}
+
+/**
+ * A cover image over a note glyph; an album with no art just keeps the glyph.
+ * The image goes into the page straight away: a lazy image that is not in the page is
+ * never loaded at all, so waiting for it to load before adding it would wait forever.
+ */
+function coverEl(cls, albumId) {
+  var box = document.createElement("div");
+  box.className = cls + " has-glyph";
+  box.textContent = "♪";
+  var img = document.createElement("img");
+  img.loading = "lazy";
+  img.alt = "";
+  img.onerror = function () { img.remove(); };
+  img.src = artUrl(albumId);
+  box.appendChild(img);
+  return box;
+}
+
+async function musicOpen() {
+  if (music.loaded || music.loading) return;
+  await musicLoad(false);
+}
+
+async function musicLoad(refresh) {
+  music.loading = true;
+  try {
+    var res = await api("/api/music" + (refresh ? "?refresh=1" : ""));
+    var body = await res.json();
+    music.granted = !!body.granted;
+    music.tracks = body.tracks || [];
+    music.loaded = true;
+  } catch (e) {
+    $("music-list").innerHTML = '<p class="empty">Could not load the library.</p>';
+  }
+  music.loading = false;
+  renderMusic();
+}
+
+function musicMatches() {
+  var q = music.filter.trim().toLowerCase();
+  var list = music.tracks;
+  if (music.album !== null) list = list.filter(function (t) { return t.albumId === music.album; });
+  if (!q) return list;
+  return list.filter(function (t) {
+    return (t.title + " " + t.artist + " " + t.album).toLowerCase().indexOf(q) >= 0;
+  });
+}
+
+function renderMusic() {
+  $("music-perm").hidden = music.granted;
+  var host = $("music-list"), more = $("music-more"), crumb = $("music-crumb");
+  host.innerHTML = ""; more.innerHTML = "";
+
+  if (music.album !== null) {
+    var a = music.tracks.find(function (t) { return t.albumId === music.album; });
+    crumb.hidden = false;
+    crumb.innerHTML = "";
+    var back = document.createElement("button");
+    back.className = "btn sm ghost";
+    back.textContent = "← All albums";
+    back.onclick = function () { music.album = null; music.view = "albums"; setViewButtons(); renderMusic(); };
+    var playAll = document.createElement("button");
+    playAll.className = "btn sm";
+    playAll.textContent = "Play album";
+    playAll.onclick = function () { startQueue(musicMatches(), 0); };
+    var title = document.createElement("span");
+    title.className = "meta";
+    title.style.alignSelf = "center";
+    title.textContent = a ? a.album + " · " + a.artist : "";
+    crumb.appendChild(back); crumb.appendChild(playAll); crumb.appendChild(title);
+  } else {
+    crumb.hidden = true;
+  }
+
+  if (!music.granted) { host.innerHTML = ""; return; }
+  if (!music.tracks.length) {
+    host.innerHTML = '<p class="empty">No music found on the phone.</p>';
+    return;
+  }
+
+  if (music.view === "albums" && music.album === null) { renderAlbums(host); return; }
+
+  var list = musicMatches();
+  var cur = currentTrack();
+  list.slice(0, music.shown).forEach(function (t, i) {
+    var row = document.createElement("div");
+    row.className = "row song" + (cur && cur.id === t.id ? " accent" : "");
+    row.appendChild(coverEl("cover", t.albumId));
+    var body = document.createElement("div");
+    body.className = "body";
+    var title = document.createElement("div");
+    title.className = "title";
+    title.textContent = t.title;
+    var badge = formatBadge(t.mime);
+    if (badge) {
+      var b = document.createElement("span");
+      b.className = "badge";
+      b.textContent = badge;
+      title.appendChild(b);
+    }
+    var meta = document.createElement("div");
+    meta.className = "meta";
+    meta.textContent = t.artist + " · " + t.album + (player.blobs[t.id] ? " · ready" : "");
+    body.appendChild(title); body.appendChild(meta);
+    row.appendChild(body);
+    var dur = document.createElement("span");
+    dur.className = "dur";
+    dur.textContent = fmtTime(t.durationMs / 1000);
+    row.appendChild(dur);
+    row.onclick = function () { startQueue(list, i); };
+    host.appendChild(row);
+  });
+
+  if (list.length > music.shown) {
+    var btn = document.createElement("button");
+    btn.className = "btn sm ghost";
+    btn.textContent = "Show " + Math.min(MUSIC_PAGE, list.length - music.shown) + " more of " + list.length;
+    btn.onclick = function () { music.shown += MUSIC_PAGE; renderMusic(); };
+    more.appendChild(btn);
+  }
+}
+
+function renderAlbums(host) {
+  var q = music.filter.trim().toLowerCase();
+  var seen = {}, albums = [];
+  music.tracks.forEach(function (t) {
+    if (seen[t.albumId]) { seen[t.albumId].count++; return; }
+    var a = { albumId: t.albumId, album: t.album, artist: t.artist, count: 1 };
+    seen[t.albumId] = a; albums.push(a);
+  });
+  if (q) albums = albums.filter(function (a) { return (a.album + " " + a.artist).toLowerCase().indexOf(q) >= 0; });
+  var grid = document.createElement("div");
+  grid.className = "albums";
+  albums.forEach(function (a) {
+    var tile = document.createElement("div");
+    tile.className = "album";
+    tile.appendChild(coverEl("art", a.albumId));
+    var cap = document.createElement("div");
+    cap.className = "cap";
+    cap.innerHTML = '<div class="t"></div><div class="a"></div>';
+    cap.firstChild.textContent = a.album;
+    cap.lastChild.textContent = a.artist + " · " + a.count + (a.count === 1 ? " track" : " tracks");
+    tile.appendChild(cap);
+    tile.onclick = function () { music.album = a.albumId; music.shown = MUSIC_PAGE; renderMusic(); };
+    grid.appendChild(tile);
+  });
+  host.appendChild(grid);
+}
+
+function setViewButtons() {
+  Array.prototype.forEach.call($("music-view").children, function (b) {
+    b.classList.toggle("on", b.dataset.v === music.view);
+  });
+}
+
+// ------------------------------------------------------------------ player
+
+function currentTrack() {
+  if (player.pos < 0 || player.pos >= player.order.length) return null;
+  return player.queue[player.order[player.pos]] || null;
+}
+
+/** The track `k` steps ahead of the current one, honouring shuffle and repeat-all. */
+function trackAhead(k) {
+  var n = player.order.length;
+  if (!n) return null;
+  var p = player.pos + k;
+  if (p >= n) { if (player.repeat !== "all") return null; p = p % n; }
+  return player.queue[player.order[p]] || null;
+}
+
+function buildOrder(startIndex) {
+  var idx = player.queue.map(function (_, i) { return i; });
+  if (player.shuffle) {
+    // The chosen track plays first; everything else is shuffled behind it.
+    idx.splice(startIndex, 1);
+    for (var i = idx.length - 1; i > 0; i--) {
+      var j = Math.floor(Math.random() * (i + 1));
+      var tmp = idx[i]; idx[i] = idx[j]; idx[j] = tmp;
+    }
+    idx.unshift(startIndex);
+    player.pos = 0;
+  } else {
+    player.pos = startIndex;
+  }
+  player.order = idx;
+}
+
+function startQueue(list, index) {
+  player.queue = list.slice();
+  buildOrder(index);
+  playCurrent();
+}
+
+function playCurrent() {
+  var t = currentTrack();
+  if (!t) return;
+  var audio = $("audio");
+  // From memory if it was prefetched; otherwise stream it with ranges.
+  audio.src = player.blobs[t.id] || streamUrl(t.id);
+  var p = audio.play();
+  if (p && p.catch) p.catch(function () {});
+  showPlayer(t);
+  renderMusic();
+  // Give the current track a head start before pulling the next ones, so prefetching
+  // never competes with the first seconds of what you are actually listening to.
+  clearTimeout(player.prefetchTimer);
+  player.prefetchTimer = setTimeout(prefetchAhead, 1500);
+}
+
+async function prefetchAhead() {
+  if (player.prefetchCtl) player.prefetchCtl.abort();
+  var ctl = new AbortController();
+  player.prefetchCtl = ctl;
+
+  var wanted = [];
+  for (var k = 1; k <= PREFETCH_AHEAD; k++) { var t = trackAhead(k); if (t) wanted.push(t); }
+  var keep = {};
+  var cur = currentTrack();
+  if (cur) keep[cur.id] = true;
+  wanted.forEach(function (t) { keep[t.id] = true; });
+  // Let go of anything no longer near the playhead, so memory stays bounded.
+  Object.keys(player.blobs).forEach(function (id) {
+    if (!keep[id]) { URL.revokeObjectURL(player.blobs[id]); delete player.blobs[id]; }
+  });
+
+  for (var i = 0; i < wanted.length; i++) {
+    var tr = wanted[i];
+    if (ctl.signal.aborted) return;
+    if (player.blobs[tr.id] || tr.size > PREFETCH_MAX_BYTES) continue;
+    try {
+      var r = await fetch(streamUrl(tr.id), { credentials: "same-origin", signal: ctl.signal });
+      if (!r.ok) continue;
+      var blob = await r.blob();
+      if (ctl.signal.aborted) return;
+      player.blobs[tr.id] = URL.createObjectURL(blob);
+      deckNext();
+      if (music.view === "songs" || music.album !== null) renderMusic();
+    } catch (e) {
+      if (ctl.signal.aborted) return;
+    }
+  }
+}
+
+// ------------------------------------------------------------------ turntable
+//
+// Sequenced like a real turntable, with the Vinyl Glass widget's timings:
+//   pause -> freeze the disc now, lift the arm 650 ms later. Cancelled if play resumes,
+//            because changing tracks blips through "paused" for a moment.
+//   play  -> lower the arm, start the disc 900 ms later, once the arm has landed.
+//            If the arm never left, the disc just carries on.
+var deck = { spinTimer: 0, armTimer: 0, albumId: null };
+var ARM_OUT_MS = 650, SPIN_START_MS = 900;
+
+function deckPlaying(on) {
+  var tt = $("tt");
+  $("deck-state").textContent = on ? "NOW PLAYING" : "PAUSED";
+  if (!on) {
+    clearTimeout(deck.spinTimer);
+    tt.classList.remove("spin");
+    clearTimeout(deck.armTimer);
+    deck.armTimer = setTimeout(function () { tt.classList.remove("arm"); }, ARM_OUT_MS);
+    return;
+  }
+  clearTimeout(deck.armTimer);
+  if (tt.classList.contains("arm")) { tt.classList.add("spin"); return; }
+  tt.classList.add("arm");
+  clearTimeout(deck.spinTimer);
+  deck.spinTimer = setTimeout(function () { tt.classList.add("spin"); }, SPIN_START_MS);
+}
+
+function showDeck(t) {
+  $("deck").hidden = false;
+  $("deck-title").textContent = t.title;
+  $("deck-artist").textContent = t.artist;
+  var album = $("deck-album");
+  album.textContent = t.album + (t.year > 0 ? " · " + t.year : "");
+  var badge = formatBadge(t.mime);
+  if (badge) {
+    var b = document.createElement("span");
+    b.className = "badge";
+    b.textContent = badge;
+    album.appendChild(b);
+  }
+  // The cover becomes the record's label. Same album, same label: no flicker between its tracks.
+  if (deck.albumId !== t.albumId) {
+    deck.albumId = t.albumId;
+    var label = $("tt-label"), bg = $("deck-bg");
+    label.textContent = "XOOSH";
+    bg.classList.remove("on");
+    var url = artUrl(t.albumId);
+    var img = new Image();
+    img.alt = "";
+    img.onload = function () {
+      if (deck.albumId !== t.albumId) return;
+      label.textContent = "";
+      label.appendChild(img);
+      bg.style.backgroundImage = "url('" + url + "')";
+      bg.classList.add("on");
+    };
+    img.src = url;
+  }
+  deckNext();
+}
+
+function deckNext() {
+  var el = $("deck-next"), n = trackAhead(1);
+  el.hidden = !n;
+  if (!n) return;
+  el.innerHTML = "<b>UP NEXT</b>";
+  el.appendChild(document.createTextNode(n.title + " · " + n.artist + (player.blobs[n.id] ? " · ready" : "")));
+}
+
+function showPlayer(t) {
+  var pl = $("player");
+  pl.hidden = false;
+  $("pl-title").textContent = t.title;
+  $("pl-sub").textContent = t.artist + " · " + t.album;
+  var art = $("pl-art");
+  art.innerHTML = "♪";
+  var img = new Image();
+  img.onload = function () { art.innerHTML = ""; art.appendChild(img); };
+  img.src = artUrl(t.albumId);
+  showDeck(t);
+  document.documentElement.style.setProperty("--player-h", pl.offsetHeight + "px");
+  document.body.style.paddingBottom = (pl.offsetHeight + 90) + "px";
+
+  if ("mediaSession" in navigator && typeof MediaMetadata !== "undefined") {
+    navigator.mediaSession.metadata = new MediaMetadata({
+      title: t.title, artist: t.artist, album: t.album,
+      artwork: [{ src: location.origin + artUrl(t.albumId), sizes: "512x512", type: "image/jpeg" }],
+    });
+  }
+}
+
+function playNext(auto) {
+  var audio = $("audio");
+  if (auto && player.repeat === "one") { audio.currentTime = 0; audio.play(); return; }
+  if (player.pos + 1 < player.order.length) { player.pos++; playCurrent(); return; }
+  if (player.repeat === "all" && player.order.length) { player.pos = 0; playCurrent(); return; }
+  if (auto) { $("pl-play").innerHTML = "&#9654;"; }
+}
+
+function playPrev() {
+  var audio = $("audio");
+  // Like every player: early in a song, go back a track; later, restart this one.
+  if (audio.currentTime > 3 || player.pos <= 0) { audio.currentTime = 0; return; }
+  player.pos--;
+  playCurrent();
+}
+
+function togglePlay() {
+  var audio = $("audio");
+  if (!currentTrack()) return;
+  if (audio.paused) audio.play(); else audio.pause();
+}
+
+function setupPlayer() {
+  var audio = $("audio"), seek = $("pl-seek");
+  var seeking = false;
+
+  audio.addEventListener("play", function () { $("pl-play").innerHTML = "&#10074;&#10074;"; deckPlaying(true); });
+  audio.addEventListener("pause", function () { $("pl-play").innerHTML = "&#9654;"; deckPlaying(false); });
+  audio.addEventListener("ended", function () { playNext(true); });
+  audio.addEventListener("error", function () {
+    var t = currentTrack();
+    $("pl-sub").textContent = "This browser cannot play " + (t ? (formatBadge(t.mime) || t.mime) : "this file") + " - skipping";
+    setTimeout(function () { playNext(true); }, 1500);
+  });
+  audio.addEventListener("timeupdate", function () {
+    var t = currentTrack();
+    var dur = audio.duration && isFinite(audio.duration) ? audio.duration : (t ? t.durationMs / 1000 : 0);
+    $("pl-time").textContent = fmtTime(audio.currentTime) + " / " + fmtTime(dur);
+    if (!seeking && dur > 0) {
+      var pct = audio.currentTime / dur * 100;
+      seek.value = Math.round(pct * 10);
+      seek.style.background = "linear-gradient(to right, var(--yellow) " + pct + "%, " +
+        (document.body.classList.contains("glass") ? "rgba(255,255,255,.18)" : "#333") + " " + pct + "%)";
+    }
+  });
+  seek.addEventListener("input", function () { seeking = true; });
+  seek.addEventListener("change", function () {
+    var t = currentTrack();
+    var dur = audio.duration && isFinite(audio.duration) ? audio.duration : (t ? t.durationMs / 1000 : 0);
+    if (dur > 0) audio.currentTime = seek.value / 1000 * dur;
+    seeking = false;
+  });
+
+  $("pl-play").onclick = togglePlay;
+  $("tt").onclick = togglePlay;
+  // The little cover in the bar opens the turntable.
+  $("pl-art").onclick = function () {
+    selectTab("music");
+    $("deck").scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+  $("pl-next").onclick = function () { playNext(false); };
+  $("pl-prev").onclick = playPrev;
+  $("pl-shuffle").onclick = function () {
+    player.shuffle = !player.shuffle;
+    this.classList.toggle("on", player.shuffle);
+    var cur = currentTrack();
+    if (cur) { buildOrder(player.queue.indexOf(cur)); prefetchAhead(); }
+    deckNext();
+  };
+  $("pl-repeat").onclick = function () {
+    player.repeat = player.repeat === "off" ? "all" : player.repeat === "all" ? "one" : "off";
+    this.textContent = player.repeat === "one" ? "RPT 1" : "RPT";
+    this.classList.toggle("on", player.repeat !== "off");
+    prefetchAhead();
+    deckNext();
+  };
+
+  // Keyboard, when you are not typing: space plays and pauses, arrows seek.
+  document.addEventListener("keydown", function (e) {
+    var tag = (document.activeElement && document.activeElement.tagName) || "";
+    if (tag === "INPUT" || tag === "TEXTAREA" || !currentTrack()) return;
+    if (e.code === "Space") { e.preventDefault(); togglePlay(); }
+    else if (e.code === "ArrowRight") { audio.currentTime = Math.min(audio.currentTime + 10, audio.duration || 1e9); }
+    else if (e.code === "ArrowLeft") { audio.currentTime = Math.max(audio.currentTime - 10, 0); }
+  });
+
+  // Hardware media keys and the OS media overlay.
+  if ("mediaSession" in navigator) {
+    try {
+      navigator.mediaSession.setActionHandler("play", function () { audio.play(); });
+      navigator.mediaSession.setActionHandler("pause", function () { audio.pause(); });
+      navigator.mediaSession.setActionHandler("nexttrack", function () { playNext(false); });
+      navigator.mediaSession.setActionHandler("previoustrack", playPrev);
+      navigator.mediaSession.setActionHandler("seekto", function (d) { if (d.seekTime != null) audio.currentTime = d.seekTime; });
+    } catch (e) {}
+  }
+
+  // Music-tab controls.
+  var searchTimer = null;
+  $("music-search").addEventListener("input", function () {
+    clearTimeout(searchTimer);
+    var v = this.value;
+    searchTimer = setTimeout(function () { music.filter = v; music.shown = MUSIC_PAGE; renderMusic(); }, 120);
+  });
+  Array.prototype.forEach.call($("music-view").children, function (b) {
+    b.onclick = function () { music.view = b.dataset.v; music.album = null; setViewButtons(); renderMusic(); };
+  });
+  $("music-rescan").onclick = function () { musicLoad(true); };
+}
+
+// ------------------------------------------------------------------ auth
+
+var pairPoll = null;
+var appStarted = false;
+
+function showLogin() {
+  $("app").hidden = true;
+  $("dock").hidden = true;
+  $("login").hidden = false;
+  pairReset();
+  if (events) { events.close(); events = null; }
+}
+
+function showApp() {
+  pairStop();
+  $("login").hidden = true;
+  $("app").hidden = false;
+  // Listeners are wired once. Coming back from a re-pair must not double them up, or
+  // every click would fire twice.
+  if (!appStarted) {
+    appStarted = true;
+    buildTabs();
+    setupClipboard();
+    setupDrop();
+    setupDock();
+    setupPlayer();
+    $("theme-toggle").onclick = toggleTheme;
+    $("measure").addEventListener("click", measure);
+    renderPending();
+  }
+  refreshState();
+  connectEvents();
+}
+
+function pairStop() {
+  if (pairPoll) { clearInterval(pairPoll); pairPoll = null; }
+}
+
+function pairReset() {
+  pairStop();
+  $("pair-idle").hidden = false;
+  $("pair-wait").hidden = true;
+}
+
+function pairError(msg) {
+  pairReset();
+  $("login-error").textContent = msg;
+  $("login-error").hidden = false;
+}
+
+/**
+ * Asks the phone to let this computer in, then waits for the tap.
+ *
+ * The code on screen matches the one on the phone. That is what stops you approving
+ * someone else's request by accident if two arrive at once.
+ */
+async function pair() {
+  $("login-error").hidden = true;
+  var res;
+  try {
+    res = await fetch("/api/pair", { method: "POST", credentials: "same-origin" });
+  } catch (e) { pairError("Could not reach the phone."); return; }
+  var body = {}; try { body = await res.json(); } catch (e) {}
+  if (!res.ok) { pairError(body.message || "The phone refused the request."); return; }
+
+  $("pair-idle").hidden = true;
+  $("pair-wait").hidden = false;
+  $("pair-code").textContent = body.code;
+  $("pair-status").textContent = "Waiting for the phone...";
+
+  pairStop();
+  pairPoll = setInterval(async function () {
+    var r;
+    try {
+      r = await fetch("/api/pair/" + encodeURIComponent(body.id), { credentials: "same-origin" });
+    } catch (e) { return; } // transient; keep waiting
+    var s = {}; try { s = await r.json(); } catch (e) { return; }
+    if (s.state === "APPROVED") { showApp(); }
+    else if (s.state === "DENIED") { pairError("The phone declined this computer."); }
+    else if (s.state === "EXPIRED") { pairError("Nobody answered on the phone. Ask again."); }
+  }, 1000);
+}
+
+function setupDrop() {
+  var drop = $("drop"), input = $("file-input"), folderInput = $("folder-input");
+  drop.addEventListener("click", function () { input.click(); });
+  $("pick-files").addEventListener("click", function () { input.click(); });
+  $("pick-folder").addEventListener("click", function () { folderInput.click(); });
+  input.addEventListener("change", function () {
+    if (input.files && input.files.length) addFiles(input.files);
+    input.value = "";
+  });
+  folderInput.addEventListener("change", function () {
+    if (folderInput.files && folderInput.files.length) addPickedFolder(folderInput.files);
+    folderInput.value = "";
+  });
+  ["dragenter", "dragover"].forEach(function (ev) {
+    drop.addEventListener(ev, function (e) { e.preventDefault(); drop.classList.add("over"); });
+  });
+  ["dragleave", "drop"].forEach(function (ev) {
+    drop.addEventListener(ev, function (e) { e.preventDefault(); drop.classList.remove("over"); });
+  });
+  drop.addEventListener("drop", function (e) {
+    // Handled here; the page-wide handler below must not add the same drop again.
+    e.stopPropagation();
+    if (e.dataTransfer) takeDrop(e.dataTransfer);
+  });
+  // Anywhere on the page, so a mis-aimed drop does not navigate away and kill the tab.
+  window.addEventListener("dragover", function (e) { e.preventDefault(); });
+  window.addEventListener("drop", function (e) {
+    e.preventDefault();
+    if (e.dataTransfer && e.dataTransfer.files.length) { takeDrop(e.dataTransfer); selectTab("send"); }
+  });
+}
+
+function setupDock() {
+  $("dock-head").addEventListener("click", function () {
+    var list = $("dock-list");
+    list.hidden = !list.hidden;
+    $("dock-toggle").textContent = list.hidden ? "SHOW" : "HIDE";
+  });
+}
+
+window.addEventListener("beforeunload", function (e) {
+  if (transfers.some(function (r) { return r.state === "active"; })) {
+    e.preventDefault(); e.returnValue = "";
+  }
+});
+
+$("pair").addEventListener("click", pair);
+$("pair-cancel").addEventListener("click", pairReset);
+
+(async function boot() {
+  // Paint the last-known theme immediately; the phone's real setting follows a moment later.
+  try { applyTheme(localStorage.getItem("xoosh.glass") === "1"); } catch (e) {}
+  try {
+    var res = await fetch("/api/ping", { credentials: "same-origin" });
+    var info = await res.json();
+    $("login-device").textContent =
+      (info.device || "The phone") + " will ask you to allow this computer. You only do this once.";
+    info.paired ? showApp() : showLogin();
+  } catch (e) { showLogin(); }
+})();
+</script>
+</body>
+</html>
