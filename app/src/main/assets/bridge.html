@@ -787,13 +787,55 @@ function addFiles(list) {
     }
     var row = {
       id: uid(), dir: "up", file: f, name: f.name, size: f.size,
-      transferred: 0, bps: 0, streams: [], state: "active", status: "starting",
+      transferred: 0, bps: 0, streams: [], state: "queued", status: "waiting",
     };
     transfers.unshift(row);
-    pump(row);
   });
+  kickUploads();
   renderTransfers();
+}
+
+// ------------------------------------------------------------------ upload pacing
+//
+// Two limits keep a big batch moving instead of stalling.
+//
+// Files: only a few upload at once. The rest wait their turn as "waiting" rows.
+//
+// Connections: a browser opens about six connections to one server and queues the
+// rest, and a queued request that sits long enough fails. This page already keeps
+// one open for live updates and needs one for everything else, so uploads share
+// four. Every piece of every file waits here for one of them before it is sent.
+
+var FILES_AT_ONCE = 3;
+var UPLOAD_CONNECTIONS = 4;
+var connectionsInUse = 0;
+var connectionWaiters = [];
+
+function takeConnection() {
+  if (connectionsInUse < UPLOAD_CONNECTIONS) { connectionsInUse++; return Promise.resolve(); }
+  return new Promise(function (resolve) { connectionWaiters.push(resolve); });
+}
+
+function giveConnection() {
+  var next = connectionWaiters.shift();
+  if (next) next(); else connectionsInUse--;
+}
+
+/** Starts queued loose files, oldest first, up to FILES_AT_ONCE. */
+function kickUploads() {
+  var running = transfers.filter(function (r) { return r.running; }).length;
+  for (var i = transfers.length - 1; i >= 0 && running < FILES_AT_ONCE; i--) {
+    var row = transfers[i];
+    if (row.dir !== "up" || row.kind === "folder" || row.state !== "queued") continue;
+    running++;
+    startLoose(row);
+  }
   ensureTicker();
+}
+
+function startLoose(row) {
+  row.state = "active"; row.status = "starting"; row.running = true;
+  pump(row).then(function () { row.running = false; kickUploads(); });
 }
 
 async function createStreams(file, relDir) {
@@ -910,9 +952,13 @@ async function runStream(row, s) {
   while (s.offset < s.length) {
     if (row.state !== "active") return;
     var end = Math.min(s.offset + MAX_PATCH, s.length);
+    await takeConnection();
+    // Paused or cancelled while waiting for a connection: hand it straight back.
+    if (row.state !== "active") { giveConnection(); return; }
     try {
       var before = s.offset;
-      s.offset = await patch(row, s, s.offset, end);
+      try { s.offset = await patch(row, s, s.offset, end); }
+      finally { giveConnection(); }
       if (s.offset > before) s.tries = 0;
     } catch (e) {
       if (row.state !== "active") return;
@@ -970,6 +1016,12 @@ function pauseRow(row) {
 function resumeRow(row) {
   if (row.kind === "folder") { resumeFolder(row); return; }
   if (row.dir === "up" && !row.file) return;
+  if (row.dir === "up" && !row.inFolder) {
+    row.status = "waiting"; row.state = "queued";
+    row.streams.forEach(function (s) { s.tries = 0; });
+    renderTransfers(); kickUploads();
+    return;
+  }
   row.state = "active"; row.status = "resuming";
   row.streams.forEach(function (s) { s.tries = 0; });
   renderTransfers(); ensureTicker();
@@ -987,6 +1039,7 @@ function cancelRow(row) {
   forget(row);
   transfers = transfers.filter(function (r) { return r !== row; });
   renderTransfers();
+  kickUploads();
 }
 
 /**
