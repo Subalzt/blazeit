@@ -56,6 +56,28 @@ object BlazeIcons {
         "M4,14 V18 A2,2 0 0 0 6,20 H18 A2,2 0 0 0 20,18 V14",
     )
 
+    /** A clipboard: paste. */
+    val Paste: ImageVector = stroked(
+        "paste",
+        "M9 5.5H7.5A1.5 1.5 0 0 0 6 7v12a1.5 1.5 0 0 0 1.5 1.5h9A1.5 1.5 0 0 0 18 19V7a1.5 1.5 0 0 0-1.5-1.5H15",
+        "M10 3.5h4a1 1 0 0 1 1 1v1.5a1 1 0 0 1-1 1h-4a1 1 0 0 1-1-1V4.5a1 1 0 0 1 1-1Z",
+    )
+
+    /** Two sheets: copy. */
+    val Copy: ImageVector = stroked(
+        "copy",
+        "M15 8.5V6a1.5 1.5 0 0 0-1.5-1.5H6A1.5 1.5 0 0 0 4.5 6v7.5A1.5 1.5 0 0 0 6 15h2.5",
+        "M10 8.5h8a1.5 1.5 0 0 1 1.5 1.5v8a1.5 1.5 0 0 1-1.5 1.5h-8A1.5 1.5 0 0 1 8.5 18v-8A1.5 1.5 0 0 1 10 8.5Z",
+    )
+
+    /** A bin: clear. */
+    val Trash: ImageVector = stroked(
+        "trash",
+        "M4.5 7h15",
+        "M9.5 7V5a1 1 0 0 1 1-1h3a1 1 0 0 1 1 1v2",
+        "M6.5 7l.8 11.5A1.5 1.5 0 0 0 8.8 20h6.4a1.5 1.5 0 0 0 1.5-1.5L17.5 7",
+    )
+
     /** A chevron pointing on. */
     val Chevron: ImageVector = stroked("chevron", "M9.5,5.5 L16,12 L9.5,18.5")
 

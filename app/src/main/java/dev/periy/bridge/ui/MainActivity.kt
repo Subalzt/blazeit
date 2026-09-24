@@ -13,6 +13,10 @@ import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.material3.Icon
@@ -545,26 +549,53 @@ private fun ClipboardPanel(shared: String, status: String, vm: MainViewModel) {
     var draft by remember { mutableStateOf(shared) }
     LaunchedEffect(shared) { if (shared != draft) draft = shared }
 
-    Column(Modifier.fillMaxWidth().panel().padding(14.dp)) {
-        BridgeTextField(
-            value = draft,
-            onValueChange = { draft = it },
-            placeholder = "Type here, or tap Paste to grab what you last copied.",
-            minHeight = 96.dp,
-        )
-        Spacer(Modifier.height(10.dp))
-        BridgeButton("Send to computer", Modifier.fillMaxWidth()) { vm.sendClipboard(draft) }
-        Spacer(Modifier.height(8.dp))
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            GhostButton("Paste", Modifier.weight(1f)) { vm.pasteFromDevice() }
-            GhostButton("Copy", Modifier.weight(1f)) { vm.copyToDevice() }
-            GhostButton("Clear", Modifier.weight(1f), danger = true) { vm.clearClipboard(); draft = "" }
+    // One sheet: the text sits straight on it, and one row of tools underneath. No boxes
+    // inside the box.
+    Column(Modifier.fillMaxWidth().panel()) {
+        Box(Modifier.fillMaxWidth().heightIn(min = 104.dp).padding(horizontal = 20.dp, vertical = 16.dp)) {
+            if (draft.isEmpty()) {
+                Text("Type here, or tap Paste to grab what you last copied.", style = BodyStyle.copy(fontSize = 15.sp), color = Bridge.Faint)
+            }
+            BasicTextField(
+                value = draft,
+                onValueChange = { draft = it },
+                textStyle = BodyStyle.copy(fontSize = 15.sp, lineHeight = 21.sp, color = Bridge.Text),
+                cursorBrush = SolidColor(Bridge.Yellow),
+                modifier = Modifier.fillMaxWidth(),
+            )
+        }
+        Box(Modifier.fillMaxWidth().padding(horizontal = 18.dp).height(0.5.dp).background(Bridge.Outline))
+        Row(Modifier.fillMaxWidth().padding(start = 8.dp, end = 10.dp, top = 6.dp, bottom = 6.dp), verticalAlignment = Alignment.CenterVertically) {
+            ClipTool(BlazeIcons.Paste, "Paste") { vm.pasteFromDevice() }
+            ClipTool(BlazeIcons.Copy, "Copy") { vm.copyToDevice() }
+            ClipTool(BlazeIcons.Trash, "Clear", tint = Bridge.Danger) { vm.clearClipboard(); draft = "" }
+            Spacer(Modifier.weight(1f))
+            Row(
+                Modifier
+                    .clip(ButtonShape)
+                    .background(Brush.verticalGradient(listOf(Color(0xFFFFE45C), Color(0xFFFFC400))))
+                    .clickable { vm.sendClipboard(draft) }
+                    .padding(start = 14.dp, end = 16.dp, top = 9.dp, bottom = 9.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Icon(BlazeIcons.Upload, null, tint = Bridge.OnYellow, modifier = Modifier.size(17.dp))
+                Spacer(Modifier.width(6.dp))
+                Text("Send to computer", style = TextStyle(fontSize = 14.5.sp, fontWeight = FontWeight.SemiBold), color = Bridge.OnYellow, maxLines = 1)
+            }
         }
         if (status.isNotEmpty()) {
-            Spacer(Modifier.height(8.dp))
-            Text(status, style = LabelStyle, color = Bridge.Good)
+            Text(status, style = LabelStyle, color = Bridge.Good, modifier = Modifier.padding(start = 20.dp, bottom = 12.dp))
         }
     }
+}
+
+/** A quiet tool under the clipboard: just its icon, with no chip around it. */
+@Composable
+private fun ClipTool(icon: androidx.compose.ui.graphics.vector.ImageVector, label: String, tint: Color = Bridge.Text, onClick: () -> Unit) {
+    Box(
+        Modifier.size(44.dp).clip(CircleShape).clickable(onClick = onClick),
+        contentAlignment = Alignment.Center,
+    ) { Icon(icon, label, tint = tint, modifier = Modifier.size(21.dp)) }
 }
 
 // ---------------------------------------------------------------------- tab: phones
@@ -808,10 +839,15 @@ private fun LazyListScope.setupTab(
                 first = true,
                 onClick = pickFolder,
             ) { Text("Change", style = LabelStyle, color = Bridge.Yellow) }
-            SettingRow("Largest file accepted") {}
+            SettingRow(
+                "Largest file accepted",
+                if (state.maxUploadSize == Long.MAX_VALUE) "No limit: anything that fits in the free space." else null,
+            ) {}
             Box(Modifier.padding(start = 16.dp, end = 16.dp, bottom = 12.dp)) {
-                SegmentedRow(listOf("4 GB", "12 GB", "32 GB", "64 GB"), listOf(4L, 12L, 32L, 64L).indexOf(state.maxUploadSize / (1024L * 1024 * 1024))) {
-                    vm.setMaxUploadSize(listOf(4L, 12L, 32L, 64L)[it] * 1024 * 1024 * 1024)
+                // Long.MAX_VALUE is "no limit": the free-space check on every upload is then the only one.
+                val sizes = listOf(4L shl 30, 12L shl 30, 32L shl 30, 64L shl 30, Long.MAX_VALUE)
+                SegmentedRow(listOf("4 GB", "12 GB", "32 GB", "64 GB", "No limit"), sizes.indexOf(state.maxUploadSize)) {
+                    vm.setMaxUploadSize(sizes[it])
                 }
             }
             SettingRow("Always stage in app storage", "Slower but always safe. Only if files arrive damaged.") {
@@ -831,10 +867,17 @@ private fun LazyListScope.setupTab(
             }
             SettingRow(
                 if (state.hotspotActive) "Hotspot is on" else "Work offline with the hotspot",
-                if (state.hotspotActive) "Join the computer to it for the fastest link."
-                else "A direct link, no internet needed, and faster than going through a router.",
+                if (state.hotspotActive) "Join the computer to it: the fastest wireless link."
+                else "The fastest wireless link: direct, no internet needed, no router in between.",
                 onClick = { vm.tetherSettingsIntent()?.let(openSettings) },
             ) { Text("Open", style = LabelStyle, color = Bridge.Yellow) }
+            SettingRow(
+                "Fastest of all: a USB-C cable",
+                "Plug the phone into the laptop and turn on USB tethering. A cable has no radio to share " +
+                    "and no interference, so it is the quickest and steadiest link. BlazeIt then shows " +
+                    "the cable's address on Home.",
+                onClick = { vm.tetherSettingsIntent()?.let(openSettings) },
+            ) { Text("Set up", style = LabelStyle, color = Bridge.Yellow) }
         }
     }
 
