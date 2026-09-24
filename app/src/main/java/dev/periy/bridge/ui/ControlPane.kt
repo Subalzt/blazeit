@@ -49,7 +49,14 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.withFrameMillis
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.layout.boundsInParent
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.unit.sp
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.width
 import androidx.compose.ui.input.pointer.PointerInputChange
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.input.pointer.util.VelocityTracker
@@ -106,36 +113,14 @@ fun ControlPane(running: Boolean, onStart: () -> Unit, modifier: Modifier = Modi
 
     // Whichever is taller, the keyboard or the navigation bar, and never both stacked.
     Column(modifier.windowInsetsPadding(WindowInsets.ime.union(WindowInsets.navigationBars))) {
-        SectionBar(
-            when {
-                !running -> "Xoosh is off"
-                laptops.isEmpty() -> "No laptop listening"
-                else -> "Controlling " + laptops.first().removePrefix("Laptop control on ")
-            }
-        ) {
-            listOf("Slow" to 0.6f, "Normal" to 1f, "Fast" to 1.6f).forEach { (label, k) ->
-                val on = abs(pad.speed - k) < 0.01f
-                Text(
-                    label.uppercase(),
-                    style = LabelStyle,
-                    color = if (on) Bridge.OnYellow else Bridge.OnBar,
-                    modifier = Modifier
-                        .padding(start = 4.dp)
-                        .background(if (on) Bridge.Yellow else androidx.compose.ui.graphics.Color.Transparent)
-                        .clickable { pad.chooseSpeed(k) }
-                        .padding(horizontal = 8.dp, vertical = 4.dp),
-                )
-            }
-        }
-
         if (!running || laptops.isEmpty()) {
             Column(Modifier.fillMaxWidth().panel().padding(14.dp)) {
                 if (!running) {
-                    Text("Start Xoosh, then run the helper on the laptop.", style = BodyStyle, color = Bridge.Text)
+                    Text("Start BlazeIt, then run the helper on the laptop.", style = BodyStyle, color = Bridge.Text)
                     BridgeButton("Start", Modifier.padding(top = 10.dp), onClick = onStart)
                 } else {
                     Text(
-                        "On the laptop, run xoosh-pc.bat (the Xoosh page has it under Laptop control). " +
+                        "On the laptop, run blazeit-pc.bat (the BlazeIt page has it under Laptop control). " +
                             "It finds this phone by itself and asks you to allow it here once.",
                         style = BodyStyle, color = Bridge.Text,
                     )
@@ -143,7 +128,12 @@ fun ControlPane(running: Boolean, onStart: () -> Unit, modifier: Modifier = Modi
             }
         }
 
-        Trackpad(pad, Modifier.weight(1f).fillMaxWidth())
+        val status = when {
+            !running -> "Off"
+            laptops.isEmpty() -> "No laptop"
+            else -> laptops.first().removePrefix("Laptop control on ")
+        }
+        Trackpad(pad, status, laptops.isNotEmpty(), Modifier.weight(1f).fillMaxWidth())
 
         // With the keyboard up, the keys sit directly on top of it and the mouse buttons
         // move above them. The key row keeps its place in the tree either way: rebuilding
@@ -205,9 +195,12 @@ private class PadState(private val ctx: Context) {
 private enum class Mode { UNDECIDED, POINT, DRAG, SCROLL, PINCH, SWIPE3, SWITCHER, SWIPE4, DONE }
 
 @Composable
-private fun Trackpad(pad: PadState, modifier: Modifier) {
+private fun Trackpad(pad: PadState, status: String, live: Boolean, modifier: Modifier) {
     val view = LocalView.current
     val scope = rememberCoroutineScope()
+    // Where the speed control sits, in the pad's own coordinates. A touch that starts
+    // there belongs to the control, not to the pointer.
+    var speedArea by remember { mutableStateOf(Rect.Zero) }
     var fling by remember { mutableStateOf<Job?>(null) }
     var lastTapAt by remember { mutableStateOf(0L) }
     var lastTapPos by remember { mutableStateOf(Offset.Zero) }
@@ -226,6 +219,7 @@ private fun Trackpad(pad: PadState, modifier: Modifier) {
 
                 awaitEachGesture {
                     val first = awaitFirstDown(requireUnconsumed = false)
+                    if (speedArea.contains(first.position)) return@awaitEachGesture
                     fling?.cancel()
                     val t0 = first.uptimeMillis
                     val dragArmed = t0 - lastTapAt < DOUBLE_TAP_MS &&
@@ -376,6 +370,18 @@ private fun Trackpad(pad: PadState, modifier: Modifier) {
         contentAlignment = Alignment.Center,
     ) {
         Text(
+            (if (live) "● " else "○ ") + status.uppercase(),
+            style = LabelStyle.copy(fontSize = 10.sp),
+            color = if (live) Bridge.Text else Bridge.Muted,
+            modifier = Modifier.align(Alignment.TopStart).padding(12.dp),
+        )
+        SpeedControl(
+            pad,
+            Modifier
+                .align(Alignment.TopEnd)
+                .onGloballyPositioned { speedArea = it.boundsInParent() },
+        )
+        Text(
             "Move with one finger · tap to click\nTwo fingers scroll · pinch zooms · tap for right click\n" +
                 "Three fingers: up Task View · down desktop · sideways switch apps\n" +
                 "Four fingers sideways switch desktops",
@@ -386,6 +392,38 @@ private fun Trackpad(pad: PadState, modifier: Modifier) {
         )
     }
 }
+
+/**
+ * Pointer speed as one quiet control in the pad's corner: three bars and a word, and a
+ * tap moves to the next speed.
+ */
+@Composable
+private fun SpeedControl(pad: PadState, modifier: Modifier) {
+    val view = LocalView.current
+    val level = SPEEDS.indexOfFirst { abs(it.second - pad.speed) < 0.01f }.coerceAtLeast(0)
+    Row(
+        modifier
+            .clickable {
+                view.performHapticFeedback(HapticFeedbackConstants.CLOCK_TICK)
+                pad.chooseSpeed(SPEEDS[(level + 1) % SPEEDS.size].second)
+            }
+            .padding(12.dp),
+        verticalAlignment = Alignment.Bottom,
+    ) {
+        Text(SPEEDS[level].first.uppercase(), style = LabelStyle.copy(fontSize = 10.sp), color = Bridge.Muted)
+        Spacer(Modifier.width(6.dp))
+        SPEEDS.indices.forEach { i ->
+            Box(
+                Modifier
+                    .padding(start = 2.dp)
+                    .size(width = 3.dp, height = (5 + i * 3).dp)
+                    .background(if (i <= level) Bridge.Yellow else Bridge.Chip),
+            )
+        }
+    }
+}
+
+private val SPEEDS = listOf("Slow" to 0.6f, "Normal" to 1f, "Fast" to 1.6f)
 
 /** Log of how much the two fingers moved apart since the previous event. */
 private fun spanChange(two: List<PointerInputChange>): Float {
@@ -468,6 +506,7 @@ private fun KeyChip(label: String, modifier: Modifier = Modifier, on: Boolean = 
         modifier
             .widthIn(min = 44.dp)
             .height(38.dp)
+            .clip(BlockShape)
             .background(if (on) Bridge.Yellow else Bridge.Chip)
             .clickable {
                 view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
@@ -476,7 +515,7 @@ private fun KeyChip(label: String, modifier: Modifier = Modifier, on: Boolean = 
             .padding(horizontal = 10.dp),
         contentAlignment = Alignment.Center,
     ) {
-        Text(label.uppercase(), style = LabelStyle, color = if (on) Bridge.OnYellow else Bridge.Text)
+        Text(label, style = LabelStyle, color = if (on) Bridge.OnYellow else Bridge.Text)
     }
 }
 
@@ -487,8 +526,10 @@ private fun HoldButton(label: String, modifier: Modifier, pad: PadState, button:
     var down by remember { mutableStateOf(false) }
     Box(
         modifier
+            .padding(horizontal = 4.dp, vertical = 3.dp)
+            .clip(BlockShape)
             .background(if (down) Bridge.Yellow else Bridge.Paper)
-            .border(BorderStroke(1.dp, Bridge.Outline))
+            .border(BorderStroke(0.5.dp, Bridge.Outline), BlockShape)
             .pointerInput(button) {
                 awaitEachGesture {
                     awaitFirstDown()
@@ -506,7 +547,7 @@ private fun HoldButton(label: String, modifier: Modifier, pad: PadState, button:
             },
         contentAlignment = Alignment.Center,
     ) {
-        Text(label.uppercase(), style = LabelStyle, color = if (down) Bridge.OnYellow else Bridge.Text)
+        Text(label, style = LabelStyle, color = if (down) Bridge.OnYellow else Bridge.Text)
     }
 }
 
