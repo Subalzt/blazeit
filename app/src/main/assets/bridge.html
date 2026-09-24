@@ -575,6 +575,83 @@
   .steps li { margin: 6px 0; }
   .steps li::marker { color: var(--accent); font-weight: 700; }
   @media (max-width: 900px) { .tabs::before, .side-foot::before { display: none; } .side { background: rgba(8,10,18,.85); } }
+
+  /* ================================================================ straight, edge-docked panels
+     The sidebar and the docked monitor run the full height of the window, flush to its
+     edges, square-cornered, divided from the page by a single hairline. The player floats
+     in the page between them. */
+  .side, body.mon-dock .mon-sheet { top: 0; bottom: 0; border-radius: 0; }
+  .side { left: 0; box-shadow: 1px 0 0 var(--hud-line), 12px 0 40px rgba(0,0,0,.25); transition: width .22s ease; overflow: hidden; }
+  body.mon-dock .mon-sheet { right: 0; box-shadow: -1px 0 0 var(--hud-line), -12px 0 40px rgba(0,0,0,.25); }
+  .side::before { background: linear-gradient(180deg, var(--accent), rgba(255,214,10,0)) 100% 22px / 1px 72px no-repeat; }
+  body.mon-dock .mon-sheet::before { background: linear-gradient(180deg, var(--accent), rgba(255,214,10,0)) 0 22px / 1px 72px no-repeat; }
+  .main { margin-left: var(--side); padding: 36px 44px calc(var(--player-h, 0px) + 60px); transition: margin .22s ease; }
+  body.mon-dock .main { margin-right: var(--panel); }
+  .player { left: calc(var(--side) + 18px); right: 18px; bottom: 16px; transition: left .22s ease; }
+  body.mon-dock .player { right: calc(var(--panel) + 18px); }
+  .dock { bottom: calc(var(--player-h, 0px) + 32px); }
+
+  /* top of the sidebar: the mark, and the button that folds the sidebar away */
+  .side-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 2px 2px 24px 10px; }
+  .side-top .logo { padding: 0; min-width: 0; }
+  .side-collapse { flex: 0 0 auto; width: 30px; height: 30px; display: grid; place-items: center; padding: 0; cursor: pointer;
+    border: 0; border-radius: 7px; background: transparent; color: var(--hud-label); box-shadow: inset 0 0 0 1px var(--hud-line); }
+  .side-collapse:hover { color: #fff; box-shadow: inset 0 0 0 1px rgba(255,255,255,.25); }
+  .side-collapse svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; transition: transform .22s ease; }
+
+  /* folded: a rail of icons, labels as tooltips */
+  body.side-collapsed { --side: 72px; }
+  body.side-collapsed .side { padding: 18px 12px 14px; }
+  body.side-collapsed .side-top { flex-direction: column; padding: 0 0 22px; gap: 14px; }
+  body.side-collapsed .side-collapse svg { transform: scaleX(-1); }
+  body.side-collapsed .wordmark, body.side-collapsed .tabs button span, body.side-collapsed .side-item span,
+  body.side-collapsed .tabs::before, body.side-collapsed .side-foot::before, body.side-collapsed .status-text,
+  body.side-collapsed .switch { display: none; }
+  body.side-collapsed .tabs button, body.side-collapsed .side-item { justify-content: center; padding: 11px 0; position: relative; }
+  body.side-collapsed .tabs .count, body.side-collapsed .tabs .eq { position: absolute; top: 4px; right: 4px; margin: 0; transform: scale(.8); }
+  body.side-collapsed .mon-toggle.on svg { stroke: var(--accent); filter: drop-shadow(0 0 4px rgba(255,214,10,.8)); }
+  body.side-collapsed .status { justify-content: center; padding: 12px 0; }
+
+  /* ================================================================ clipboard, as a compose box
+     The text sits straight on the card with the send button in its corner; underneath, one
+     toolbar split into three even parts. The same on the phone. */
+  .clip-card { padding: 0; overflow: hidden; }
+  .clip-field { position: relative; padding: 18px 20px 16px; }
+  .clip-field textarea {
+    display: block; min-height: 150px; padding: 0 60px 26px 0; resize: vertical;
+    background: transparent; border: 0; box-shadow: none; border-radius: 0; font-size: 15px; line-height: 1.55;
+  }
+  .clip-field textarea:focus { box-shadow: none; border: 0; }
+  .clip-status { position: absolute; left: 20px; bottom: 16px; color: var(--good); }
+  .send-round {
+    position: absolute; right: 16px; bottom: 16px; width: 44px; height: 44px; display: grid; place-items: center; padding: 0;
+    border: 0; border-radius: 50%; cursor: pointer; color: #111;
+    background: linear-gradient(180deg, #FFE45C, #FFC400);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.7), 0 8px 20px rgba(255,196,0,.28);
+    transition: transform .1s, filter .12s;
+  }
+  .send-round:hover { filter: brightness(1.06); }
+  .send-round:active { transform: scale(.94); }
+  .send-round svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+  .clip-tools { display: flex; border-top: 1px solid rgba(255,255,255,.1); }
+  .tool { flex: 1 1 0; display: flex; align-items: center; justify-content: center; gap: 8px; height: 48px; padding: 0;
+    border: 0; background: transparent; color: var(--txt); font: inherit; font-size: 13.5px; font-weight: 600; cursor: pointer;
+    transition: background .12s; }
+  .tool + .tool { box-shadow: inset 1px 0 0 rgba(255,255,255,.1); }
+  .tool:hover { background: rgba(255,255,255,.06); }
+  .tool.danger { color: #FF6961; }
+  .tool svg { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+  .note.under { margin: 10px 6px 0; }
+
+  @media (max-width: 900px) {
+    .side { top: auto; bottom: 0; }
+    .side-top { display: none; }
+    .player { left: 12px; right: 12px; bottom: 76px; }
+    .main { margin-left: 0; }
+  }
+  .clip-card { display: flex; flex-direction: column; }
+  .clip-field { flex: 1 1 auto; display: flex; flex-direction: column; }
+  .clip-field textarea { flex: 1 1 auto; }
 </style>
 </head>
 <body>
@@ -604,10 +681,13 @@
 <!-- -------------------------------------------------------------------- app -->
 <div class="shell" id="app" hidden>
   <aside class="side">
-    <div class="logo"><svg class="mark" viewBox="0 0 108 108" aria-hidden="true"><defs><linearGradient id="m-bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#2A2270"/><stop offset=".55" stop-color="#0C0C18"/><stop offset="1" stop-color="#08080E"/></linearGradient><radialGradient id="m-g1" cx="98" cy="18" r="48" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#64D2FF" stop-opacity=".44"/><stop offset="1" stop-color="#64D2FF" stop-opacity="0"/></radialGradient><radialGradient id="m-g2" cx="30" cy="100" r="56" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#FFB000" stop-opacity=".4"/><stop offset="1" stop-color="#FFB000" stop-opacity="0"/></radialGradient><radialGradient id="m-g3" cx="104" cy="104" r="50" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#BF5AF2" stop-opacity=".4"/><stop offset="1" stop-color="#BF5AF2" stop-opacity="0"/></radialGradient><linearGradient id="m-body" x1="330" y1="272" x2="520" y2="586" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#FFF4A8"/><stop offset=".42" stop-color="#FFD60A"/><stop offset="1" stop-color="#FF9F0A"/></linearGradient><linearGradient id="m-gloss" x1="0" y1="260" x2="0" y2="440" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#fff" stop-opacity=".5"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient><linearGradient id="m-rim" x1="295" y1="272" x2="580" y2="586" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#fff" stop-opacity=".95"/><stop offset=".45" stop-color="#fff" stop-opacity="0"/><stop offset=".8" stop-color="#fff" stop-opacity="0"/><stop offset="1" stop-color="#fff" stop-opacity=".6"/></linearGradient><clipPath id="m-glyph"><path d="M295,272 H371 V358 A127.5,127.5 0 1 1 371,551 V586 H295 V484 H433 V527 L527,458 L433,386 V430 H295 Z"/></clipPath><filter id="m-soft" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="10"/></filter></defs><rect width="108" height="108" rx="24" fill="url(#m-bg)"/><rect width="108" height="108" rx="24" fill="url(#m-g1)"/><rect width="108" height="108" rx="24" fill="url(#m-g2)"/><rect width="108" height="108" rx="24" fill="url(#m-g3)"/><g transform="translate(54 54) scale(0.152) translate(-438.5 -429)"><path d="M295,272 H371 V358 A127.5,127.5 0 1 1 371,551 V586 H295 V484 H433 V527 L527,458 L433,386 V430 H295 Z" transform="translate(6 22)" fill="#000" fill-opacity=".45" filter="url(#m-soft)"/><path d="M295,272 H371 V358 A127.5,127.5 0 1 1 371,551 V586 H295 V484 H433 V527 L527,458 L433,386 V430 H295 Z" fill="url(#m-body)"/><path d="M270,250 H600 V420 Q440,380 270,440 Z" fill="url(#m-gloss)" clip-path="url(#m-glyph)"/><path d="M295,272 H371 V358 A127.5,127.5 0 1 1 371,551 V586 H295 V484 H433 V527 L527,458 L433,386 V430 H295 Z" fill="none" stroke="url(#m-rim)" stroke-width="7" stroke-linejoin="round"/></g></svg><span class="wordmark">BlazeIt</span></div>
+    <div class="side-top">
+      <div class="logo"><svg class="mark" viewBox="0 0 108 108" aria-hidden="true"><defs><linearGradient id="m-bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#2A2270"/><stop offset=".55" stop-color="#0C0C18"/><stop offset="1" stop-color="#08080E"/></linearGradient><radialGradient id="m-g1" cx="98" cy="18" r="48" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#64D2FF" stop-opacity=".44"/><stop offset="1" stop-color="#64D2FF" stop-opacity="0"/></radialGradient><radialGradient id="m-g2" cx="30" cy="100" r="56" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#FFB000" stop-opacity=".4"/><stop offset="1" stop-color="#FFB000" stop-opacity="0"/></radialGradient><radialGradient id="m-g3" cx="104" cy="104" r="50" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#BF5AF2" stop-opacity=".4"/><stop offset="1" stop-color="#BF5AF2" stop-opacity="0"/></radialGradient><linearGradient id="m-body" x1="330" y1="272" x2="520" y2="586" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#FFF4A8"/><stop offset=".42" stop-color="#FFD60A"/><stop offset="1" stop-color="#FF9F0A"/></linearGradient><linearGradient id="m-gloss" x1="0" y1="260" x2="0" y2="440" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#fff" stop-opacity=".5"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient><linearGradient id="m-rim" x1="295" y1="272" x2="580" y2="586" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#fff" stop-opacity=".95"/><stop offset=".45" stop-color="#fff" stop-opacity="0"/><stop offset=".8" stop-color="#fff" stop-opacity="0"/><stop offset="1" stop-color="#fff" stop-opacity=".6"/></linearGradient><clipPath id="m-glyph"><path d="M295,272 H371 V358 A127.5,127.5 0 1 1 371,551 V586 H295 V484 H433 V527 L527,458 L433,386 V430 H295 Z"/></clipPath><filter id="m-soft" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="10"/></filter></defs><rect width="108" height="108" rx="24" fill="url(#m-bg)"/><rect width="108" height="108" rx="24" fill="url(#m-g1)"/><rect width="108" height="108" rx="24" fill="url(#m-g2)"/><rect width="108" height="108" rx="24" fill="url(#m-g3)"/><g transform="translate(54 54) scale(0.152) translate(-438.5 -429)"><path d="M295,272 H371 V358 A127.5,127.5 0 1 1 371,551 V586 H295 V484 H433 V527 L527,458 L433,386 V430 H295 Z" transform="translate(6 22)" fill="#000" fill-opacity=".45" filter="url(#m-soft)"/><path d="M295,272 H371 V358 A127.5,127.5 0 1 1 371,551 V586 H295 V484 H433 V527 L527,458 L433,386 V430 H295 Z" fill="url(#m-body)"/><path d="M270,250 H600 V420 Q440,380 270,440 Z" fill="url(#m-gloss)" clip-path="url(#m-glyph)"/><path d="M295,272 H371 V358 A127.5,127.5 0 1 1 371,551 V586 H295 V484 H433 V527 L527,458 L433,386 V430 H295 Z" fill="none" stroke="url(#m-rim)" stroke-width="7" stroke-linejoin="round"/></g></svg><span class="wordmark">BlazeIt</span></div>
+      <button class="side-collapse" id="side-collapse" title="Collapse the sidebar"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5.5h16v13H4z"/><path d="M9.5 5.5v13"/><path d="m15.5 10-2 2 2 2"/></svg></button>
+    </div>
     <nav class="tabs" id="tabs"></nav>
     <div class="side-foot">
-      <button class="side-item mon-toggle" id="mon-toggle" title="Live speed, ping and the Wi-Fi link">
+      <button class="side-item mon-toggle" id="mon-toggle" title="Monitor: live speed, ping and the Wi-Fi link">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12h4l3-7 5 14 3-9 2 2h3"/></svg><span>Monitor</span><i class="switch"></i>
       </button>
       <button class="theme-toggle" id="theme-toggle" hidden></button>
@@ -626,18 +706,20 @@
     <div class="grid2">
     <div class="block">
     <div class="bar">Clipboard</div>
-    <div class="pad">
-      <textarea id="clip" placeholder="Type or paste text here, then send it to the phone."></textarea>
-      <div class="actions">
-        <button id="clip-send" class="btn">Send to phone</button>
-        <button id="clip-copy" class="btn ghost">Copy to my clipboard</button>
-        <button id="clip-clear" class="btn ghost danger">Clear</button>
-        <span class="grow"></span>
-        <span class="meta" id="clip-status" style="align-self:center"></span>
+    <div class="pad clip-card">
+      <div class="clip-field">
+        <textarea id="clip" placeholder="Type or paste text here, then send it to the phone."></textarea>
+        <span class="meta clip-status" id="clip-status"></span>
+        <button id="clip-send" class="send-round" title="Send to the phone (Ctrl+Enter)"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 19V5.5"/><path d="M6.5 11 12 5.5 17.5 11"/></svg></button>
       </div>
-      <p class="note">From the phone: copy anything there, open BlazeIt and tap <b>Paste</b>. It lands here in a moment.</p>
-      <p class="note" id="clip-note"></p>
+      <div class="clip-tools">
+        <button class="tool" id="clip-paste" title="Paste what this computer last copied"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5.5H7.5A1.5 1.5 0 0 0 6 7v12a1.5 1.5 0 0 0 1.5 1.5h9A1.5 1.5 0 0 0 18 19V7a1.5 1.5 0 0 0-1.5-1.5H15"/><path d="M10 3.5h4a1 1 0 0 1 1 1v1.5a1 1 0 0 1-1 1h-4a1 1 0 0 1-1-1V4.5a1 1 0 0 1 1-1Z"/></svg><span>Paste</span></button>
+        <button class="tool" id="clip-copy" title="Copy the text to this computer"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 8.5V6a1.5 1.5 0 0 0-1.5-1.5H6A1.5 1.5 0 0 0 4.5 6v7.5A1.5 1.5 0 0 0 6 15h2.5"/><path d="M10 8.5h8a1.5 1.5 0 0 1 1.5 1.5v8a1.5 1.5 0 0 1-1.5 1.5h-8A1.5 1.5 0 0 1 8.5 18v-8A1.5 1.5 0 0 1 10 8.5Z"/></svg><span>Copy</span></button>
+        <button class="tool danger" id="clip-clear" title="Clear here and on the phone"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 7h15"/><path d="M9.5 7V5a1 1 0 0 1 1-1h3a1 1 0 0 1 1 1v2"/><path d="M6.5 7l.8 11.5A1.5 1.5 0 0 0 8.8 20h6.4a1.5 1.5 0 0 0 1.5-1.5L17.5 7"/></svg><span>Clear</span></button>
+      </div>
     </div>
+    <p class="note under">From the phone: copy anything there, open BlazeIt and tap <b>Paste</b>. It lands here in a moment.</p>
+    <p class="note under" id="clip-note"></p>
     </div>
 
     <div class="block">
@@ -1213,6 +1295,19 @@ function setupClipboard() {
       body: JSON.stringify({ text: $("clip").value }),
     });
     flash(res.ok ? "Sent to the phone" : "Too long to send");
+  });
+
+  // Paste: the clipboard API where the browser allows it (the laptop helper's localhost
+  // page); otherwise the box takes focus and Ctrl+V does it.
+  $("clip-paste").addEventListener("click", async function () {
+    if (navigator.clipboard && navigator.clipboard.readText) {
+      try { $("clip").value = await navigator.clipboard.readText(); flash("Pasted, not yet sent"); return; } catch (e) {}
+    }
+    $("clip").focus();
+    flash("Press Ctrl+V to paste");
+  });
+  $("clip").addEventListener("keydown", function (e) {
+    if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) { e.preventDefault(); $("clip-send").click(); }
   });
 
   $("clip-copy").addEventListener("click", function () {
@@ -2794,6 +2889,14 @@ function showApp() {
     wireMonitor();
     $("theme-toggle").onclick = toggleTheme;
     $("measure").addEventListener("click", measure);
+    // The sidebar folds down to a rail of icons; this computer remembers which.
+    var setRail = function (on) {
+      document.body.classList.toggle("side-collapsed", on);
+      $("side-collapse").title = on ? "Expand the sidebar" : "Collapse the sidebar";
+      try { localStorage.setItem("blazeit.rail", on ? "1" : "0"); } catch (e) {}
+    };
+    $("side-collapse").addEventListener("click", function () { setRail(!document.body.classList.contains("side-collapsed")); });
+    try { setRail(localStorage.getItem("blazeit.rail") === "1"); } catch (e) {}
     $("usb-link").addEventListener("click", function (e) { e.preventDefault(); selectTab("settings"); });
     Array.prototype.forEach.call($("theme-seg").children, function (b) {
       b.addEventListener("click", function () { setOled(b.dataset.v === "oled"); });
