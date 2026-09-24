@@ -3,240 +3,297 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
 <title>BlazeIt</title>
-<link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20108%20108%22%3E%3Cdefs%3E%3ClinearGradient%20id%3D%22bg%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%221%22%20y2%3D%221%22%3E%3Cstop%20offset%3D%220%22%20stop-color%3D%22%232A2270%22%2F%3E%3Cstop%20offset%3D%22.55%22%20stop-color%3D%22%230C0C18%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%2308080E%22%2F%3E%3C%2FlinearGradient%3E%3CradialGradient%20id%3D%22g1%22%20cx%3D%2298%22%20cy%3D%2218%22%20r%3D%2248%22%20gradientUnits%3D%22userSpaceOnUse%22%3E%3Cstop%20offset%3D%220%22%20stop-color%3D%22%2364D2FF%22%20stop-opacity%3D%22.44%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%2364D2FF%22%20stop-opacity%3D%220%22%2F%3E%3C%2FradialGradient%3E%3CradialGradient%20id%3D%22g2%22%20cx%3D%2230%22%20cy%3D%22100%22%20r%3D%2256%22%20gradientUnits%3D%22userSpaceOnUse%22%3E%3Cstop%20offset%3D%220%22%20stop-color%3D%22%23FFB000%22%20stop-opacity%3D%22.4%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%23FFB000%22%20stop-opacity%3D%220%22%2F%3E%3C%2FradialGradient%3E%3CradialGradient%20id%3D%22g3%22%20cx%3D%22104%22%20cy%3D%22104%22%20r%3D%2250%22%20gradientUnits%3D%22userSpaceOnUse%22%3E%3Cstop%20offset%3D%220%22%20stop-color%3D%22%23BF5AF2%22%20stop-opacity%3D%22.4%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%23BF5AF2%22%20stop-opacity%3D%220%22%2F%3E%3C%2FradialGradient%3E%3ClinearGradient%20id%3D%22body%22%20x1%3D%22330%22%20y1%3D%22272%22%20x2%3D%22520%22%20y2%3D%22586%22%20gradientUnits%3D%22userSpaceOnUse%22%3E%3Cstop%20offset%3D%220%22%20stop-color%3D%22%23FFF4A8%22%2F%3E%3Cstop%20offset%3D%22.42%22%20stop-color%3D%22%23FFD60A%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%23FF9F0A%22%2F%3E%3C%2FlinearGradient%3E%3ClinearGradient%20id%3D%22gloss%22%20x1%3D%220%22%20y1%3D%22260%22%20x2%3D%220%22%20y2%3D%22440%22%20gradientUnits%3D%22userSpaceOnUse%22%3E%3Cstop%20offset%3D%220%22%20stop-color%3D%22%23fff%22%20stop-opacity%3D%22.5%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%23fff%22%20stop-opacity%3D%220%22%2F%3E%3C%2FlinearGradient%3E%3ClinearGradient%20id%3D%22rim%22%20x1%3D%22295%22%20y1%3D%22272%22%20x2%3D%22580%22%20y2%3D%22586%22%20gradientUnits%3D%22userSpaceOnUse%22%3E%3Cstop%20offset%3D%220%22%20stop-color%3D%22%23fff%22%20stop-opacity%3D%22.95%22%2F%3E%3Cstop%20offset%3D%22.45%22%20stop-color%3D%22%23fff%22%20stop-opacity%3D%220%22%2F%3E%3Cstop%20offset%3D%22.8%22%20stop-color%3D%22%23fff%22%20stop-opacity%3D%220%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%23fff%22%20stop-opacity%3D%22.6%22%2F%3E%3C%2FlinearGradient%3E%3CclipPath%20id%3D%22glyph%22%3E%3Cpath%20d%3D%22M295%2C272%20H371%20V358%20A127.5%2C127.5%200%201%201%20371%2C551%20V586%20H295%20V484%20H433%20V527%20L527%2C458%20L433%2C386%20V430%20H295%20Z%22%2F%3E%3C%2FclipPath%3E%3Cfilter%20id%3D%22soft%22%20x%3D%22-20%25%22%20y%3D%22-20%25%22%20width%3D%22140%25%22%20height%3D%22140%25%22%3E%3CfeGaussianBlur%20stdDeviation%3D%2210%22%2F%3E%3C%2Ffilter%3E%3C%2Fdefs%3E%3Crect%20width%3D%22108%22%20height%3D%22108%22%20rx%3D%2224%22%20fill%3D%22url(%23bg)%22%2F%3E%3Crect%20width%3D%22108%22%20height%3D%22108%22%20rx%3D%2224%22%20fill%3D%22url(%23g1)%22%2F%3E%3Crect%20width%3D%22108%22%20height%3D%22108%22%20rx%3D%2224%22%20fill%3D%22url(%23g2)%22%2F%3E%3Crect%20width%3D%22108%22%20height%3D%22108%22%20rx%3D%2224%22%20fill%3D%22url(%23g3)%22%2F%3E%3Cg%20transform%3D%22translate(54%2054)%20scale(0.152)%20translate(-438.5%20-429)%22%3E%3Cpath%20d%3D%22M295%2C272%20H371%20V358%20A127.5%2C127.5%200%201%201%20371%2C551%20V586%20H295%20V484%20H433%20V527%20L527%2C458%20L433%2C386%20V430%20H295%20Z%22%20transform%3D%22translate(6%2022)%22%20fill%3D%22%23000%22%20fill-opacity%3D%22.45%22%20filter%3D%22url(%23soft)%22%2F%3E%3Cpath%20d%3D%22M295%2C272%20H371%20V358%20A127.5%2C127.5%200%201%201%20371%2C551%20V586%20H295%20V484%20H433%20V527%20L527%2C458%20L433%2C386%20V430%20H295%20Z%22%20fill%3D%22url(%23body)%22%2F%3E%3Cpath%20d%3D%22M270%2C250%20H600%20V420%20Q440%2C380%20270%2C440%20Z%22%20fill%3D%22url(%23gloss)%22%20clip-path%3D%22url(%23glyph)%22%2F%3E%3Cpath%20d%3D%22M295%2C272%20H371%20V358%20A127.5%2C127.5%200%201%201%20371%2C551%20V586%20H295%20V484%20H433%20V527%20L527%2C458%20L433%2C386%20V430%20H295%20Z%22%20fill%3D%22none%22%20stroke%3D%22url(%23rim)%22%20stroke-width%3D%227%22%20stroke-linejoin%3D%22round%22%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%23FFC21A'/%3E%3Cpath d='M36 10 17 36h14l-3 18 19-26H33l3-18Z' fill='%2315120A'/%3E%3C/svg%3E">
 <style>
-  /* BlazeIt, for a laptop screen.
-     A sidebar for where you are, the page across the rest of the width, the monitor as a
-     panel docked on the right while it is on, and the player docked along the bottom.
-     Surfaces are quiet; glass is kept for the chrome that floats over content. Corners
-     are small and consistent: 12px for cards, 8px for controls. One accent, the yellow. */
+  /* BlazeIt on a laptop: the same look as the app on the phone.
+     Solid surfaces on a quiet background, big clear type, and colour used the way a home
+     screen uses it: small bright tiles that say what a thing is. Nothing is blurred, so
+     nothing costs a frame. Light or dark follows the computer, unless the phone's
+     Settings (or this page's) picks one; the choice is shared by every screen. */
   :root {
-    --accent: #FFD60A;
-    --txt: rgba(255,255,255,.94);
-    --sub: rgba(235,235,245,.6);
-    --faint: rgba(235,235,245,.32);
-    --surface: rgba(255,255,255,.045);
-    --surface-2: rgba(255,255,255,.08);
-    --surface-3: rgba(255,255,255,.14);
-    --hover: rgba(255,255,255,.06);
-    --line: rgba(255,255,255,.08);
-    --line-2: rgba(255,255,255,.16);
-    --glass: rgba(22,22,28,.62);
-    --glass-strong: rgba(24,24,30,.86);
-    --blur: blur(30px) saturate(180%);
-    --good: #30D158;
-    --bad: #FF453A;
-    --blue: #0A84FF;
-    --music: #BF5AF2;
-    --side: 232px;
-    --panel: 400px;
-    --r-lg: 12px;
-    --r: 8px;
-    --mono: ui-monospace, "SF Mono", "Cascadia Mono", Menlo, monospace;
+    --bg: #F2F2F5; --surface: #FFFFFF; --surface-2: #EFEFF3; --surface-3: #E4E4EA;
+    --txt: #0B0B0D; --sub: #6C6C75; --faint: #ABABB4; --line: rgba(0,0,0,.08);
+    --accent: #FFC21A; --on-accent: #15120A;
+    --blue: #1F78FF; --good: #1FB855; --orange: #FF7A1A; --purple: #7B5CFF; --bad: #F23B30; --music: #FF2D55;
+    --shadow: 0 1px 2px rgba(0,0,0,.04), 0 6px 20px rgba(0,0,0,.05);
+    --float-shadow: 0 10px 40px rgba(0,0,0,.14), 0 1px 3px rgba(0,0,0,.06);
+    --scrim: rgba(0,0,0,.28);
+    --side: 244px; --panel: 400px;
+    --r-card: 24px; --r: 14px;
+    --mono: ui-monospace, "Cascadia Mono", "SF Mono", Menlo, Consolas, monospace;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #000000; --surface: #151518; --surface-2: #232328; --surface-3: #2E2E34;
+      --txt: #F5F5F7; --sub: #9C9CA5; --faint: #5A5A62; --line: rgba(255,255,255,.09);
+      --accent: #FFC933; --blue: #3D8BFF; --good: #30D158; --orange: #FF8A2A; --purple: #9079FF; --bad: #FF453A; --music: #FF375F;
+      --shadow: none; --float-shadow: 0 0 0 1px rgba(255,255,255,.08), 0 18px 50px rgba(0,0,0,.6); --scrim: rgba(0,0,0,.6);
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #000000; --surface: #151518; --surface-2: #232328; --surface-3: #2E2E34;
+    --txt: #F5F5F7; --sub: #9C9CA5; --faint: #5A5A62; --line: rgba(255,255,255,.09);
+    --accent: #FFC933; --blue: #3D8BFF; --good: #30D158; --orange: #FF8A2A; --purple: #9079FF; --bad: #FF453A; --music: #FF375F;
+    --shadow: none; --float-shadow: 0 0 0 1px rgba(255,255,255,.08), 0 18px 50px rgba(0,0,0,.6); --scrim: rgba(0,0,0,.6);
+    color-scheme: dark;
   }
   * { box-sizing: border-box; }
   html, body { margin: 0; padding: 0; }
   body {
-    min-height: 100vh; color: var(--txt);
-    font: 14px/1.5 -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI Variable Text", "Segoe UI", Inter, Roboto, sans-serif;
+    min-height: 100vh; background: var(--bg); color: var(--txt);
+    font: 15px/1.45 system-ui, -apple-system, "Segoe UI Variable Text", "Segoe UI", Roboto, "MiSans", sans-serif;
     -webkit-font-smoothing: antialiased;
-    background:
-      radial-gradient(900px 700px at 0% 0%, rgba(94,92,230,.22), transparent 70%),
-      radial-gradient(800px 600px at 100% 20%, rgba(100,210,255,.12), transparent 70%),
-      radial-gradient(900px 700px at 60% 110%, rgba(255,159,10,.10), transparent 70%),
-      #0b0b10;
-    background-attachment: fixed;
   }
-  body.oled { background: #000; --surface: rgba(255,255,255,.05); --glass: rgba(14,14,16,.78); --glass-strong: rgba(12,12,14,.94); }
   [hidden] { display: none !important; }
+  button { font: inherit; color: inherit; }
+  a { color: var(--blue); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  b { font-weight: 650; }
   .grow { flex: 1 1 auto; min-width: 0; }
-  a { color: var(--accent); }
-  b { font-weight: 600; }
-  .kv { font-family: var(--mono); font-weight: 600; font-size: .95em; }
-  .hazard, .theme-toggle { display: none !important; }
+  .kv { font-family: var(--mono); font-weight: 600; font-size: .92em; }
+  svg.i { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; flex: 0 0 auto; }
+
+  /* ---------------------------------------------------------------- app icons: colour says what a thing is */
+  .appicon { width: 40px; height: 40px; flex: 0 0 40px; border-radius: 12px; display: grid; place-items: center; color: #fff; background: var(--blue); }
+  .appicon svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  .appicon.sm { width: 34px; height: 34px; flex-basis: 34px; border-radius: 10px; }
+  .appicon.sm svg { width: 19px; height: 19px; }
+  .blue { --tint: var(--blue); } .green { --tint: var(--good); } .orange { --tint: var(--orange); }
+  .purple { --tint: var(--purple); } .red { --tint: var(--bad); } .yellow { --tint: var(--accent); } .grey { --tint: var(--faint); }
+  .appicon[class*=" "] { background: var(--tint, var(--blue)); }
+  .appicon.yellow { color: var(--on-accent); }
 
   /* ---------------------------------------------------------------- shell */
   .side {
     position: fixed; z-index: 30; left: 0; top: 0; bottom: var(--player-h, 0px); width: var(--side);
-    display: flex; flex-direction: column; padding: 18px 12px 14px;
-    background: var(--glass); -webkit-backdrop-filter: var(--blur); backdrop-filter: var(--blur);
-    border-right: 1px solid var(--line);
+    display: flex; flex-direction: column; padding: 22px 14px 16px; background: var(--surface); border-right: 1px solid var(--line);
   }
-  .logo { display: flex; align-items: center; gap: 10px; font-size: 17px; font-weight: 700; letter-spacing: -.2px; }
-  .side .logo { padding: 2px 10px 22px; }
-  .logo .mark { width: 30px; height: 30px; border-radius: 8px; flex: 0 0 auto; box-shadow: 0 0 0 1px rgba(255,255,255,.08); }
-  .tabs { display: flex; flex-direction: column; gap: 2px; }
+  .logo { display: flex; align-items: center; gap: 10px; font-size: 19px; font-weight: 750; letter-spacing: -.3px; padding: 0 8px 26px; }
+  .logo .mark { width: 32px; height: 32px; border-radius: 10px; background: var(--accent); display: grid; place-items: center; }
+  .logo .mark svg { width: 20px; height: 20px; fill: var(--on-accent); }
+  .tabs { display: flex; flex-direction: column; gap: 4px; }
   .tabs button, .side-item {
-    display: flex; align-items: center; gap: 12px; width: 100%; padding: 8px 10px; border: 0; border-radius: var(--r);
-    background: transparent; color: var(--sub); font: inherit; font-size: 14px; font-weight: 500; text-align: left; cursor: pointer;
-    transition: background .12s, color .12s;
+    position: relative; display: flex; align-items: center; gap: 12px; width: 100%; padding: 10px 12px; border: 0; border-radius: 12px;
+    background: transparent; color: var(--sub); font-size: 15px; font-weight: 550; text-align: left; cursor: pointer; transition: background .12s, color .12s;
   }
-  .tabs button:hover, .side-item:hover { background: var(--hover); color: var(--txt); }
-  .tabs button.on { background: var(--surface-2); color: var(--txt); box-shadow: inset 0 0 0 1px var(--line); }
-  .tabs svg, .side-item svg { width: 18px; height: 18px; flex: 0 0 18px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
-  .tabs button.on svg { stroke: var(--accent); }
+  .tabs button:hover, .side-item:hover { background: var(--surface-2); color: var(--txt); }
+  .tabs button.on { background: color-mix(in srgb, var(--accent) 26%, transparent); color: var(--txt); font-weight: 650; }
+  .tabs svg, .side-item svg { width: 20px; height: 20px; flex: 0 0 20px; fill: none; stroke: currentColor; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
   .tabs .eq { display: inline-flex; align-items: flex-end; gap: 2px; height: 12px; margin-left: auto; }
-  .tabs .eq b { width: 2.5px; border-radius: 1px; background: var(--accent); animation: eq .9s ease-in-out infinite alternate; }
-  .tabs .eq b:nth-child(2) { animation-delay: -.35s; }
-  .tabs .eq b:nth-child(3) { animation-delay: -.7s; }
+  .tabs .eq b { width: 2.5px; border-radius: 1px; background: var(--music); animation: eq .9s ease-in-out infinite alternate; }
+  .tabs .eq b:nth-child(2) { animation-delay: -.35s; } .tabs .eq b:nth-child(3) { animation-delay: -.7s; }
   @keyframes eq { from { height: 25%; } to { height: 100%; } }
-  .tabs .count { margin-left: auto; font-style: normal; font-size: 11px; font-weight: 700; color: #111; background: var(--accent);
-    min-width: 18px; height: 18px; line-height: 18px; border-radius: 9px; padding: 0 5px; text-align: center; }
+  .tabs .count { margin-left: auto; font-style: normal; font-size: 11.5px; font-weight: 750; color: var(--on-accent); background: var(--accent);
+    min-width: 20px; height: 20px; line-height: 20px; border-radius: 10px; padding: 0 6px; text-align: center; }
   .side-foot { margin-top: auto; display: flex; flex-direction: column; gap: 8px; }
-  .switch { margin-left: auto; position: relative; width: 30px; height: 18px; border-radius: 9px; background: rgba(255,255,255,.18); transition: background .15s; flex: 0 0 auto; }
-  .switch::after { content: ""; position: absolute; left: 2px; top: 2px; width: 14px; height: 14px; border-radius: 50%; background: #fff; transition: left .15s; box-shadow: 0 1px 2px rgba(0,0,0,.4); }
+  .switch { margin-left: auto; position: relative; width: 38px; height: 23px; border-radius: 12px; background: var(--surface-3); transition: background .15s; flex: 0 0 auto; }
+  .switch::after { content: ""; position: absolute; left: 2px; top: 2px; width: 19px; height: 19px; border-radius: 50%; background: #fff; transition: left .15s; box-shadow: 0 1px 3px rgba(0,0,0,.3); }
   .mon-toggle.on { color: var(--txt); }
   .mon-toggle.on .switch { background: var(--good); }
-  .mon-toggle.on .switch::after { left: 14px; }
-  .status { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 10px; background: var(--surface); border: 1px solid var(--line); min-width: 0; }
+  .mon-toggle.on .switch::after { left: 17px; }
+  .status { display: flex; align-items: center; gap: 12px; padding: 12px; border-radius: 16px; background: var(--surface-2); min-width: 0; }
   .status-text { display: flex; flex-direction: column; min-width: 0; line-height: 1.3; }
-  .status .dev { font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .status .lbl { font-size: 12px; color: var(--sub); }
-  .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--faint); flex: 0 0 8px; }
-  .dot.on { background: var(--good); box-shadow: 0 0 8px rgba(48,209,88,.7); }
+  .status .dev { font-size: 13.5px; font-weight: 650; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .status .lbl { font-size: 12.5px; color: var(--sub); }
+  .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--faint); flex: 0 0 9px; }
+  .dot.on { background: var(--good); }
 
-  .main { margin-left: var(--side); padding: 30px 40px calc(var(--player-h, 0px) + 48px); min-width: 0; }
+  .main { margin-left: var(--side); padding: 34px 44px calc(var(--player-h, 0px) + 56px); min-width: 0; }
   body.mon-dock .main { margin-right: var(--panel); }
-  .main > * { max-width: 1320px; }
-  .page-head h1 { margin: 0; font-size: 26px; font-weight: 700; letter-spacing: -.4px; }
-  .page-head p { margin: 2px 0 0; color: var(--sub); }
-  .hero { display: none; }
+  .main > * { max-width: 1180px; }
+  .page-head { margin-bottom: 22px; }
+  .page-head h1 { margin: 0; font-size: 34px; font-weight: 800; letter-spacing: -.9px; line-height: 1.1; }
+  .page-head p { margin: 6px 0 0; color: var(--sub); font-size: 15px; }
 
-  /* ---------------------------------------------------------------- sections */
-  .bar { display: flex; align-items: center; gap: 10px; margin: 28px 2px 10px; font-size: 13px; font-weight: 600; color: var(--sub); }
-  .bar .act { margin-left: auto; color: var(--accent); cursor: pointer; font-weight: 600; }
-  .pad { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-lg); padding: 18px 20px; }
-  .grid2 { display: grid; grid-template-columns: minmax(0, 1fr); column-gap: 24px; }
-  .block { display: flex; flex-direction: column; min-width: 0; }
-  .block > .pad { flex: 1 1 auto; }
-  @media (min-width: 1150px) { .grid2 { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } }
-  .note { font-size: 13px; color: var(--sub); margin: 10px 0 0; max-width: 72ch; }
+  /* ---------------------------------------------------------------- cards */
+  .card { background: var(--surface); border-radius: var(--r-card); padding: 20px 22px; box-shadow: var(--shadow); min-width: 0; }
+  .bar { display: flex; align-items: center; gap: 10px; margin: 30px 6px 10px; font-size: 14px; font-weight: 650; color: var(--sub); }
+  .bar .act { margin-left: auto; color: var(--blue); cursor: pointer; font-weight: 600; }
+  .card-title { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
+  .card-title h3 { margin: 0; font-size: 17px; font-weight: 700; letter-spacing: -.2px; }
+  .card-title p { margin: 1px 0 0; font-size: 13px; color: var(--sub); }
+  .grid2 { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; }
+  @media (min-width: 1180px) { .grid2 { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } }
+  .settings { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; align-items: start; }
+  @media (min-width: 1180px) { .settings { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } }
+  .note { font-size: 13.5px; color: var(--sub); margin: 12px 0 0; max-width: 72ch; }
   .note b { color: var(--txt); }
-  .note.warn { color: var(--bad); }
-  .empty { color: var(--sub); margin: 4px 0; }
-  .meta { font-size: 12.5px; color: var(--sub); font-variant-numeric: tabular-nums; }
-  .actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; align-items: center; }
+  .empty { color: var(--sub); margin: 6px 0; }
+  .meta { font-size: 13px; color: var(--sub); font-variant-numeric: tabular-nums; }
+  .actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; align-items: center; }
+
+  /* ---------------------------------------------------------------- home: the widgets across the top */
+  .home-top { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr) minmax(0, 1fr); gap: 16px; margin-bottom: 16px; }
+  .hero { background: var(--accent); color: var(--on-accent); border-radius: var(--r-card); padding: 22px 24px; min-width: 0; display: flex; flex-direction: column; }
+  .hero .kicker { display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 650; opacity: .72; }
+  .hero .kicker .dot { background: rgba(0,0,0,.25); }
+  .hero .kicker .dot.on { background: #0E7A32; }
+  .hero h2 { margin: 6px 0 0; font-size: 30px; font-weight: 800; letter-spacing: -.8px; line-height: 1.1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .hero p { margin: 6px 0 0; font-size: 14px; opacity: .72; }
+  .hero .rate { margin-top: auto; padding-top: 18px; display: flex; align-items: baseline; gap: 10px; }
+  .hero .rate b { font-size: 26px; font-weight: 800; letter-spacing: -.5px; font-variant-numeric: tabular-nums; }
+  .hero .rate span { font-size: 13.5px; font-weight: 600; opacity: .7; }
+  .tile { display: flex; flex-direction: column; align-items: flex-start; text-align: left; border: 0; cursor: pointer; min-width: 0;
+    background: var(--surface); color: var(--txt); border-radius: var(--r-card); padding: 20px; box-shadow: var(--shadow); transition: background .15s, transform .08s; }
+  .tile:hover { background: var(--surface-2); }
+  .tile:active { transform: scale(.985); }
+  .tile .t { margin-top: 22px; font-size: 17px; font-weight: 700; letter-spacing: -.2px; }
+  .tile .d { margin-top: 2px; font-size: 13.5px; color: var(--sub); overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+  .tile.on { background: var(--tint); color: #fff; }
+  .tile.on .d { color: rgba(255,255,255,.8); }
+  .tile.on .appicon { background: rgba(255,255,255,.18); }
+  .tile.busy .appicon { animation: pulse 1s ease-in-out infinite alternate; }
+  @keyframes pulse { to { opacity: .45; } }
+  @media (max-width: 1100px) { .home-top { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } .hero { grid-column: 1 / -1; } }
+
+  .direct-card { margin-bottom: 16px; }
+  .fields { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px; }
+  .field { display: flex; flex-direction: column; gap: 2px; padding: 12px 14px; border-radius: var(--r); background: var(--surface-2); cursor: pointer; border: 0; text-align: left; min-width: 0; }
+  .field:hover { background: var(--surface-3); }
+  .field span { font-size: 12.5px; color: var(--sub); }
+  .field b { font-family: var(--mono); font-size: 15px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
   /* ---------------------------------------------------------------- controls */
   .btn {
-    display: inline-flex; align-items: center; justify-content: center; gap: 6px; height: 34px; padding: 0 16px;
-    border: 1px solid transparent; border-radius: var(--r); background: var(--accent); color: #111;
-    font: inherit; font-size: 13.5px; font-weight: 600; text-decoration: none; white-space: nowrap; cursor: pointer;
-    box-shadow: inset 0 1px 0 rgba(255,255,255,.35); transition: filter .12s, background .12s, transform .08s;
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 42px; padding: 0 20px;
+    border: 0; border-radius: 21px; background: var(--accent); color: var(--on-accent);
+    font-size: 14.5px; font-weight: 650; text-decoration: none !important; white-space: nowrap; cursor: pointer; transition: filter .12s, background .12s, transform .08s;
   }
-  .btn:hover:not(:disabled) { filter: brightness(1.07); }
-  .btn:active:not(:disabled) { transform: scale(.98); }
-  .btn:disabled { opacity: .4; cursor: default; }
-  .btn.ghost { background: var(--surface-2); color: var(--txt); border-color: var(--line); box-shadow: none; }
+  .btn:hover:not(:disabled) { filter: brightness(1.05); }
+  .btn:active:not(:disabled) { transform: scale(.97); }
+  .btn:disabled { opacity: .45; cursor: default; }
+  .btn svg { width: 18px; height: 18px; }
+  .btn.ghost { background: var(--surface-2); color: var(--txt); }
   .btn.ghost:hover:not(:disabled) { background: var(--surface-3); filter: none; }
-  .btn.danger { color: #FF6961; }
-  .btn.sm { height: 30px; padding: 0 12px; font-size: 13px; }
+  .btn.blue { background: var(--blue); color: #fff; }
+  .btn.danger { color: var(--bad); }
+  .btn.sm { height: 34px; padding: 0 14px; font-size: 13.5px; border-radius: 17px; }
   textarea, input[type=search], input[type=text] {
-    width: 100%; font: inherit; font-size: 14px; color: var(--txt);
-    background: rgba(0,0,0,.25); border: 1px solid var(--line); border-radius: 10px; padding: 11px 14px; outline: none;
-    transition: border-color .12s, box-shadow .12s;
+    width: 100%; font: inherit; font-size: 15px; color: var(--txt);
+    background: var(--surface-2); border: 0; border-radius: var(--r); padding: 13px 16px; outline: none; transition: box-shadow .12s;
   }
   textarea { min-height: 150px; resize: vertical; line-height: 1.5; }
-  textarea:focus, input[type=search]:focus { border-color: rgba(255,214,10,.55); box-shadow: 0 0 0 3px rgba(255,214,10,.15); }
+  textarea:focus, input[type=search]:focus { box-shadow: 0 0 0 2px var(--accent); }
   textarea::placeholder, input::placeholder { color: var(--faint); }
-  input[type=search] { height: 38px; padding: 0 14px; border-radius: var(--r); }
-  .seg { display: inline-flex; gap: 2px; padding: 3px; border-radius: 9px; background: rgba(0,0,0,.28); border: 1px solid var(--line); }
-  .seg button { border: 0; border-radius: 6px; background: transparent; color: var(--sub); font: inherit; font-size: 13px; font-weight: 600; padding: 6px 14px; cursor: pointer; }
+  input[type=search] { height: 42px; padding: 0 16px; border-radius: 21px; }
+  .seg { display: inline-flex; gap: 2px; padding: 3px; border-radius: 22px; background: var(--surface-2); max-width: 100%; }
+  .seg button { border: 0; border-radius: 19px; background: transparent; color: var(--sub); font-size: 13.5px; font-weight: 600; padding: 7px 16px; cursor: pointer; white-space: nowrap; }
   .seg button:hover { color: var(--txt); }
-  .seg button.on { background: var(--surface-3); color: var(--txt); box-shadow: 0 1px 2px rgba(0,0,0,.4), inset 0 0 0 1px var(--line); }
+  .seg button.on { background: var(--surface); color: var(--txt); box-shadow: 0 1px 3px rgba(0,0,0,.12); }
+  :root[data-theme="dark"] .seg button.on { background: var(--surface-3); }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .seg button.on { background: var(--surface-3); } }
+  .set-label { font-size: 14px; font-weight: 600; margin-bottom: 10px; }
 
   /* ---------------------------------------------------------------- rows */
-  .row { display: flex; align-items: center; gap: 14px; padding: 12px 14px; margin-bottom: 8px;
-    background: var(--surface); border: 1px solid var(--line); border-radius: 10px; }
-  .pad .row { background: transparent; border: 0; border-radius: 0; margin: 0; padding: 11px 6px; }
-  .pad .row + .row { border-top: 1px solid var(--line); }
+  .row { display: flex; align-items: center; gap: 14px; padding: 12px 4px; min-width: 0; }
+  .row + .row { border-top: 1px solid var(--line); }
   .row .body { flex: 1 1 auto; min-width: 0; }
-  .row .title { font-size: 14px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .glyph { width: 34px; height: 34px; flex: 0 0 34px; display: grid; place-items: center; border-radius: var(--r);
-    background: var(--surface-2); color: var(--sub); font-size: 14px; font-weight: 700; }
-  .row.accent { background: rgba(255,214,10,.08); box-shadow: inset 0 0 0 1px rgba(255,214,10,.22); }
-  .row.accent .glyph { background: var(--accent); color: #111; }
-  /* files and transfers: text on the left, actions on the right, on one line */
+  .row .title { font-size: 15px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   #files .row .body, #transfers .row .body { display: grid; grid-template-columns: minmax(0, 1fr) auto; column-gap: 16px; align-items: center; }
   #files .row .body > *, #transfers .row .body > * { grid-column: 1; }
   #files .row .actions, #transfers .row .actions { grid-column: 2; grid-row: 1 / span 4; margin: 0; flex-wrap: nowrap; }
-  .track { height: 4px; margin-top: 8px; border-radius: 2px; background: rgba(255,255,255,.1); overflow: hidden; }
-  .track > i { display: block; height: 100%; width: 0; background: var(--accent); transition: width .25s linear; }
-  .lanes { display: flex; gap: 2px; margin-top: 3px; }
-  .lanes > i { flex: 1 1 0; height: 3px; border-radius: 2px; background: rgba(255,255,255,.07); overflow: hidden; }
-  .lanes > i > b { display: block; height: 100%; width: 0; background: var(--accent); opacity: .5; }
-  .drop { border: 1.5px dashed var(--line-2); border-radius: var(--r-lg); padding: 38px 18px; text-align: center; cursor: pointer;
-    background: rgba(0,0,0,.14); transition: border-color .12s, background .12s; }
-  .drop:hover, .drop.over { border-color: rgba(255,214,10,.7); background: rgba(255,214,10,.05); }
-  .drop .big { font-size: 16px; font-weight: 600; }
-  .banner { padding: 11px 14px; border-radius: 10px; font-size: 13px; font-weight: 500;
-    background: rgba(255,214,10,.08); color: var(--accent); border: 1px solid rgba(255,214,10,.22); }
-  .banner.bad { background: rgba(255,69,58,.1); color: #FF6961; border-color: rgba(255,69,58,.28); }
-  .badge { font-size: 9.5px; font-weight: 700; letter-spacing: .6px; padding: 2px 5px; margin-left: 8px; vertical-align: 2px;
-    border-radius: 4px; background: rgba(255,255,255,.1); color: var(--sub); }
+  .track { height: 6px; margin-top: 8px; border-radius: 3px; background: var(--surface-2); overflow: hidden; }
+  .track > i { display: block; height: 100%; width: 0; border-radius: 3px; background: var(--accent); transition: width .45s linear; }
+  .row.done .track > i { background: var(--good); }
+  .row.paused .track > i, .row.error .track > i { background: var(--faint); }
+  .row.done .meta { color: var(--good); }
+  .row.paused .meta, .row.error .meta { color: var(--bad); }
+  .lanes { display: flex; gap: 3px; margin-top: 4px; }
+  .lanes > i { flex: 1 1 0; height: 3px; border-radius: 2px; background: var(--surface-2); overflow: hidden; }
+  .lanes > i > b { display: block; height: 100%; width: 0; background: var(--accent); opacity: .55; transition: width .45s linear; }
+
+  .clip-card { display: flex; flex-direction: column; }
+  .clip-field { position: relative; }
+  .clip-field textarea { min-height: 170px; padding-bottom: 36px; }
+  .clip-status { position: absolute; left: 16px; bottom: 12px; font-size: 13px; font-weight: 600; color: var(--good); }
+  .clip-tools { display: flex; gap: 8px; margin-top: 12px; align-items: center; }
+  .clip-tools .grow { flex: 1; }
+  .drop { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; border: 2px dashed var(--surface-3); border-radius: 20px;
+    padding: 34px 18px; text-align: center; cursor: pointer; transition: border-color .12s, background .12s; min-height: 220px; }
+  .drop:hover, .drop.over { border-color: var(--good); background: color-mix(in srgb, var(--good) 7%, transparent); }
+  .drop .appicon { width: 54px; height: 54px; flex-basis: 54px; border-radius: 16px; margin-bottom: 14px; }
+  .drop .appicon svg { width: 28px; height: 28px; }
+  .drop .big { font-size: 18px; font-weight: 700; letter-spacing: -.2px; }
+  .drop-actions { display: flex; gap: 8px; margin-top: 16px; }
+  .banner { padding: 12px 16px; border-radius: var(--r); font-size: 14px; font-weight: 550; background: color-mix(in srgb, var(--good) 13%, transparent); color: var(--txt); }
+  .banner.bad { background: color-mix(in srgb, var(--orange) 15%, transparent); }
+  .badge { font-size: 10px; font-weight: 750; letter-spacing: .5px; padding: 2px 6px; margin-left: 8px; vertical-align: 2px; border-radius: 5px; background: var(--surface-2); color: var(--sub); }
+  .steps { margin: 6px 0 0; padding-left: 20px; color: var(--sub); }
+  .steps li { margin: 6px 0; }
+  .steps b { color: var(--txt); }
 
   /* ---------------------------------------------------------------- dock: transfers */
-  .dock { position: fixed; z-index: 35; right: 24px; bottom: calc(var(--player-h, 0px) + 16px); width: min(560px, calc(100vw - var(--side) - 48px));
-    border-radius: var(--r-lg); overflow: hidden; background: var(--glass-strong); border: 1px solid var(--line-2);
-    -webkit-backdrop-filter: var(--blur); backdrop-filter: var(--blur); box-shadow: 0 16px 48px rgba(0,0,0,.5); }
+  .dock { position: fixed; z-index: 35; right: 24px; bottom: calc(var(--player-h, 0px) + 18px); width: min(560px, calc(100vw - var(--side) - 48px));
+    border-radius: 22px; overflow: hidden; background: var(--surface); box-shadow: var(--float-shadow); }
   body.mon-dock .dock { right: calc(var(--panel) + 24px); }
-  .dock .head { display: flex; align-items: center; gap: 12px; padding: 11px 16px; cursor: pointer; }
-  .dock .rate { font-size: 16px; font-weight: 700; color: var(--accent); font-variant-numeric: tabular-nums; }
-  .dock .lbl { font-size: 12px; font-weight: 600; color: var(--sub); }
+  .dock .head { display: flex; align-items: center; gap: 12px; padding: 14px 18px; cursor: pointer; }
+  .dock .rate { font-size: 17px; font-weight: 800; font-variant-numeric: tabular-nums; }
+  .dock .lbl { font-size: 13px; font-weight: 600; color: var(--sub); }
   .dock .list { max-height: 46vh; overflow-y: auto; border-top: 1px solid var(--line); }
-  .dock .list .inner { padding: 6px 12px; }
+  .dock .list .inner { padding: 4px 16px 8px; }
 
   /* ---------------------------------------------------------------- login */
-  #login { max-width: 420px; margin: 14vh auto 0; border-radius: 16px; overflow: hidden;
-    background: var(--glass-strong); border: 1px solid var(--line-2); -webkit-backdrop-filter: var(--blur); backdrop-filter: var(--blur);
-    box-shadow: 0 24px 64px rgba(0,0,0,.5); }
-  #login .mast { padding: 22px 24px 0; }
-  #login .hero { display: block; padding: 18px 24px 0; }
-  #login .hero h1 { margin: 0; font-size: 20px; font-weight: 700; }
-  #login .hero p { margin: 4px 0 0; color: var(--sub); }
-  #login .pad { background: transparent; border: 0; padding: 18px 24px 24px; }
-  #login .actions .btn { flex: 1; height: 38px; }
-  .code { font-family: var(--mono); font-size: 40px; font-weight: 700; letter-spacing: 12px; text-align: center;
-    padding: 14px; margin: 12px 0 8px; border-radius: var(--r-lg); color: var(--accent);
-    background: rgba(255,214,10,.08); border: 1px solid rgba(255,214,10,.22); }
+  #login { max-width: 440px; margin: 13vh auto 0; padding: 30px 30px 28px; border-radius: 28px; background: var(--surface); box-shadow: var(--float-shadow); }
+  #login .logo { padding: 0 0 22px; }
+  #login h1 { margin: 0; font-size: 26px; font-weight: 800; letter-spacing: -.6px; }
+  #login p { margin: 6px 0 0; color: var(--sub); }
+  #login .pad { margin-top: 20px; }
+  #login .actions .btn { flex: 1; height: 46px; border-radius: 23px; }
+  .code { font-family: var(--mono); font-size: 44px; font-weight: 800; letter-spacing: 14px; text-align: center; padding: 16px; margin: 14px 0 8px; border-radius: 20px; background: var(--surface-2); }
 
   /* ---------------------------------------------------------------- music */
-  .music-tools { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin: 4px 0 12px; }
+  .music-tools { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin: 0 0 12px; }
   .music-tools input[type=search] { flex: 1 1 260px; width: auto; }
-  .cover { width: 44px; height: 44px; flex: 0 0 44px; display: grid; place-items: center; overflow: hidden;
-    border-radius: var(--r); background: var(--surface-2); color: var(--sub); font-weight: 700; }
+  .cover { width: 46px; height: 46px; flex: 0 0 46px; display: grid; place-items: center; overflow: hidden;
+    border-radius: 11px; background: var(--surface-2); color: var(--faint); font-weight: 700; }
   .cover img { width: 100%; height: 100%; object-fit: cover; display: block; }
   .has-glyph { position: relative; }
   .has-glyph > img { position: absolute; inset: 0; }
-  #music-list .song { cursor: pointer; border-radius: var(--r); padding: 7px 10px; }
+  #music-list .song { cursor: pointer; border-radius: 14px; padding: 8px 10px; }
   #music-list .song + .song { border-top: 0; }
-  #music-list .song:hover { background: var(--hover); }
-  #music-list .song.accent { background: rgba(255,214,10,.08); box-shadow: none; }
-  #music-list .song.accent .title { color: var(--accent); }
-  .song .dur { font-size: 12.5px; color: var(--sub); font-variant-numeric: tabular-nums; }
-  .albums { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 12px; }
-  .album { cursor: pointer; border-radius: 10px; padding: 8px; transition: background .12s; }
-  .album:hover { background: var(--hover); }
-  .album .art { aspect-ratio: 1 / 1; display: grid; place-items: center; overflow: hidden; border-radius: var(--r);
-    background: var(--surface-2); color: var(--faint); font-size: 34px; box-shadow: 0 8px 20px rgba(0,0,0,.35); }
+  #music-list .song:hover { background: var(--surface-2); }
+  #music-list .song.accent { background: color-mix(in srgb, var(--music) 10%, transparent); }
+  #music-list .song.accent .title { color: var(--music); }
+  .song .dur { font-size: 13px; color: var(--sub); font-variant-numeric: tabular-nums; }
+  .albums { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 14px; }
+  .album { position: relative; cursor: pointer; border: 0; background: transparent; color: inherit; text-align: left; border-radius: 18px; padding: 8px; transition: background .12s; }
+  .album:hover { background: var(--surface-2); }
+  .album .art { position: relative; aspect-ratio: 1 / 1; display: grid; place-items: center; overflow: hidden; border-radius: 14px; background: var(--surface-2); color: var(--faint); font-size: 34px; }
   .album .art img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .album-play { position: absolute; right: 10px; bottom: 10px; width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center;
+    background: var(--music); color: #fff; opacity: 0; transform: translateY(4px); transition: opacity .15s, transform .15s; }
+  .album-play svg { width: 18px; height: 18px; }
+  .album:hover .album-play { opacity: 1; transform: none; }
   .album .cap { padding: 8px 2px 0; }
-  .album .cap .t { font-size: 13.5px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .album .cap .a { font-size: 12px; color: var(--sub); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .album .cap .t { font-size: 14px; font-weight: 650; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .album .cap .a { font-size: 12.5px; color: var(--sub); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .album-page { margin: 0 0 16px; }
+  .album-page .back { display: inline-flex; align-items: center; gap: 4px; border: 0; background: none; color: var(--blue); font-weight: 600; cursor: pointer; padding: 4px 0; }
+  .album-page .back svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+  .album-head { display: flex; gap: 26px; align-items: flex-end; margin-top: 12px; }
+  .album-cover .cover { width: 200px; height: 200px; flex-basis: 200px; border-radius: 18px; font-size: 48px; box-shadow: 0 12px 30px rgba(0,0,0,.18); }
+  .album-info .kicker { font-size: 12px; font-weight: 750; letter-spacing: 1px; text-transform: uppercase; color: var(--sub); }
+  .album-info h2 { margin: 4px 0 0; font-size: 30px; font-weight: 800; letter-spacing: -.7px; line-height: 1.1; }
+  .album-info .by { font-size: 17px; font-weight: 600; color: var(--music); margin-top: 4px; }
+  .album-info .facts { font-size: 13px; color: var(--sub); margin-top: 6px; }
+  .album-actions { display: flex; gap: 10px; margin-top: 16px; }
+  .album-actions .btn { background: var(--music); color: #fff; }
+  .album-actions .btn.ghost { background: var(--surface-2); color: var(--music); }
+  .album-actions svg { width: 18px; height: 18px; }
 
-  /* turntable, ported from the Vinyl Glass widget: same 1000-unit square, record, sheen and arm.
-     Only the label turns, so pausing freezes it exactly where it is. */
-  .deck { position: relative; overflow: hidden; display: flex; align-items: center; gap: 36px; padding: 26px 30px;
-    margin-bottom: 16px; border-radius: var(--r-lg); background: rgba(0,0,0,.3); border: 1px solid var(--line); }
-  .deck-bg { position: absolute; inset: -40px; background-size: cover; background-position: center;
-    filter: blur(50px) saturate(150%); opacity: 0; transition: opacity .6s; pointer-events: none; }
-  .deck-bg.on { opacity: .45; }
+  /* turntable: record, sheen and arm on a 1000-unit square. Only the label turns, so
+     pausing freezes it exactly where it is. */
+  .deck { position: relative; overflow: hidden; display: flex; align-items: center; gap: 40px; padding: 28px 32px; margin-bottom: 16px; border-radius: var(--r-card); background: #121214; color: #F5F5F7; }
+  .deck-bg { position: absolute; inset: -40px; background-size: cover; background-position: center; filter: blur(60px) saturate(140%); opacity: 0; transition: opacity .6s; pointer-events: none; }
+  .deck-bg.on { opacity: .5; }
   .tt { position: relative; flex: 0 0 auto; width: min(280px, 32vw); aspect-ratio: 1 / 1; cursor: pointer; }
   .tt > * { position: absolute; display: block; }
-  .tt-label { left: 18.5%; top: 19%; width: 56%; height: 56%; border-radius: 50%; overflow: hidden;
-    background: var(--accent); color: #111; display: flex; align-items: center; justify-content: center;
-    font-weight: 800; letter-spacing: 3px; font-size: clamp(11px, 1.6vw, 16px);
+  .tt-label { left: 18.5%; top: 19%; width: 56%; height: 56%; border-radius: 50%; overflow: hidden; background: var(--accent); color: var(--on-accent);
+    display: flex; align-items: center; justify-content: center; font-weight: 800; letter-spacing: 3px; font-size: clamp(11px, 1.6vw, 16px);
     animation: tt-spin 5.28s linear infinite; animation-play-state: paused; }
   .tt-label img { width: 100%; height: 100%; object-fit: cover; display: block; }
   .tt.spin .tt-label { animation-play-state: running; }
@@ -246,570 +303,146 @@
   #tt-arm { transform-origin: 915px 75px; transform: rotate(-5deg); transition: transform 750ms cubic-bezier(.4, 0, .2, 1); }
   .tt.arm #tt-arm { transform: rotate(17deg); transition-duration: 900ms; }
   .deck-meta { position: relative; flex: 1 1 auto; min-width: 0; }
-  .deck-kicker { font-size: 11px; font-weight: 700; letter-spacing: 1.4px; color: var(--accent); margin-bottom: 10px; }
-  .deck-title { font-size: clamp(22px, 2.4vw, 34px); font-weight: 700; line-height: 1.12; letter-spacing: -.5px;
+  .deck-kicker { font-size: 12px; font-weight: 750; letter-spacing: 1.4px; color: var(--accent); margin-bottom: 10px; }
+  .deck-title { font-size: clamp(24px, 2.6vw, 38px); font-weight: 800; line-height: 1.1; letter-spacing: -.8px;
     overflow-wrap: anywhere; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
-  .deck-artist { font-size: 16px; font-weight: 600; margin-top: 8px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .deck-album { font-size: 13px; color: var(--sub); margin-top: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .deck-next { font-size: 12.5px; color: var(--sub); margin-top: 18px; padding-top: 12px; border-top: 1px solid var(--line);
+  .deck-artist { font-size: 17px; font-weight: 650; margin-top: 8px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .deck-album { font-size: 13.5px; color: rgba(245,245,247,.62); margin-top: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .deck-album .badge { background: rgba(255,255,255,.12); color: rgba(245,245,247,.75); }
+  .deck-next { font-size: 13px; color: rgba(245,245,247,.62); margin-top: 18px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,.12);
     overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .deck-next b { color: var(--accent); letter-spacing: 1px; font-size: 11px; margin-right: 8px; }
 
-  /* ---------------------------------------------------------------- player, docked along the bottom */
+  /* ---------------------------------------------------------------- player, along the bottom */
   .player { position: fixed; z-index: 40; left: 0; right: 0; bottom: 0;
     display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.6fr) minmax(0, 1fr); align-items: center; gap: 24px;
-    padding: 10px 24px; background: var(--glass-strong); border-top: 1px solid var(--line);
-    -webkit-backdrop-filter: var(--blur); backdrop-filter: var(--blur); }
+    padding: 10px 24px; background: var(--surface); border-top: 1px solid var(--line); }
   .pl-left { display: flex; align-items: center; gap: 12px; min-width: 0; }
-  .player .cover { width: 52px; height: 52px; flex: 0 0 52px; cursor: pointer; font-size: 20px; box-shadow: 0 4px 12px rgba(0,0,0,.4); }
+  .player .cover { width: 52px; height: 52px; flex: 0 0 52px; cursor: pointer; font-size: 20px; border-radius: 12px; }
   .pl-meta { min-width: 0; }
-  .pl-title { font-size: 14px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .pl-sub { font-size: 12.5px; color: var(--sub); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .pl-title { font-size: 14.5px; font-weight: 650; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .pl-sub { font-size: 13px; color: var(--sub); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .pl-center { display: flex; flex-direction: column; align-items: center; gap: 4px; min-width: 0; }
   .pl-ctrls { display: flex; align-items: center; gap: 12px; }
-  .pl-btn { position: relative; width: 34px; height: 34px; display: grid; place-items: center; padding: 0;
-    border: 0; border-radius: var(--r); background: transparent; color: var(--sub); cursor: pointer; transition: color .12s, background .12s; }
-  .pl-btn svg { width: 19px; height: 19px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+  .pl-btn { position: relative; width: 36px; height: 36px; display: grid; place-items: center; padding: 0; border: 0; border-radius: 50%;
+    background: transparent; color: var(--sub); cursor: pointer; transition: color .12s, background .12s; }
+  .pl-btn svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
   .pl-btn svg .fill { fill: currentColor; stroke: none; }
-  .pl-btn:hover { color: var(--txt); background: var(--hover); }
-  .pl-btn.on { color: var(--accent); }
+  .pl-btn:hover { color: var(--txt); background: var(--surface-2); }
+  .pl-btn.on { color: var(--music); }
   #pl-prev, #pl-next { color: var(--txt); }
-  .pl-btn.play { width: 38px; height: 38px; border-radius: 50%; color: #111; background: #fff; }
-  .pl-btn.play:hover { background: #fff; transform: scale(1.05); }
-  .pl-btn.play svg { width: 20px; height: 20px; }
+  .pl-btn.play { width: 42px; height: 42px; color: var(--surface); background: var(--txt); }
+  .pl-btn.play:hover { background: var(--txt); transform: scale(1.05); }
   #pl-repeat .one { display: none; position: absolute; top: 3px; right: 3px; width: 12px; height: 12px; border-radius: 50%;
-    background: var(--accent); color: #111; font: 800 8.5px/12px system-ui; text-align: center; }
+    background: var(--music); color: #fff; font: 800 8.5px/12px system-ui; text-align: center; }
   #pl-repeat.one .one { display: block; }
   .pl-bar { display: flex; align-items: center; gap: 10px; width: 100%; max-width: 640px; }
-  .pl-t { font-size: 11.5px; color: var(--sub); font-variant-numeric: tabular-nums; min-width: 36px; text-align: center; }
-  #pl-seek, #pl-vol { -webkit-appearance: none; appearance: none; display: block; flex: 1 1 auto; height: 4px; margin: 0; border-radius: 2px; cursor: pointer;
-    background: linear-gradient(to right, var(--accent) var(--p, 0%), rgba(255,255,255,.16) var(--p, 0%)); }
-  #pl-vol { flex: 0 1 110px; background: linear-gradient(to right, var(--txt) var(--p, 100%), rgba(255,255,255,.16) var(--p, 100%)); }
-  #pl-seek::-webkit-slider-thumb, #pl-vol::-webkit-slider-thumb { -webkit-appearance: none; width: 12px; height: 12px; border-radius: 50%;
-    background: #fff; border: 0; box-shadow: 0 1px 4px rgba(0,0,0,.5); opacity: 0; transition: opacity .12s; }
+  .pl-t { font-size: 12px; color: var(--sub); font-variant-numeric: tabular-nums; min-width: 36px; text-align: center; }
+  #pl-seek, #pl-vol { -webkit-appearance: none; appearance: none; display: block; flex: 1 1 auto; height: 5px; margin: 0; border-radius: 3px; cursor: pointer;
+    background: linear-gradient(to right, var(--txt) var(--p, 0%), var(--surface-3) var(--p, 0%)); }
+  #pl-vol { flex: 0 1 110px; background: linear-gradient(to right, var(--txt) var(--p, 100%), var(--surface-3) var(--p, 100%)); }
+  #pl-seek::-webkit-slider-thumb, #pl-vol::-webkit-slider-thumb { -webkit-appearance: none; width: 13px; height: 13px; border-radius: 50%;
+    background: var(--txt); border: 0; opacity: 0; transition: opacity .12s; }
   #pl-seek:hover::-webkit-slider-thumb, #pl-vol:hover::-webkit-slider-thumb { opacity: 1; }
-  #pl-seek::-moz-range-thumb, #pl-vol::-moz-range-thumb { width: 12px; height: 12px; border-radius: 50%; background: #fff; border: 0; }
+  #pl-seek::-moz-range-thumb, #pl-vol::-moz-range-thumb { width: 13px; height: 13px; border-radius: 50%; background: var(--txt); border: 0; }
   .pl-right { display: flex; align-items: center; justify-content: flex-end; gap: 6px; }
-  .pl-btn.small { width: 32px; height: 32px; }
+  .pl-btn.small { width: 34px; height: 34px; }
   #pl-mute.low .w2, #pl-mute.muted .w1, #pl-mute.muted .w2 { display: none; }
 
   /* ---------------------------------------------------------------- monitor */
-  .mon-pill { position: fixed; z-index: 45; top: 16px; right: 16px; display: flex; align-items: center; gap: 12px;
-    padding: 8px 14px; border-radius: 10px; border: 1px solid var(--line-2); cursor: pointer; font: inherit; font-size: 13px;
-    color: var(--txt); font-variant-numeric: tabular-nums; background: var(--glass-strong);
-    -webkit-backdrop-filter: var(--blur); backdrop-filter: var(--blur); box-shadow: 0 8px 24px rgba(0,0,0,.4); }
-  .mon-pill b { font-weight: 600; white-space: nowrap; }
-  .mon-pill .in { color: var(--accent); min-width: 74px; }
-  .mon-pill .out { color: #64B5FF; min-width: 74px; }
+  .mon-pill { position: fixed; z-index: 45; top: 18px; right: 18px; display: flex; align-items: center; gap: 12px;
+    padding: 9px 16px; border-radius: 22px; border: 0; cursor: pointer; font-size: 13.5px; color: var(--txt); font-variant-numeric: tabular-nums;
+    background: var(--surface); box-shadow: var(--float-shadow); }
+  .mon-pill b { font-weight: 650; white-space: nowrap; }
+  .mon-pill .in { color: var(--orange); min-width: 76px; }
+  .mon-pill .out { color: var(--blue); min-width: 76px; }
   .mon-pill .ping.good { color: var(--good); }
   .mon-pill .ping.bad { color: var(--bad); }
-  .pill-ch { width: 40px; height: 5px; border-radius: 3px; background: rgba(255,255,255,.14); overflow: hidden; display: block; }
-  .pill-ch i { display: block; height: 100%; width: 0; background: var(--accent); transition: width .6s; }
+  .pill-ch { width: 40px; height: 6px; border-radius: 3px; background: var(--surface-2); overflow: hidden; display: block; }
+  .pill-ch i { display: block; height: 100%; width: 0; background: var(--orange); transition: width .6s; }
   .pill-ch i.hot { background: var(--bad); }
-
   .mon-sheet { position: fixed; z-index: 46; top: 50%; left: 50%; transform: translate(-50%, -50%);
-    width: min(1000px, calc(100vw - 48px)); max-height: calc(100vh - 48px); overflow-y: auto; padding: 4px 0 20px;
-    border-radius: 14px; border: 1px solid var(--line-2); background: var(--glass-strong);
-    -webkit-backdrop-filter: var(--blur); backdrop-filter: var(--blur);
-    box-shadow: 0 30px 80px rgba(0,0,0,.6), 0 0 0 100vmax rgba(0,0,0,.45); }
+    width: min(1000px, calc(100vw - 48px)); max-height: calc(100vh - 48px); overflow-y: auto; padding: 6px 0 22px;
+    border-radius: 28px; background: var(--surface); box-shadow: var(--float-shadow), 0 0 0 100vmax var(--scrim); }
   body.mon-dock .mon-sheet { top: 0; right: 0; left: auto; bottom: var(--player-h, 0px); transform: none; width: var(--panel);
-    max-height: none; border-radius: 0; border: 0; border-left: 1px solid var(--line); box-shadow: none; z-index: 31;
-    background: var(--glass); }
-  .mon-head { display: flex; align-items: center; gap: 10px; padding: 18px 20px 4px; }
-  .mon-head > b { font-size: 17px; font-weight: 700; }
-  .mon-live { font-size: 11.5px; font-weight: 600; color: var(--good); background: rgba(48,209,88,.12); padding: 2px 8px; border-radius: 6px; }
-  .mon-head .x { width: 28px; height: 28px; border: 0; border-radius: var(--r); background: var(--surface-2); color: var(--sub); cursor: pointer; font-size: 12px; }
+    max-height: none; border-radius: 0; border-left: 1px solid var(--line); box-shadow: none; z-index: 31; }
+  .mon-head { display: flex; align-items: center; gap: 10px; padding: 20px 22px 4px; }
+  .mon-head > b { font-size: 19px; font-weight: 800; letter-spacing: -.3px; }
+  .mon-live { font-size: 12px; font-weight: 650; color: var(--good); background: color-mix(in srgb, var(--good) 14%, transparent); padding: 3px 9px; border-radius: 10px; }
+  .mon-head .x { width: 32px; height: 32px; border: 0; border-radius: 50%; background: var(--surface-2); color: var(--sub); cursor: pointer; font-size: 12px; }
   .mon-head .x:hover { color: var(--txt); background: var(--surface-3); }
-  .mon-body { display: grid; grid-template-columns: minmax(0, 1fr); column-gap: 36px; padding: 0 20px; }
+  .mon-body { display: grid; grid-template-columns: minmax(0, 1fr); column-gap: 36px; padding: 0 22px; }
   @media (min-width: 900px) { body:not(.mon-dock) .mon-body { grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); } }
-  .mon-sub { margin: 20px 0 8px; font-size: 12px; font-weight: 600; letter-spacing: .5px; text-transform: uppercase; color: var(--sub); }
+  .mon-sub { margin: 22px 0 8px; font-size: 13px; font-weight: 650; color: var(--sub); }
   .mon-rates { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-top: 12px; }
-  .mon-rates .k { display: flex; align-items: center; gap: 6px; font-size: 12.5px; color: var(--sub); }
-  .mon-rates b { display: block; margin-top: 2px; font-size: 30px; font-weight: 600; letter-spacing: -.6px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .mon-rates .k { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--sub); }
+  .mon-rates b { display: block; margin-top: 2px; font-size: 30px; font-weight: 800; letter-spacing: -.8px; font-variant-numeric: tabular-nums; white-space: nowrap; }
   body.mon-dock .mon-rates b { font-size: 22px; }
-  .sw { width: 8px; height: 8px; border-radius: 50%; display: inline-block; flex: 0 0 8px; background: var(--faint); }
-  .sw.in, .sw.files { background: var(--accent); }
+  .sw { width: 9px; height: 9px; border-radius: 50%; display: inline-block; flex: 0 0 9px; background: var(--faint); }
+  .sw.in, .sw.files { background: var(--orange); }
   .sw.out, .sw.test { background: var(--blue); }
   .sw.music { background: var(--music); }
-  .sw.live.on { background: var(--good); box-shadow: 0 0 6px var(--good); }
+  .sw.live.on { background: var(--good); }
   .mon-graph { display: block; width: 100%; height: 240px; margin-top: 14px; }
   body.mon-dock .mon-graph { height: 170px; }
   .mon-grid { display: grid; grid-template-columns: minmax(0, 1fr); }
-  .mon-grid > div { display: flex; justify-content: space-between; gap: 12px; padding: 9px 0; border-bottom: 1px solid var(--line); font-size: 13.5px; }
+  .mon-grid > div { display: flex; justify-content: space-between; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--line); font-size: 14px; }
   .mon-grid span { color: var(--sub); }
-  .mon-grid b { font-weight: 500; text-align: right; font-variant-numeric: tabular-nums; }
+  .mon-grid b { font-weight: 550; text-align: right; font-variant-numeric: tabular-nums; }
   .bars { display: inline-flex; gap: 2px; align-items: flex-end; margin-right: 6px; }
-  .bars i { width: 3px; border-radius: 1px; background: rgba(255,255,255,.22); }
-  .bars i.on { background: #fff; }
+  .bars i { width: 3px; border-radius: 1px; background: var(--surface-3); }
+  .bars i.on { background: var(--txt); }
   .ch-head { display: flex; align-items: baseline; gap: 10px; }
-  .ch-head b { font-size: 26px; font-weight: 600; letter-spacing: -.5px; font-variant-numeric: tabular-nums; }
+  .ch-head b { font-size: 26px; font-weight: 800; letter-spacing: -.5px; font-variant-numeric: tabular-nums; }
   .ch-head span { color: var(--sub); font-size: 13px; }
-  .ch-bar { display: flex; height: 10px; margin: 10px 0; border-radius: 5px; overflow: hidden; background: rgba(255,255,255,.08); }
-  .ch-bar i { display: block; height: 100%; transition: width .6s; }
-  .ch-bar .files { background: var(--accent); }
+  .ch-bar { display: flex; gap: 2px; height: 10px; margin: 10px 0; }
+  .ch-bar i { flex: 1 1 0; border-radius: 2px; background: var(--surface-2); }
+  .ch-bar .files { background: var(--orange); }
   .ch-bar .music { background: var(--music); }
   .ch-bar .test { background: var(--blue); }
-  .ch-legend { display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: 12.5px; color: var(--sub); }
+  .ch-legend { display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: 13px; color: var(--sub); }
   .ch-legend span { display: inline-flex; align-items: center; gap: 6px; }
   .ch-legend b { color: var(--txt); font-variant-numeric: tabular-nums; }
+  .ch-hint { font-size: 13px; color: var(--sub); }
 
-  /* ---------------------------------------------------------------- narrow screens: the sidebar becomes a bottom bar */
+  /* ---------------------------------------------------------------- narrow screens: the sidebar becomes a tab bar */
   @media (max-width: 900px) {
     .side { top: auto; bottom: var(--player-h, 0px); right: 0; width: auto; height: auto; flex-direction: row; align-items: center;
-      padding: 6px 10px; border-right: 0; border-top: 1px solid var(--line); }
+      padding: 6px 8px; border-right: 0; border-top: 1px solid var(--line); }
     .side .logo, .side .status { display: none; }
     .tabs { flex-direction: row; flex: 1 1 auto; }
-    .tabs button { flex: 1 1 0; flex-direction: column; gap: 2px; padding: 6px 4px; font-size: 11px; text-align: center; }
-    .tabs .eq, .tabs .count { position: absolute; margin: 0; }
+    .tabs button { flex: 1 1 0; flex-direction: column; gap: 3px; padding: 6px 4px; font-size: 11.5px; text-align: center; }
+    .tabs .eq, .tabs .count { position: absolute; top: 2px; right: 20%; margin: 0; }
     .side-foot { margin: 0; flex-direction: row; }
-    .side-item { width: auto; flex-direction: column; gap: 2px; font-size: 11px; padding: 6px 10px; }
+    .side-item { width: auto; flex-direction: column; gap: 3px; font-size: 11.5px; padding: 6px 10px; }
     .side-item .switch { display: none; }
-    .main { margin-left: 0; padding: 20px 16px calc(var(--player-h, 0px) + 96px); }
-    .dock { right: 12px; left: 12px; width: auto; bottom: calc(var(--player-h, 0px) + 72px); }
+    .main { margin-left: 0; padding: 22px 16px calc(var(--player-h, 0px) + 96px); }
+    .page-head h1 { font-size: 30px; }
+    .home-top { grid-template-columns: minmax(0, 1fr); }
+    .dock { right: 12px; left: 12px; width: auto; bottom: calc(var(--player-h, 0px) + 76px); }
     .player { grid-template-columns: minmax(0, 1fr) auto; gap: 12px; padding: 8px 12px; }
     .pl-right, .pl-bar, #pl-shuffle, #pl-repeat { display: none; }
     .deck { flex-direction: column; align-items: stretch; }
     .tt { width: min(280px, 70vw); align-self: center; }
     .mon-rates b { font-size: 22px; }
+    .album-head { flex-direction: column; align-items: flex-start; }
   }
-
-  /* ================================================================ the phone's look
-     The same material as the app: the aurora backdrop, glossy glass sheets with a rim
-     that catches the light top-left, capsule controls, large titles. The chrome --
-     sidebar, player, monitor -- floats inset from the window edges, as on iPadOS 26. */
-  :root {
-    --glass-fill: linear-gradient(180deg, rgba(255,255,255,.15), rgba(255,255,255,.055));
-    --glass-fill-hi: linear-gradient(180deg, rgba(255,255,255,.26), rgba(255,255,255,.10));
-    --float: linear-gradient(180deg, rgba(40,40,52,.58), rgba(16,16,24,.66));
-    --rim: linear-gradient(135deg, rgba(255,255,255,.62) 0%, rgba(255,255,255,.10) 32%, rgba(255,255,255,.04) 68%, rgba(255,255,255,.28) 100%);
-    --lift: inset 0 1px 0 rgba(255,255,255,.28), 0 18px 50px rgba(0,0,0,.32);
-    --gap: 12px;
-    --r-card: 22px;
-  }
-  body {
-    background:
-      radial-gradient(62vmax 62vmax at 0% 5%, rgba(94,92,230,.62), transparent 62%),
-      radial-gradient(52vmax 52vmax at 100% 30%, rgba(100,210,255,.45), transparent 62%),
-      radial-gradient(50vmax 50vmax at 85% 80%, rgba(191,90,242,.38), transparent 62%),
-      radial-gradient(55vmax 55vmax at 12% 96%, rgba(255,214,10,.32), transparent 62%),
-      radial-gradient(40vmax 40vmax at 55% 55%, rgba(255,159,10,.16), transparent 62%),
-      #06060a;
-    background-attachment: fixed;
-  }
-  body.oled { background: #000; --float: linear-gradient(180deg, rgba(30,30,34,.8), rgba(10,10,12,.86)); }
-
-  /* glass sheets, with the rim drawn as a masked gradient border */
-  .pad, .side, .player, .mon-sheet, .dock, #login, .status, .mon-pill, #music-list, .deck {
-    background: var(--glass-fill); border: 0; box-shadow: var(--lift);
-    -webkit-backdrop-filter: blur(26px) saturate(200%); backdrop-filter: blur(26px) saturate(200%);
-  }
-  .pad, .status, #login, #music-list, .deck { position: relative; }
-  .pad::before, .side::before, .player::before, .mon-sheet::before, .dock::before, #login::before, .status::before,
-  .mon-pill::before, #music-list::before, .deck::before, .btn.ghost::before, .tabs button.on::before {
-    content: ""; position: absolute; inset: 0; border-radius: inherit; padding: 1px; pointer-events: none; z-index: 2;
-    background: var(--rim);
-    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
-    -webkit-mask-composite: xor; mask-composite: exclude;
-  }
-  .pad { border-radius: var(--r-card); padding: 20px 22px; }
-
-  /* floating chrome */
-  .side { top: var(--gap); left: var(--gap); bottom: calc(var(--player-h, 0px) + var(--gap) * 2); border-radius: 26px; border-right: 0; background: var(--float); padding: 20px 12px 12px; }
-  .main { margin-left: calc(var(--side) + var(--gap) * 2); padding: 36px 36px calc(var(--player-h, 0px) + 56px); }
-  body.mon-dock .main { margin-right: calc(var(--panel) + var(--gap) * 2); }
-  body.mon-dock .mon-sheet { top: var(--gap); right: var(--gap); bottom: calc(var(--player-h, 0px) + var(--gap) * 2); border-radius: 26px; border-left: 0; background: var(--float); box-shadow: var(--lift); }
-  .player { left: var(--gap); right: var(--gap); bottom: var(--gap); border-radius: 22px; border-top: 0; background: var(--float); }
-  .dock { border-radius: 18px; background: var(--float); bottom: calc(var(--player-h, 0px) + var(--gap) * 2 + 8px); }
-  .mon-sheet { border-radius: 28px; background: var(--float); }
-  .mon-pill { border-radius: 999px; background: var(--float); padding: 9px 16px; }
-
-  /* type: iOS large titles, sentence-case section titles */
-  .page-head h1 { font-size: 34px; letter-spacing: -.7px; }
-  .page-head p { font-size: 14.5px; }
-  .bar { font-size: 15px; font-weight: 600; color: rgba(255,255,255,.86); margin: 28px 6px 10px; }
-  .mon-sub { color: rgba(255,255,255,.7); }
-
-  /* navigation: the current item sits under a lens */
-  .side .logo { font-size: 18px; }
-  .logo .mark { width: 32px; height: 32px; border-radius: 9px; }
-  .tabs button, .side-item { border-radius: 14px; padding: 10px 12px; font-size: 14.5px; color: rgba(255,255,255,.72); }
-  .tabs button.on { position: relative; background: var(--glass-fill-hi); box-shadow: inset 0 1px 0 rgba(255,255,255,.4), 0 6px 16px rgba(0,0,0,.25); color: #fff; }
-  .status { border-radius: 16px; }
-  .switch { width: 38px; height: 23px; border-radius: 12px; }
-  .switch::after { width: 19px; height: 19px; }
-  .mon-toggle.on .switch::after { left: 17px; }
-
-  /* controls: capsules, the primary one a drop of yellow */
-  .btn { border-radius: 999px; height: 36px; padding: 0 18px; background: linear-gradient(180deg, #FFE45C, #FFC400);
-    box-shadow: inset 0 1px 0 rgba(255,255,255,.7), 0 6px 18px rgba(255,196,0,.2); }
-  .btn.ghost { position: relative; background: var(--glass-fill-hi); border: 0; box-shadow: inset 0 1px 0 rgba(255,255,255,.3); }
-  .btn.ghost:hover:not(:disabled) { background: linear-gradient(180deg, rgba(255,255,255,.32), rgba(255,255,255,.14)); }
-  .btn.sm { height: 32px; padding: 0 14px; }
-  textarea { border-radius: 18px; border: 0; background: rgba(0,0,0,.24); box-shadow: inset 0 1px 3px rgba(0,0,0,.4), inset 0 -1px 0 rgba(255,255,255,.1); }
-  input[type=search] { border-radius: 999px; border: 0; background: rgba(0,0,0,.24); box-shadow: inset 0 1px 3px rgba(0,0,0,.4), inset 0 -1px 0 rgba(255,255,255,.1); padding: 0 18px; }
-  .seg { border-radius: 999px; border: 0; background: rgba(0,0,0,.26); box-shadow: inset 0 1px 2px rgba(0,0,0,.4); }
-  .seg button { border-radius: 999px; padding: 7px 16px; }
-  .seg button.on { background: var(--glass-fill-hi); box-shadow: inset 0 1px 0 rgba(255,255,255,.45), 0 3px 10px rgba(0,0,0,.3); }
-  .drop { border-radius: 18px; border-color: rgba(255,255,255,.26); }
-  .banner { border-radius: 14px; }
-  .glyph { border-radius: 50%; background: rgba(255,255,255,.12); }
-  .code { border-radius: 16px; }
-  #login { border-radius: 28px; background: var(--float); }
-
-  /* music, the way iOS Music does it: art first, a quiet list, a floating mini player */
-  section[data-panel="music"] > .pad { background: transparent; box-shadow: none; padding: 0; -webkit-backdrop-filter: none; backdrop-filter: none; }
-  section[data-panel="music"] > .pad::before { display: none; }
-  .deck { border-radius: 26px; background: rgba(0,0,0,.28); padding: 28px 32px; margin-bottom: 18px; }
-  .deck-bg.on { opacity: .7; }
-  .deck-kicker { color: rgba(255,255,255,.7); }
-  .deck-next b { color: rgba(255,255,255,.7); }
-  #music-list { border-radius: 22px; padding: 8px; }
-  #music-list .song { border-radius: 14px; padding: 8px 12px; }
-  #music-list .song .cover { width: 48px; height: 48px; flex-basis: 48px; border-radius: 9px; box-shadow: 0 4px 12px rgba(0,0,0,.35); }
-  #music-list .song .title { font-size: 15px; }
-  #music-list .song:hover { background: rgba(255,255,255,.08); }
-  #music-list .song.accent { background: var(--glass-fill-hi); box-shadow: inset 0 1px 0 rgba(255,255,255,.3); }
-  #music-list .albums { padding: 8px; }
-  .album .art { border-radius: 14px; box-shadow: 0 14px 34px rgba(0,0,0,.45); transition: transform .2s; }
-  .album:hover { background: transparent; }
-  .album:hover .art { transform: scale(1.03); }
-  .album .cap .t { font-size: 14px; }
-  .player .cover { border-radius: 11px; }
-  .pl-btn { border-radius: 50%; }
-  .pl-btn.play { width: 42px; height: 42px; box-shadow: 0 6px 16px rgba(0,0,0,.4); }
-
-  @media (max-width: 900px) {
-    .side { left: var(--gap); right: var(--gap); top: auto; bottom: calc(var(--player-h, 0px) + var(--gap) * 2); border-radius: 999px; padding: 6px 8px; }
-    .main { margin-left: 0; padding: 22px 16px calc(var(--player-h, 0px) + 110px); }
-  }
-  #login .pad { background: transparent; box-shadow: none; -webkit-backdrop-filter: none; backdrop-filter: none; padding-top: 14px; }
-  #login .pad::before { display: none; }
-
-  /* ================================================================ straight, edge-docked panels
-     The sidebar and the docked monitor run the full height of the window, flush to its
-     edges, square-cornered, divided from the page by a single hairline. The player floats
-     in the page between them. */
-  .side, body.mon-dock .mon-sheet { top: 0; bottom: 0; border-radius: 0; }
-  .side { left: 0; box-shadow: 1px 0 0 var(--hud-line), 12px 0 40px rgba(0,0,0,.25); transition: width .22s ease; overflow: hidden; }
-  body.mon-dock .mon-sheet { right: 0; box-shadow: -1px 0 0 var(--hud-line), -12px 0 40px rgba(0,0,0,.25); }
-  .side::before { background: linear-gradient(180deg, var(--accent), rgba(255,214,10,0)) 100% 22px / 1px 72px no-repeat; }
-  body.mon-dock .mon-sheet::before { background: linear-gradient(180deg, var(--accent), rgba(255,214,10,0)) 0 22px / 1px 72px no-repeat; }
-  .main { margin-left: var(--side); padding: 36px 44px calc(var(--player-h, 0px) + 60px); transition: margin .22s ease; }
-  body.mon-dock .main { margin-right: var(--panel); }
-  .player { left: calc(var(--side) + 18px); right: 18px; bottom: 16px; transition: left .22s ease; }
-  body.mon-dock .player { right: calc(var(--panel) + 18px); }
-  .dock { bottom: calc(var(--player-h, 0px) + 32px); }
-
-  /* top of the sidebar: the mark, and the button that folds the sidebar away */
-  .side-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 2px 2px 24px 10px; }
-  .side-top .logo { padding: 0; min-width: 0; }
-  .side-collapse { flex: 0 0 auto; width: 30px; height: 30px; display: grid; place-items: center; padding: 0; cursor: pointer;
-    border: 0; border-radius: 7px; background: transparent; color: var(--hud-label); box-shadow: inset 0 0 0 1px var(--hud-line); }
-  .side-collapse:hover { color: #fff; box-shadow: inset 0 0 0 1px rgba(255,255,255,.25); }
-  .side-collapse svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; transition: transform .22s ease; }
-
-  /* folded: a rail of icons, labels as tooltips */
-  body.side-collapsed { --side: 72px; }
-  body.side-collapsed .side { padding: 18px 12px 14px; }
-  body.side-collapsed .side-top { flex-direction: column; padding: 0 0 22px; gap: 14px; }
-  body.side-collapsed .side-collapse svg { transform: scaleX(-1); }
-  body.side-collapsed .wordmark, body.side-collapsed .tabs button span, body.side-collapsed .side-item span,
-  body.side-collapsed .tabs::before, body.side-collapsed .side-foot::before, body.side-collapsed .status-text,
-  body.side-collapsed .switch { display: none; }
-  body.side-collapsed .tabs button, body.side-collapsed .side-item { justify-content: center; padding: 11px 0; position: relative; }
-  body.side-collapsed .tabs .count, body.side-collapsed .tabs .eq { position: absolute; top: 4px; right: 4px; margin: 0; transform: scale(.8); }
-  body.side-collapsed .mon-toggle.on svg { stroke: var(--accent); filter: drop-shadow(0 0 4px rgba(255,214,10,.8)); }
-  body.side-collapsed .status { justify-content: center; padding: 12px 0; }
-
-  /* ================================================================ clipboard, as a compose box
-     The text sits straight on the card with the send button in its corner; underneath, one
-     toolbar split into three even parts. The same on the phone. */
-  .clip-card { padding: 0; overflow: hidden; }
-  .clip-field { position: relative; padding: 18px 20px 16px; }
-  .clip-field textarea {
-    display: block; min-height: 150px; padding: 0 60px 26px 0; resize: vertical;
-    background: transparent; border: 0; box-shadow: none; border-radius: 0; font-size: 15px; line-height: 1.55;
-  }
-  .clip-field textarea:focus { box-shadow: none; border: 0; }
-  .clip-status { position: absolute; left: 20px; bottom: 16px; color: var(--good); }
-  .send-round {
-    position: absolute; right: 16px; bottom: 16px; width: 44px; height: 44px; display: grid; place-items: center; padding: 0;
-    border: 0; border-radius: 50%; cursor: pointer; color: #111;
-    background: linear-gradient(180deg, #FFE45C, #FFC400);
-    box-shadow: inset 0 1px 0 rgba(255,255,255,.7), 0 8px 20px rgba(255,196,0,.28);
-    transition: transform .1s, filter .12s;
-  }
-  .send-round:hover { filter: brightness(1.06); }
-  .send-round:active { transform: scale(.94); }
-  .send-round svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
-  .clip-tools { display: flex; border-top: 1px solid rgba(255,255,255,.1); }
-  .tool { flex: 1 1 0; display: flex; align-items: center; justify-content: center; gap: 8px; height: 48px; padding: 0;
-    border: 0; background: transparent; color: var(--txt); font: inherit; font-size: 13.5px; font-weight: 600; cursor: pointer;
-    transition: background .12s; }
-  .tool + .tool { box-shadow: inset 1px 0 0 rgba(255,255,255,.1); }
-  .tool:hover { background: rgba(255,255,255,.06); }
-  .tool.danger { color: #FF6961; }
-  .tool svg { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
-  .note.under { margin: 10px 6px 0; }
-
-  @media (max-width: 900px) {
-    .side { top: auto; bottom: 0; }
-    .side-top { display: none; }
-    .player { left: 12px; right: 12px; bottom: 76px; }
-    .main { margin-left: 0; }
-  }
-  .clip-card { display: flex; flex-direction: column; }
-  .clip-field { flex: 1 1 auto; display: flex; flex-direction: column; }
-  .clip-field textarea { flex: 1 1 auto; }
-
-  /* ================================================================ iOS, like the phone
-     The sidebar is an iPadOS sidebar: a material that lets the aurora through, rows with
-     the icon tinted in the accent, the current row under a rounded glass highlight, a real
-     iOS switch, and the phone's status as a small card. The monitor panel uses the same
-     type and bars as the phone's monitor. No monospace, no grid. */
-  :root { --hud-line: rgba(255,255,255,.08); --hud-label: rgba(235,235,245,.6); }
-
-  .side, body.mon-dock .mon-sheet {
-    background: linear-gradient(180deg, rgba(36,36,46,.52), rgba(18,18,26,.6));
-    -webkit-backdrop-filter: blur(40px) saturate(190%); backdrop-filter: blur(40px) saturate(190%);
-  }
-  body.oled .side, body.oled.mon-dock .mon-sheet { background: rgba(18,18,20,.92); }
-  .side::before, body.mon-dock .mon-sheet::before { display: none; }
-  .side { padding: 22px 12px 14px; }
-
-  .side-top { padding: 0 2px 20px 8px; }
-  .side-top .logo { font-size: 20px; font-weight: 700; letter-spacing: -.3px; }
-  .side-collapse { width: 32px; height: 32px; border-radius: 50%; box-shadow: none; color: var(--accent); }
-  .side-collapse:hover { background: rgba(255,255,255,.08); box-shadow: none; color: var(--accent); }
-  .side-collapse svg { stroke-width: 1.7; }
-
-  .tabs { gap: 3px; }
-  .tabs::before { content: none; }
-  .side-foot::before { content: "Connection"; font: 600 13px/1 -apple-system, "Segoe UI Variable Text", "Segoe UI", sans-serif;
-    letter-spacing: 0; color: var(--hud-label); padding: 0 12px 4px; }
-  .tabs button, .side-item { border-radius: 11px; padding: 9px 12px; font-size: 15px; font-weight: 500; color: rgba(255,255,255,.9); gap: 12px; }
-  .tabs svg, .side-item svg { width: 20px; height: 20px; flex-basis: 20px; stroke: var(--accent); stroke-width: 1.8; }
-  .tabs button:hover, .side-item:hover { background: rgba(255,255,255,.07); color: #fff; }
-  .tabs button.on {
-    position: relative; color: #fff; font-weight: 600;
-    background: linear-gradient(180deg, rgba(255,255,255,.24), rgba(255,255,255,.10));
-    box-shadow: inset 0 1px 0 rgba(255,255,255,.4), 0 6px 16px rgba(0,0,0,.22);
-  }
-  .tabs button.on::before {
-    display: block; content: ""; position: absolute; inset: 0; border-radius: inherit; padding: 1px; pointer-events: none;
-    background: var(--rim); -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
-    -webkit-mask-composite: xor; mask-composite: exclude;
-  }
-
-  /* the iOS switch, as on the phone */
-  .switch { width: 42px; height: 26px; border-radius: 13px; background: rgba(120,120,128,.32); box-shadow: none; }
-  .switch::after { left: 2px; top: 2px; width: 22px; height: 22px; border-radius: 50%; background: #fff; box-shadow: 0 2px 5px rgba(0,0,0,.35); }
-  .mon-toggle.on .switch { background: var(--good); box-shadow: none; }
-  .mon-toggle.on .switch::after { left: 18px; background: #fff; box-shadow: 0 2px 5px rgba(0,0,0,.35); }
-
-  /* the phone, as a small glass card */
-  .status { border-radius: 14px; padding: 11px 12px; background: linear-gradient(180deg, rgba(255,255,255,.12), rgba(255,255,255,.05)); box-shadow: inset 0 1px 0 rgba(255,255,255,.2); }
-  .status .dev { font-family: inherit; font-size: 13.5px; font-weight: 600; letter-spacing: 0; }
-  .status .lbl { font-family: inherit; font-size: 12px; letter-spacing: 0; text-transform: none; }
-  .dot.on { animation: none; }
-
-  body.side-collapsed .tabs::before, body.side-collapsed .side-foot::before { display: none; }
-  body.side-collapsed .tabs button, body.side-collapsed .side-item { padding: 11px 0; }
-  body.side-collapsed .mon-toggle.on svg { filter: none; }
-  body.side-collapsed .mon-toggle.on { background: rgba(48,209,88,.16); }
-
-  /* the monitor panel reads like the phone's monitor */
-  body.mon-dock .mon-head > b { font-family: inherit; font-size: 20px; font-weight: 700; letter-spacing: -.3px; text-transform: none; }
-  .mon-head > b { font-size: 20px; }
-  .mon-live { font-family: inherit; font-size: 12px; letter-spacing: 0; text-transform: none; border-radius: 99px; padding: 3px 10px;
-    background: rgba(48,209,88,.16); box-shadow: none; }
-  .mon-head .x { border-radius: 50%; background: rgba(255,255,255,.1); box-shadow: none; }
-  .mon-sub { font-family: inherit; font-size: 15px; font-weight: 600; line-height: 1.2; letter-spacing: 0; text-transform: none; color: rgba(255,255,255,.86); margin: 22px 0 10px; }
-  .mon-rates .k { font-family: inherit; font-size: 13px; font-weight: 500; line-height: 1.2; letter-spacing: 0; text-transform: none; color: var(--sub); }
-  .mon-rates b { font-weight: 600; letter-spacing: -.5px; }
-  .mon-grid > div { border-bottom: .5px solid rgba(255,255,255,.1); }
-  .mon-grid span { font-size: 14px; }
-  .mon-grid b { font-family: inherit; font-size: 14px; font-weight: 600; }
-  .ch-head b { font-weight: 600; font-size: 28px; }
-  .ch-head span { font-family: inherit; font-size: 13px; letter-spacing: 0; }
-  /* one continuous capsule, filled left to right by use */
-  .ch-bar { display: grid; grid-template-columns: repeat(32, minmax(0, 1fr)); gap: 0; height: 10px; border-radius: 5px; overflow: hidden;
-    background: rgba(0,0,0,.3); box-shadow: inset 0 1px 2px rgba(0,0,0,.4); }
-  .ch-bar i { border-radius: 0; background: transparent; box-shadow: none !important; }
-  .ch-bar i.files { background: var(--accent); }
-  .ch-bar i.music { background: var(--music); }
-  .ch-bar i.test { background: var(--blue); }
-  .ch-legend { font-family: inherit; font-size: 13px; }
-  .ch-hint { margin: 10px 0 0; font-size: 13px; color: var(--accent); }
-
-  /* clipboard: Send to phone as a real button in the corner */
-  .clip-field textarea { padding: 0 0 58px 0; }
-  .clip-status { bottom: 26px; }
-  .send-pill {
-    position: absolute; right: 16px; bottom: 16px; height: 40px; display: inline-flex; align-items: center; gap: 8px; padding: 0 18px 0 14px;
-    border: 0; border-radius: 999px; cursor: pointer; color: #111; font: inherit; font-size: 14px; font-weight: 600;
-    background: linear-gradient(180deg, #FFE45C, #FFC400);
-    box-shadow: inset 0 1px 0 rgba(255,255,255,.7), 0 8px 20px rgba(255,196,0,.28);
-    transition: transform .1s, filter .12s;
-  }
-  .send-pill:hover { filter: brightness(1.06); }
-  .send-pill:active { transform: scale(.97); }
-  .send-pill svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
-
-  /* the drop card: a big tinted icon, a title, a line, and the choosers inside */
-  .drop {
-    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; min-height: 250px; padding: 30px 20px;
-    border: 1.5px dashed rgba(255,255,255,.22); border-radius: 20px;
-    background: radial-gradient(120% 90% at 50% 0%, rgba(255,214,10,.10), rgba(0,0,0,.12) 60%);
-    transition: border-color .15s, background .15s, transform .15s;
-  }
-  .drop:hover { border-color: rgba(255,214,10,.55); }
-  .drop.over { border-color: var(--accent); background: radial-gradient(120% 90% at 50% 0%, rgba(255,214,10,.22), rgba(255,214,10,.05) 70%); transform: scale(1.01); }
-  .drop-icon { width: 64px; height: 64px; display: grid; place-items: center; margin-bottom: 8px; border-radius: 50%;
-    background: linear-gradient(180deg, rgba(255,214,10,.28), rgba(255,214,10,.10));
-    box-shadow: inset 0 1px 0 rgba(255,255,255,.35), 0 10px 30px rgba(255,196,0,.18); }
-  .drop-icon svg { width: 30px; height: 30px; fill: none; stroke: var(--accent); stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
-  .drop.over .drop-icon svg { animation: nudge .7s ease-in-out infinite alternate; }
-  @keyframes nudge { to { transform: translateY(-3px); } }
-  .drop .big { font-size: 18px; font-weight: 700; letter-spacing: -.2px; }
-  .drop .meta { font-size: 13px; }
-  .drop-actions { display: flex; gap: 10px; margin-top: 14px; }
-
-  /* the USB card in Settings */
-  .usb-head { display: flex; align-items: center; gap: 14px; }
-  .usb-head svg { width: 42px; height: 42px; flex: 0 0 42px; padding: 9px; border-radius: 50%; fill: none; stroke: var(--accent); stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; background: linear-gradient(180deg, rgba(255,214,10,.28), rgba(255,214,10,.10)); box-shadow: inset 0 1px 0 rgba(255,255,255,.3); }
-  .usb-head b { display: block; font-size: 15px; }
-  .usb-head span { color: var(--sub); font-size: 13px; }
-  .steps { margin: 14px 0 0; padding-left: 20px; color: var(--txt); font-size: 13.5px; }
-  .steps li { margin: 6px 0; }
-  .steps li::marker { color: var(--accent); font-weight: 700; }
-
-  @media (max-width: 900px) { .tabs::before, .side-foot::before { display: none; } }
-
-  /* the page fills whatever the sidebar and the monitor leave, folded or not */
-  .main > * { max-width: none; }
-
-  /* Songs / Albums: a proper switch */
-  #music-view button { padding: 8px 20px; font-size: 14px; }
-
-  /* albums: buttons you can reach with the keyboard, with a play button over the cover */
-  .albums { grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 18px 14px; }
-  button.album { display: block; width: 100%; padding: 8px; border: 0; border-radius: 16px; background: transparent; color: inherit; font: inherit; text-align: left; cursor: pointer; }
-  button.album:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-  .album .art { position: relative; }
-  .album-play { position: absolute; right: 10px; bottom: 10px; width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center;
-    color: #111; background: linear-gradient(180deg, #FFE45C, #FFC400); box-shadow: 0 6px 16px rgba(0,0,0,.45);
-    opacity: 0; transform: translateY(6px); transition: opacity .15s, transform .15s; }
-  .album-play svg { width: 20px; height: 20px; margin-left: 2px; }
-  button.album:hover .album-play, button.album:focus-visible .album-play { opacity: 1; transform: none; }
-  .album-play:hover { filter: brightness(1.08); }
-
-  /* an opened album, as iOS Music shows it */
-  .album-page { display: block; margin: 0 0 14px; }
-  .album-page .back { display: inline-flex; align-items: center; gap: 4px; margin: 0 0 14px -6px; padding: 6px 12px 6px 6px; border: 0; border-radius: 999px;
-    background: transparent; color: var(--accent); font: inherit; font-size: 15px; font-weight: 600; cursor: pointer; }
-  .album-page .back:hover { background: rgba(255,214,10,.1); }
-  .album-page .back svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
-  .album-head { display: flex; align-items: flex-end; gap: 28px; padding: 22px; border-radius: 26px;
-    background: var(--glass-fill); box-shadow: var(--lift); position: relative; }
-  .album-cover .cover { width: 200px; height: 200px; flex: 0 0 200px; border-radius: 16px; box-shadow: 0 18px 44px rgba(0,0,0,.5); font-size: 48px; }
-  .album-info { min-width: 0; }
-  .album-info .kicker { font-size: 12px; font-weight: 700; letter-spacing: 1.2px; text-transform: uppercase; color: var(--sub); }
-  .album-info h2 { margin: 6px 0 2px; font-size: 30px; font-weight: 700; letter-spacing: -.5px; line-height: 1.12; }
-  .album-info .by { font-size: 17px; font-weight: 600; color: var(--accent); }
-  .album-info .facts { margin-top: 6px; font-size: 13px; color: var(--sub); }
-  .album-actions { display: flex; gap: 10px; margin-top: 18px; }
-  .album-actions .btn { height: 40px; padding: 0 22px; gap: 8px; }
-  .album-actions .btn svg { width: 17px; height: 17px; }
-  @media (max-width: 700px) { .album-head { flex-direction: column; align-items: flex-start; } }
-
-  /* ================================================================ the liquid lens
-     One glass lens per row of choices, sliding with a little overshoot, following the
-     pointer while dragged. Buttons sit above it and carry no fill of their own. */
-  .liquid { position: relative; isolation: isolate; }
-  .liquid > .lens {
-    position: absolute; left: 0; top: 0; z-index: 0; pointer-events: none; border-radius: 999px;
-    background: linear-gradient(180deg, rgba(255,255,255,.28), rgba(255,255,255,.10));
-    box-shadow: inset 0 1px 0 rgba(255,255,255,.55), inset 0 -1px 0 rgba(255,255,255,.1), 0 6px 18px rgba(0,0,0,.3);
-    transition: transform .5s cubic-bezier(.3, 1.45, .45, 1), width .3s ease, height .3s ease, scale .25s ease, opacity .2s;
-  }
-  .liquid > .lens::before {
-    content: ""; position: absolute; inset: 0; border-radius: inherit; padding: 1px;
-    background: var(--rim); -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
-    -webkit-mask-composite: xor; mask-composite: exclude;
-  }
-  .liquid > .lens.instant { transition: scale .25s ease, opacity .2s; }
-  .liquid.dragging > .lens { scale: 1.08; background: linear-gradient(180deg, rgba(255,255,255,.34), rgba(255,255,255,.12)); }
-  .liquid.dragging { cursor: grabbing; user-select: none; }
-  .liquid > button { position: relative; z-index: 1; background: transparent !important; box-shadow: none !important; }
-  .liquid > button::before { display: none !important; }
-  .liquid > button.lit { color: #fff; }
-
-  /* segmented controls: the lens stands proud of the track, like the phone */
-  .seg.liquid { overflow: visible; }
-  .seg.liquid > .lens { margin-top: -3px; padding: 3px 0; box-sizing: content-box; }
-
-  /* the sidebar's tabs, as the phone's tab bar standing upright */
-  .side .tabs {
-    padding: 6px; border-radius: 24px;
-    background: linear-gradient(180deg, rgba(255,255,255,.12), rgba(255,255,255,.04));
-    box-shadow: inset 0 1px 0 rgba(255,255,255,.22), inset 0 0 0 1px rgba(255,255,255,.08), 0 12px 30px rgba(0,0,0,.25);
-  }
-  .side .tabs.liquid > .lens { border-radius: 18px; }
-  .side .tabs > button { border-radius: 18px; padding: 11px 12px; }
-  .side .tabs > button.on, .side .tabs > button.lit { font-weight: 600; }
-  .side .tabs > button.lit svg { stroke: var(--accent); }
-  body.side-collapsed .side .tabs { padding: 5px; }
-  @media (max-width: 900px) { .side .tabs { border-radius: 999px; } .side .tabs.liquid > .lens { border-radius: 999px; } }
-
-  /* the liquid switch: a capsule with its label, and a glass knob that bulges out of it */
-  .set-label { font-size: 14px; font-weight: 600; margin: 0 0 12px; }
-  #size-seg { margin-bottom: 2px; }
-  .lswitch {
-    position: relative; width: 176px; height: 44px; margin: 8px 0 4px; border-radius: 999px; cursor: pointer; user-select: none;
-    background: rgba(0,0,0,.3); box-shadow: inset 0 1px 3px rgba(0,0,0,.45), inset 0 -1px 0 rgba(255,255,255,.12), inset 0 0 0 1px rgba(255,255,255,.06);
-    outline: none;
-  }
-  .lswitch:focus-visible { box-shadow: 0 0 0 3px rgba(255,214,10,.45), inset 0 1px 3px rgba(0,0,0,.45); }
-  .lswitch-label { position: absolute; top: 0; bottom: 0; right: 22px; display: flex; align-items: center; font-size: 16px; font-weight: 600; transition: right .3s, left .3s; }
-  .lswitch.on .lswitch-label { right: auto; left: 22px; }
-  .lswitch-knob {
-    position: absolute; left: 0; top: -5px; width: 54px; height: 54px; border-radius: 50%; display: grid; place-items: center;
-    transform: translateX(-4px);
-    background: linear-gradient(180deg, rgba(255,255,255,.42), rgba(255,255,255,.14));
-    box-shadow: inset 0 1px 0 rgba(255,255,255,.7), inset 0 -2px 6px rgba(255,255,255,.08), 0 10px 26px rgba(0,0,0,.45);
-    -webkit-backdrop-filter: blur(6px) saturate(160%); backdrop-filter: blur(6px) saturate(160%);
-    transition: transform .5s cubic-bezier(.3, 1.45, .45, 1), scale .2s;
-  }
-  .lswitch-knob::before {
-    content: ""; position: absolute; inset: 0; border-radius: 50%; padding: 1.2px; pointer-events: none;
-    background: var(--rim); -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
-    -webkit-mask-composite: xor; mask-composite: exclude;
-  }
-  .lswitch.on .lswitch-knob { transform: translateX(126px); }
-  .lswitch.dragging .lswitch-knob { transition: scale .2s; scale: 1.06; }
-  .lswitch-knob svg { width: 24px; height: 24px; fill: none; stroke: #fff; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
-  .lswitch .moon, .lswitch.on .sun { display: none; }
-  .lswitch.on .moon { display: block; }
 </style>
 </head>
 <body>
 
 <!-- ------------------------------------------------------------------ login -->
 <section id="login" hidden>
-  <div class="mast"><span class="logo"><svg class="mark" viewBox="0 0 108 108" aria-hidden="true"><defs><linearGradient id="l-bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#2A2270"/><stop offset=".55" stop-color="#0C0C18"/><stop offset="1" stop-color="#08080E"/></linearGradient><radialGradient id="l-g1" cx="98" cy="18" r="48" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#64D2FF" stop-opacity=".44"/><stop offset="1" stop-color="#64D2FF" stop-opacity="0"/></radialGradient><radialGradient id="l-g2" cx="30" cy="100" r="56" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#FFB000" stop-opacity=".4"/><stop offset="1" stop-color="#FFB000" stop-opacity="0"/></radialGradient><radialGradient id="l-g3" cx="104" cy="104" r="50" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#BF5AF2" stop-opacity=".4"/><stop offset="1" stop-color="#BF5AF2" stop-opacity="0"/></radialGradient><linearGradient id="l-body" x1="330" y1="272" x2="520" y2="586" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#FFF4A8"/><stop offset=".42" stop-color="#FFD60A"/><stop offset="1" stop-color="#FF9F0A"/></linearGradient><linearGradient id="l-gloss" x1="0" y1="260" x2="0" y2="440" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#fff" stop-opacity=".5"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient><linearGradient id="l-rim" x1="295" y1="272" x2="580" y2="586" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#fff" stop-opacity=".95"/><stop offset=".45" stop-color="#fff" stop-opacity="0"/><stop offset=".8" stop-color="#fff" stop-opacity="0"/><stop offset="1" stop-color="#fff" stop-opacity=".6"/></linearGradient><clipPath id="l-glyph"><path d="M295,272 H371 V358 A127.5,127.5 0 1 1 371,551 V586 H295 V484 H433 V527 L527,458 L433,386 V430 H295 Z"/></clipPath><filter id="l-soft" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="10"/></filter></defs><rect width="108" height="108" rx="24" fill="url(#l-bg)"/><rect width="108" height="108" rx="24" fill="url(#l-g1)"/><rect width="108" height="108" rx="24" fill="url(#l-g2)"/><rect width="108" height="108" rx="24" fill="url(#l-g3)"/><g transform="translate(54 54) scale(0.152) translate(-438.5 -429)"><path d="M295,272 H371 V358 A127.5,127.5 0 1 1 371,551 V586 H295 V484 H433 V527 L527,458 L433,386 V430 H295 Z" transform="translate(6 22)" fill="#000" fill-opacity=".45" filter="url(#l-soft)"/><path d="M295,272 H371 V358 A127.5,127.5 0 1 1 371,551 V586 H295 V484 H433 V527 L527,458 L433,386 V430 H295 Z" fill="url(#l-body)"/><path d="M270,250 H600 V420 Q440,380 270,440 Z" fill="url(#l-gloss)" clip-path="url(#l-glyph)"/><path d="M295,272 H371 V358 A127.5,127.5 0 1 1 371,551 V586 H295 V484 H433 V527 L527,458 L433,386 V430 H295 Z" fill="none" stroke="url(#l-rim)" stroke-width="7" stroke-linejoin="round"/></g></svg>BlazeIt</span></div>
-  <div class="hazard"></div>
-  <div class="hero">
-    <h1>Connect this computer</h1>
-    <p id="login-device">The phone will ask you to allow it.</p>
-  </div>
+  <div class="logo"><span class="mark"><svg viewBox="0 0 24 24"><path d="M13.5 2.5 5 13.5h6.5l-1 8 8.5-11h-6.5l1-8Z"/></svg></span>BlazeIt</div>
+  <h1>Connect this computer</h1>
+  <p id="login-device">The phone will ask you to allow it.</p>
   <div class="pad">
     <div id="login-error" class="banner bad" hidden></div>
     <div id="pair-idle">
-      <div class="actions"><button id="pair" class="btn" style="flex:1">Ask to connect</button></div>
+      <div class="actions"><button id="pair" class="btn">Ask to connect</button></div>
     </div>
     <div id="pair-wait" hidden>
-      <p class="note" style="margin-top:0">Tap <b>Allow</b> on your phone. Only allow it if the phone shows this same code:</p>
+      <p class="note" style="margin-top:0">Tap <b>Allow</b> on your phone, but only if it shows this same code:</p>
       <div class="code" id="pair-code">----</div>
       <div class="meta" id="pair-status">Waiting for the phone...</div>
       <div class="actions"><button id="pair-cancel" class="btn ghost">Cancel</button></div>
@@ -820,16 +453,12 @@
 <!-- -------------------------------------------------------------------- app -->
 <div class="shell" id="app" hidden>
   <aside class="side">
-    <div class="side-top">
-      <div class="logo"><svg class="mark" viewBox="0 0 108 108" aria-hidden="true"><defs><linearGradient id="m-bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#2A2270"/><stop offset=".55" stop-color="#0C0C18"/><stop offset="1" stop-color="#08080E"/></linearGradient><radialGradient id="m-g1" cx="98" cy="18" r="48" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#64D2FF" stop-opacity=".44"/><stop offset="1" stop-color="#64D2FF" stop-opacity="0"/></radialGradient><radialGradient id="m-g2" cx="30" cy="100" r="56" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#FFB000" stop-opacity=".4"/><stop offset="1" stop-color="#FFB000" stop-opacity="0"/></radialGradient><radialGradient id="m-g3" cx="104" cy="104" r="50" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#BF5AF2" stop-opacity=".4"/><stop offset="1" stop-color="#BF5AF2" stop-opacity="0"/></radialGradient><linearGradient id="m-body" x1="330" y1="272" x2="520" y2="586" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#FFF4A8"/><stop offset=".42" stop-color="#FFD60A"/><stop offset="1" stop-color="#FF9F0A"/></linearGradient><linearGradient id="m-gloss" x1="0" y1="260" x2="0" y2="440" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#fff" stop-opacity=".5"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient><linearGradient id="m-rim" x1="295" y1="272" x2="580" y2="586" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#fff" stop-opacity=".95"/><stop offset=".45" stop-color="#fff" stop-opacity="0"/><stop offset=".8" stop-color="#fff" stop-opacity="0"/><stop offset="1" stop-color="#fff" stop-opacity=".6"/></linearGradient><clipPath id="m-glyph"><path d="M295,272 H371 V358 A127.5,127.5 0 1 1 371,551 V586 H295 V484 H433 V527 L527,458 L433,386 V430 H295 Z"/></clipPath><filter id="m-soft" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="10"/></filter></defs><rect width="108" height="108" rx="24" fill="url(#m-bg)"/><rect width="108" height="108" rx="24" fill="url(#m-g1)"/><rect width="108" height="108" rx="24" fill="url(#m-g2)"/><rect width="108" height="108" rx="24" fill="url(#m-g3)"/><g transform="translate(54 54) scale(0.152) translate(-438.5 -429)"><path d="M295,272 H371 V358 A127.5,127.5 0 1 1 371,551 V586 H295 V484 H433 V527 L527,458 L433,386 V430 H295 Z" transform="translate(6 22)" fill="#000" fill-opacity=".45" filter="url(#m-soft)"/><path d="M295,272 H371 V358 A127.5,127.5 0 1 1 371,551 V586 H295 V484 H433 V527 L527,458 L433,386 V430 H295 Z" fill="url(#m-body)"/><path d="M270,250 H600 V420 Q440,380 270,440 Z" fill="url(#m-gloss)" clip-path="url(#m-glyph)"/><path d="M295,272 H371 V358 A127.5,127.5 0 1 1 371,551 V586 H295 V484 H433 V527 L527,458 L433,386 V430 H295 Z" fill="none" stroke="url(#m-rim)" stroke-width="7" stroke-linejoin="round"/></g></svg><span class="wordmark">BlazeIt</span></div>
-      <button class="side-collapse" id="side-collapse" title="Collapse the sidebar"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5.5h16v13H4z"/><path d="M9.5 5.5v13"/><path d="m15.5 10-2 2 2 2"/></svg></button>
-    </div>
+    <div class="logo"><span class="mark"><svg viewBox="0 0 24 24"><path d="M13.5 2.5 5 13.5h6.5l-1 8 8.5-11h-6.5l1-8Z"/></svg></span><span>BlazeIt</span></div>
     <nav class="tabs" id="tabs"></nav>
     <div class="side-foot">
       <button class="side-item mon-toggle" id="mon-toggle" title="Monitor: live speed, ping and the Wi-Fi link">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12h4l3-7 5 14 3-9 2 2h3"/></svg><span>Monitor</span><i class="switch"></i>
       </button>
-      <button class="theme-toggle" id="theme-toggle" hidden></button>
       <div class="status" id="status" title="The phone this page is connected to">
         <span class="dot" id="dot"></span>
         <span class="status-text"><b class="dev" id="status-device">Phone</b><span class="lbl" id="conn">Connecting</span></span>
@@ -838,89 +467,112 @@
   </aside>
   <main class="main" id="main">
   <div class="page-head"><h1 id="page-title">Home</h1><p id="page-sub"></p></div>
-  <div class="hero" hidden><h1 id="hero-title"></h1><p id="hero-sub"></p></div>
 
   <!-- ---------------------------------------------------------- home -->
   <section data-panel="home" hidden>
-    <div class="grid2">
-    <div class="block">
-    <div class="bar">Clipboard</div>
-    <div class="pad clip-card">
-      <div class="clip-field">
-        <textarea id="clip" placeholder="Type or paste text here, then send it to the phone."></textarea>
-        <span class="meta clip-status" id="clip-status"></span>
-        <button id="clip-send" class="send-pill" title="Send to the phone (Ctrl+Enter)"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 19V5.5"/><path d="M6.5 11 12 5.5 17.5 11"/></svg><span>Send to phone</span></button>
+    <div class="home-top">
+      <div class="hero">
+        <div class="kicker"><span class="dot" id="hero-dot"></span><span id="hero-state">Connecting</span></div>
+        <h2 id="hero-title">Phone</h2>
+        <p id="hero-sub"></p>
+        <div class="rate"><b id="hero-rate">Idle</b><span id="hero-rate-sub">Nothing moving</span></div>
       </div>
-      <div class="clip-tools">
-        <button class="tool" id="clip-paste" title="Paste what this computer last copied"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5.5H7.5A1.5 1.5 0 0 0 6 7v12a1.5 1.5 0 0 0 1.5 1.5h9A1.5 1.5 0 0 0 18 19V7a1.5 1.5 0 0 0-1.5-1.5H15"/><path d="M10 3.5h4a1 1 0 0 1 1 1v1.5a1 1 0 0 1-1 1h-4a1 1 0 0 1-1-1V4.5a1 1 0 0 1 1-1Z"/></svg><span>Paste</span></button>
-        <button class="tool" id="clip-copy" title="Copy the text to this computer"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 8.5V6a1.5 1.5 0 0 0-1.5-1.5H6A1.5 1.5 0 0 0 4.5 6v7.5A1.5 1.5 0 0 0 6 15h2.5"/><path d="M10 8.5h8a1.5 1.5 0 0 1 1.5 1.5v8a1.5 1.5 0 0 1-1.5 1.5h-8A1.5 1.5 0 0 1 8.5 18v-8A1.5 1.5 0 0 1 10 8.5Z"/></svg><span>Copy</span></button>
-        <button class="tool danger" id="clip-clear" title="Clear here and on the phone"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 7h15"/><path d="M9.5 7V5a1 1 0 0 1 1-1h3a1 1 0 0 1 1 1v2"/><path d="M6.5 7l.8 11.5A1.5 1.5 0 0 0 8.8 20h6.4a1.5 1.5 0 0 0 1.5-1.5L17.5 7"/></svg><span>Clear</span></button>
-      </div>
-    </div>
-    <p class="note under">From the phone: copy anything there, open BlazeIt and tap <b>Paste</b>. It lands here in a moment.</p>
-    <p class="note under" id="clip-note"></p>
+      <button class="tile blue" id="direct-tile" title="The phone's own offline network: the fastest wireless link">
+        <span class="appicon blue" id="direct-icon"><svg viewBox="0 0 24 24"><path d="M13.5 2.5 5 13.5h6.5l-1 8 8.5-11h-6.5l1-8Z"/></svg></span>
+        <span class="t" id="direct-name">Direct link</span><span class="d" id="direct-detail">Fastest. Works offline</span>
+      </button>
+      <button class="tile green" id="send-tile" title="Choose files to send to the phone">
+        <span class="appicon green"><svg viewBox="0 0 24 24"><path d="M12 15V4"/><path d="M7.5 8.5 12 4l4.5 4.5"/><path d="M4 14v4a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-4"/></svg></span>
+        <span class="t">Send files</span><span class="d">To the phone, or drop them anywhere</span>
+      </button>
     </div>
 
-    <div class="block">
-    <div class="bar">Send to the phone</div>
-    <div class="pad">
-      <div id="drop" class="drop">
-        <div class="drop-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15V4"/><path d="M7.5 8.5 12 4l4.5 4.5"/><path d="M4 14v4a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-4"/></svg></div>
-        <div class="big">Drop files or folders here</div>
-        <div class="meta">They land in the phone's folder, subfolders and all.</div>
-        <div class="drop-actions">
-          <button class="btn sm" id="pick-files">Choose files</button>
-          <button class="btn sm ghost" id="pick-folder">Choose a folder</button>
-        </div>
+    <div class="card direct-card" id="direct-card" hidden>
+      <div class="card-title">
+        <span class="appicon blue"><svg viewBox="0 0 24 24"><path d="M13.5 2.5 5 13.5h6.5l-1 8 8.5-11h-6.5l1-8Z"/></svg></span>
+        <div class="grow"><h3 id="direct-title">Direct link is on</h3><p id="direct-sub">The phone's own offline network, one hop, nobody else on it.</p></div>
+        <button class="btn sm ghost" id="direct-stop">Stop</button>
       </div>
-      <input id="file-input" type="file" multiple hidden>
-      <input id="folder-input" type="file" webkitdirectory multiple hidden>
-            <p class="note">Moving something big? A USB-C cable is the fastest link: <a href="#" id="usb-link">how to set it up</a>.</p>
-      <p class="note" id="limit"></p>
+      <div class="fields" id="direct-fields"></div>
+      <p class="note" id="direct-note"></p>
     </div>
+
+    <div class="grid2">
+      <div class="card clip-card">
+        <div class="card-title">
+          <span class="appicon yellow"><svg viewBox="0 0 24 24"><path d="M9 5.5H7.5A1.5 1.5 0 0 0 6 7v12a1.5 1.5 0 0 0 1.5 1.5h9A1.5 1.5 0 0 0 18 19V7a1.5 1.5 0 0 0-1.5-1.5H15"/><path d="M10 3.5h4a1 1 0 0 1 1 1v1.5a1 1 0 0 1-1 1h-4a1 1 0 0 1-1-1V4.5a1 1 0 0 1 1-1Z"/></svg></span>
+          <div class="grow"><h3>Clipboard</h3><p>Shared with the phone, both ways</p></div>
+        </div>
+        <div class="clip-field">
+          <textarea id="clip" placeholder="Type or paste text here, then send it to the phone."></textarea>
+          <span class="clip-status" id="clip-status"></span>
+        </div>
+        <div class="clip-tools">
+          <button class="btn sm ghost" id="clip-paste" title="Paste what this computer last copied"><svg class="i" viewBox="0 0 24 24"><path d="M9 5.5H7.5A1.5 1.5 0 0 0 6 7v12a1.5 1.5 0 0 0 1.5 1.5h9A1.5 1.5 0 0 0 18 19V7a1.5 1.5 0 0 0-1.5-1.5H15"/><path d="M10 3.5h4a1 1 0 0 1 1 1v1.5a1 1 0 0 1-1 1h-4a1 1 0 0 1-1-1V4.5a1 1 0 0 1 1-1Z"/></svg>Paste</button>
+          <button class="btn sm ghost" id="clip-copy" title="Copy the text on this computer"><svg class="i" viewBox="0 0 24 24"><path d="M15 8.5V6a1.5 1.5 0 0 0-1.5-1.5H6A1.5 1.5 0 0 0 4.5 6v7.5A1.5 1.5 0 0 0 6 15h2.5"/><path d="M10 8.5h8a1.5 1.5 0 0 1 1.5 1.5v8a1.5 1.5 0 0 1-1.5 1.5h-8A1.5 1.5 0 0 1 8.5 18v-8A1.5 1.5 0 0 1 10 8.5Z"/></svg>Copy</button>
+          <button class="btn sm ghost danger" id="clip-clear" title="Clear here and on the phone"><svg class="i" viewBox="0 0 24 24"><path d="M4.5 7h15"/><path d="M9.5 7V5a1 1 0 0 1 1-1h3a1 1 0 0 1 1 1v2"/><path d="M6.5 7l.8 11.5A1.5 1.5 0 0 0 8.8 20h6.4a1.5 1.5 0 0 0 1.5-1.5L17.5 7"/></svg>Clear</button>
+          <span class="grow"></span>
+          <button id="clip-send" class="btn" title="Send to the phone (Ctrl+Enter)"><svg class="i" viewBox="0 0 24 24"><path d="M12 19V5.5"/><path d="M6.5 11 12 5.5 17.5 11"/></svg>Send to phone</button>
+        </div>
+        <p class="note" id="clip-note"></p>
+      </div>
+
+      <div class="card" style="display:flex;flex-direction:column">
+        <div id="drop" class="drop">
+          <span class="appicon green"><svg viewBox="0 0 24 24"><path d="M12 15V4"/><path d="M7.5 8.5 12 4l4.5 4.5"/><path d="M4 14v4a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-4"/></svg></span>
+          <div class="big">Drop files or folders here</div>
+          <div class="meta">They land in the phone's folder, subfolders and all.</div>
+          <div class="drop-actions">
+            <button class="btn sm" id="pick-files">Choose files</button>
+            <button class="btn sm ghost" id="pick-folder">Choose a folder</button>
+          </div>
+        </div>
+        <input id="file-input" type="file" multiple hidden>
+        <input id="folder-input" type="file" webkitdirectory multiple hidden>
+        <p class="note" id="limit"></p>
+      </div>
     </div>
-    </div>
+
     <div class="bar">On the phone</div>
-    <div class="pad" id="files"><p class="empty">Nothing here yet.</p></div>
+    <div class="card" id="files"><p class="empty">Nothing here yet.</p></div>
   </section>
 
   <!-- ---------------------------------------------------------- music -->
   <section data-panel="music" hidden>
-    <div class="bar">Library <span class="grow"></span><span class="act" id="music-rescan">Rescan</span></div>
-    <div class="pad">
-      <div class="deck" id="deck" hidden>
-        <div class="deck-bg" id="deck-bg"></div>
-        <div class="tt" id="tt" title="Play / pause">
-          <div class="tt-label" id="tt-label">BLAZEIT</div>
-          <img class="tt-record" src="/api/music/vinyl/record.png" alt="">
-          <img class="tt-sheen" src="/api/music/vinyl/sheen.png" alt="">
-          <svg class="tt-arm" viewBox="0 0 1000 1000" aria-hidden="true">
-            <g id="tt-arm">
-              <g transform="translate(10 12)" fill="#000" fill-opacity=".4">
-                <path d="M915,75 A9,9 0 0 1 924,84 L924,386 A9,9 0 0 1 915,395 A9,9 0 0 1 906,386 L906,84 A9,9 0 0 1 915,75 Z"/>
-                <path d="M901,379 L929,379 A10,10 0 0 1 939,389 L939,443 A10,10 0 0 1 929,453 L901,453 A10,10 0 0 1 891,443 L891,389 A10,10 0 0 1 901,379 Z"/>
-              </g>
-              <path fill="#E9E9EC" d="M915,75 A9,9 0 0 1 924,84 L924,386 A9,9 0 0 1 915,395 A9,9 0 0 1 906,386 L906,84 A9,9 0 0 1 915,75 Z"/>
-              <path fill="#fff" fill-opacity=".7" d="M910.5,95 A2,2 0 0 1 912.5,97 L912.5,387 A2,2 0 0 1 910.5,389 A2,2 0 0 1 908.5,387 L908.5,97 A2,2 0 0 1 910.5,95 Z"/>
-              <path fill="#F4F4F6" d="M901,379 L929,379 A10,10 0 0 1 939,389 L939,443 A10,10 0 0 1 929,453 L901,453 A10,10 0 0 1 891,443 L891,389 A10,10 0 0 1 901,379 Z"/>
-              <path fill="#C9C9CF" d="M901,429 L929,429 A10,10 0 0 1 939,439 L939,443 A10,10 0 0 1 929,453 L901,453 A10,10 0 0 1 891,443 L891,439 A10,10 0 0 1 901,429 Z"/>
-              <path fill="#2A2A2E" d="M912,449 L918,449 A3,3 0 0 1 921,452 L921,460 A3,3 0 0 1 918,463 L912,463 A3,3 0 0 1 909,460 L909,452 A3,3 0 0 1 912,449 Z"/>
-              <circle cx="915" cy="75" r="36" fill="#26262A" stroke="#4A4A50" stroke-width="3"/>
-              <circle cx="915" cy="75" r="24" fill="#ECECEF"/>
-              <circle cx="915" cy="75" r="9" fill="#B8B8BE"/>
+    <div class="deck" id="deck" hidden>
+      <div class="deck-bg" id="deck-bg"></div>
+      <div class="tt" id="tt" title="Play / pause">
+        <div class="tt-label" id="tt-label">BLAZEIT</div>
+        <img class="tt-record" src="/api/music/vinyl/record.png" alt="">
+        <img class="tt-sheen" src="/api/music/vinyl/sheen.png" alt="">
+        <svg class="tt-arm" viewBox="0 0 1000 1000" aria-hidden="true">
+          <g id="tt-arm">
+            <g transform="translate(10 12)" fill="#000" fill-opacity=".4">
+              <path d="M915,75 A9,9 0 0 1 924,84 L924,386 A9,9 0 0 1 915,395 A9,9 0 0 1 906,386 L906,84 A9,9 0 0 1 915,75 Z"/>
+              <path d="M901,379 L929,379 A10,10 0 0 1 939,389 L939,443 A10,10 0 0 1 929,453 L901,453 A10,10 0 0 1 891,443 L891,389 A10,10 0 0 1 901,379 Z"/>
             </g>
-          </svg>
-        </div>
-        <div class="deck-meta">
-          <div class="deck-kicker" id="deck-state">NOW PLAYING</div>
-          <div class="deck-title" id="deck-title"></div>
-          <div class="deck-artist" id="deck-artist"></div>
-          <div class="deck-album" id="deck-album"></div>
-          <div class="deck-next" id="deck-next" hidden></div>
-        </div>
+            <path fill="#E9E9EC" d="M915,75 A9,9 0 0 1 924,84 L924,386 A9,9 0 0 1 915,395 A9,9 0 0 1 906,386 L906,84 A9,9 0 0 1 915,75 Z"/>
+            <path fill="#fff" fill-opacity=".7" d="M910.5,95 A2,2 0 0 1 912.5,97 L912.5,387 A2,2 0 0 1 910.5,389 A2,2 0 0 1 908.5,387 L908.5,97 A2,2 0 0 1 910.5,95 Z"/>
+            <path fill="#F4F4F6" d="M901,379 L929,379 A10,10 0 0 1 939,389 L939,443 A10,10 0 0 1 929,453 L901,453 A10,10 0 0 1 891,443 L891,389 A10,10 0 0 1 901,379 Z"/>
+            <path fill="#C9C9CF" d="M901,429 L929,429 A10,10 0 0 1 939,439 L939,443 A10,10 0 0 1 929,453 L901,453 A10,10 0 0 1 891,443 L891,439 A10,10 0 0 1 901,429 Z"/>
+            <path fill="#2A2A2E" d="M912,449 L918,449 A3,3 0 0 1 921,452 L921,460 A3,3 0 0 1 918,463 L912,463 A3,3 0 0 1 909,460 L909,452 A3,3 0 0 1 912,449 Z"/>
+            <circle cx="915" cy="75" r="36" fill="#26262A" stroke="#4A4A50" stroke-width="3"/>
+            <circle cx="915" cy="75" r="24" fill="#ECECEF"/>
+            <circle cx="915" cy="75" r="9" fill="#B8B8BE"/>
+          </g>
+        </svg>
       </div>
-      <div id="music-perm" class="banner" hidden>
-        BlazeIt needs permission to read your music. On the phone: Setup &rarr; Music &rarr; Allow music access.
+      <div class="deck-meta">
+        <div class="deck-kicker" id="deck-state">NOW PLAYING</div>
+        <div class="deck-title" id="deck-title"></div>
+        <div class="deck-artist" id="deck-artist"></div>
+        <div class="deck-album" id="deck-album"></div>
+        <div class="deck-next" id="deck-next" hidden></div>
+      </div>
+    </div>
+    <div class="card">
+      <div id="music-perm" class="banner bad" hidden>
+        BlazeIt needs permission to read your music. On the phone: Settings &rarr; Music &rarr; Allow music access.
       </div>
       <div class="music-tools">
         <input id="music-search" type="search" placeholder="Search songs, artists, albums" autocomplete="off">
@@ -928,6 +580,7 @@
           <button data-v="songs" class="on">Songs</button>
           <button data-v="albums">Albums</button>
         </div>
+        <button class="btn sm ghost" id="music-rescan">Rescan</button>
       </div>
       <div id="music-crumb" class="actions" style="margin:0 0 10px" hidden></div>
       <div id="music-list"><p class="empty">Loading your library...</p></div>
@@ -936,22 +589,24 @@
   </section>
 
   <!-- ---------------------------------------------------------- settings -->
-  <section data-panel="settings" class="grid2" hidden>
-    <div class="block">
-    <div class="bar">Appearance</div>
-    <div class="pad">
-      <div class="lswitch" id="theme-switch" role="switch" aria-checked="false" aria-label="OLED black background" tabindex="0">
-        <span class="lswitch-label">Aurora</span>
-        <span class="lswitch-knob"><svg class="sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2.5v2M12 19.5v2M2.5 12h2M19.5 12h2M5.3 5.3l1.4 1.4M17.3 17.3l1.4 1.4M5.3 18.7l1.4-1.4M17.3 6.7l1.4-1.4"/></svg><svg class="moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M19.5 14.5A8 8 0 1 1 9.5 4.5a6.5 6.5 0 0 0 10 10Z"/></svg></span>
+  <section data-panel="settings" class="settings" hidden>
+    <div class="card">
+      <div class="card-title">
+        <span class="appicon purple"><svg viewBox="0 0 24 24"><path d="M12 3.5a8.5 8.5 0 1 1 0 17a8.5 8.5 0 1 1 0-17Z"/><path d="M12 3.5v17"/><path d="M12 7.5h4.5M12 11.5h5.5M12 15.5h4.5"/></svg></span>
+        <div class="grow"><h3>Appearance</h3><p>The phone and every open page follow this</p></div>
       </div>
-      <p class="note">Liquid glass either way. OLED black turns the pixels off behind it. The phone and every open page follow this.</p>
-    </div>
+      <div class="seg" id="theme-seg">
+        <button data-theme-choice="system">Automatic</button>
+        <button data-theme-choice="light">Light</button>
+        <button data-theme-choice="dark">Dark</button>
+      </div>
     </div>
 
-    <div class="block">
-    <div class="bar">Receiving on the phone</div>
-    <div class="pad">
-      <div class="set-label">Largest file accepted</div>
+    <div class="card">
+      <div class="card-title">
+        <span class="appicon orange"><svg viewBox="0 0 24 24"><path d="M13.5 3.5H7A1.5 1.5 0 0 0 5.5 5v14A1.5 1.5 0 0 0 7 20.5h10a1.5 1.5 0 0 0 1.5-1.5V8.5Z"/><path d="M13.5 3.5v5h5"/></svg></span>
+        <div class="grow"><h3>Receiving on the phone</h3><p>Largest file accepted</p></div>
+      </div>
       <div class="seg" id="size-seg">
         <button data-gb="4">4 GB</button>
         <button data-gb="12">12 GB</button>
@@ -961,66 +616,69 @@
       </div>
       <p class="note" id="size-note">The same setting as on the phone. With no limit, anything that fits in the phone's free space is accepted.</p>
     </div>
+
+    <div class="card">
+      <div class="card-title">
+        <span class="appicon blue"><svg viewBox="0 0 24 24"><path d="M13.5 2.5 5 13.5h6.5l-1 8 8.5-11h-6.5l1-8Z"/></svg></span>
+        <div class="grow"><h3>Direct link</h3><p>The fastest wireless way</p></div>
+      </div>
+      <p class="note" style="margin-top:0">
+        The phone starts its own offline Wi-Fi network, just for this laptop. One hop, no router taking turns, nobody else on the
+        channel: measured about <b>60 MB/s</b> each way, against 3 MB/s through the home router. Start it from <b>Home</b>
+        here or on the phone. With the laptop helper running, this laptop joins it by itself and returns to your Wi-Fi when
+        it stops. While on it, the laptop has no internet.
+      </p>
     </div>
 
-    <div class="block">
-    <div class="bar">Full speed and laptop control</div>
-    <div class="pad">
+    <div class="card">
+      <div class="card-title">
+        <span class="appicon purple"><svg viewBox="0 0 24 24"><path d="M5.5 5.5h13a1 1 0 0 1 1 1V16h-15V6.5a1 1 0 0 1 1-1Z"/><path d="M2.5 18.5h19"/></svg></span>
+        <div class="grow"><h3>Laptop helper</h3><p>Full speed, the direct link, and the phone as a trackpad</p></div>
+      </div>
       <div class="banner" id="helper-state"></div>
       <div class="actions"><a class="btn" href="/blazeit-pc.bat" download="blazeit-pc.bat">Get the laptop helper</a></div>
       <p class="note">
-        Double-click <b>blazeit-pc.bat</b> on this laptop (Windows may ask you to confirm once). It finds the
-        phone by itself, asks you to allow it on the phone, and opens this page at
-        <span class="kv">http://localhost:8787</span>. From there downloads use every connection, the
-        clipboard works directly, and the phone's <b>Control</b> tab becomes this laptop's trackpad and keyboard.
-        Nothing is installed; close its window to stop it.
+        Double-click <b>blazeit-pc.bat</b> (Windows may ask you to confirm once). It finds the phone, asks you to allow
+        it there, and opens this page at <span class="kv">http://localhost:8787</span>. From then on downloads use every
+        connection, the clipboard works directly, it joins the direct link when you start one, and the phone's
+        <b>Control</b> tab drives this laptop. Nothing is installed; close its window to stop it.
       </p>
-      <p class="note">
-        Fastest without a cable: join this laptop to the phone's own hotspot. Through a home router every byte
-        crosses the air twice and shares the router's time, which roughly halves the rate at best.
-      </p>
-    </div>
     </div>
 
-    <div class="block">
-    <div class="bar">Fastest link: a USB-C cable</div>
-    <div class="pad usb-card">
-      <div class="usb-head">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v14"/><path d="m9 6 3-3 3 3"/><path d="M12 13 7.5 10.5V8"/><path d="M12 15l4.5-2.5V10"/><rect x="6.5" y="6.5" width="2" height="2" rx=".5"/><circle cx="16.5" cy="9" r="1.2"/><circle cx="12" cy="19" r="2"/></svg>
-        <div><b>A cable beats any Wi-Fi.</b><span>No radio to share, no interference, no drops.</span></div>
+    <div class="card">
+      <div class="card-title">
+        <span class="appicon grey"><svg viewBox="0 0 24 24"><path d="M12 3v14"/><path d="m9 6 3-3 3 3"/><path d="M12 13 7.5 10.5V8"/><path d="M12 15l4.5-2.5V10"/><circle cx="12" cy="19" r="2"/></svg></span>
+        <div class="grow"><h3>USB-C cable</h3><p>No radio at all</p></div>
       </div>
       <ol class="steps">
         <li>Plug the phone into this laptop with a USB-C cable.</li>
-        <li>On the phone: <b>Setup &rarr; Fastest of all: a USB-C cable &rarr; Set up</b>, and turn on <b>USB tethering</b>.</li>
+        <li>On the phone: <b>Settings &rarr; USB-C cable &rarr; Set up</b>, and turn on <b>USB tethering</b>.</li>
         <li>BlazeIt's Home on the phone then shows the cable's address. Open that one here.</li>
       </ol>
-      <p class="note">Everything works the same over the cable. The monitor shows the difference.</p>
-    </div>
     </div>
 
-    <div class="block">
-    <div class="bar">Parallel connections</div>
-    <div class="pad">
+    <div class="card">
+      <div class="card-title">
+        <span class="appicon green"><svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></svg></span>
+        <div class="grow"><h3>Parallel connections</h3><p>Per file, both ways</p></div>
+      </div>
       <div class="seg" id="streams-seg"></div>
       <p class="note">
-        One connection rarely fills a Wi-Fi link: loss keeps shrinking its window, so it
-        spends much of its time recovering rather than sending. Several connections
-        stumble at different moments, so the total stays near capacity. Four is the usual
-        sweet spot. On a USB cable one or two is already enough.
+        One connection rarely fills a Wi-Fi link: every loss shrinks its window. Several stumble at different moments,
+        so the total stays near the link's capacity. Four is the usual sweet spot; on a cable one or two is enough.
       </p>
-    </div>
     </div>
 
-    <div class="block">
-    <div class="bar">Measure the link</div>
-    <div class="pad">
-      <button id="measure" class="btn">Measure now</button>
-      <p class="note" id="bench-result">
-        This moves bytes the phone generates and discards, so storage is taken out of the
-        picture. Compare it against a real transfer: close to this number means the
-        network is the ceiling, far below it means storage is.
+    <div class="card">
+      <div class="card-title">
+        <span class="appicon red"><svg viewBox="0 0 24 24"><path d="M2 12h4l3-7 5 14 3-9 2 2h3"/></svg></span>
+        <div class="grow"><h3>Measure the link</h3><p>Network only, five seconds each way</p></div>
+        <button id="measure" class="btn sm">Measure now</button>
+      </div>
+      <p class="note" id="bench-result" style="margin-top:0">
+        The phone generates and discards the data, so storage is out of the picture. A real transfer close to this number
+        is limited by the network; far below it, by storage.
       </p>
-    </div>
     </div>
   </section>
   </main>
@@ -1126,10 +784,27 @@ var ticker = null;
 var TABS = [
   { id: "home", sub: "Clipboard and files, both ways", label: "Home", icon: "<path d=\"M3.5 10.5 12 3.5l8.5 7\"/><path d=\"M5.5 9v10a1.5 1.5 0 0 0 1.5 1.5h10a1.5 1.5 0 0 0 1.5-1.5V9\"/><path d=\"M10 20.5V15a2 2 0 0 1 4 0v5.5\"/>" },
   { id: "music", sub: "Your phone's library, streamed over the local link", label: "Music", icon: "<path d=\"M9 18V5.5l11-2V16\"/><circle cx=\"6.5\" cy=\"18\" r=\"2.5\"/><circle cx=\"17.5\" cy=\"16\" r=\"2.5\"/>" },
-  { id: "settings", sub: "Appearance, the laptop helper and speed", label: "Settings", icon: "<path d=\"M3.5 7.5H13M18 7.5h2.5M3.5 16.5H6M11 16.5h9.5\"/><circle cx=\"15.5\" cy=\"7.5\" r=\"2.5\"/><circle cx=\"8.5\" cy=\"16.5\" r=\"2.5\"/>" },
+  { id: "settings", sub: "Appearance, speed and the laptop helper", label: "Settings", icon: "<path d=\"M3.5 7.5H13M18 7.5h2.5M3.5 16.5H6M11 16.5h9.5\"/><circle cx=\"15.5\" cy=\"7.5\" r=\"2.5\"/><circle cx=\"8.5\" cy=\"16.5\" r=\"2.5\"/>" },
 ];
 
 function $(id) { return document.getElementById(id); }
+
+var ICONS = {
+  up: '<path d="M12 15V4"/><path d="M7.5 8.5 12 4l4.5 4.5"/><path d="M4 14v4a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-4"/>',
+  down: '<path d="M12 4v11"/><path d="M7.5 10.5 12 15l4.5-4.5"/><path d="M4 14v4a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-4"/>',
+  folder: '<path d="M3.5 7.5A1.5 1.5 0 0 1 5 6h4l2 2h8a1.5 1.5 0 0 1 1.5 1.5V17a1.5 1.5 0 0 1-1.5 1.5H5A1.5 1.5 0 0 1 3.5 17Z"/>',
+  image: '<rect x="3.5" y="4.5" width="17" height="15" rx="2"/><circle cx="9" cy="10" r="1.6"/><path d="m4 17 5-4.5 4 3.5 3-2.5 4 3.5"/>',
+  video: '<rect x="3.5" y="5.5" width="12.5" height="13" rx="2"/><path d="m16 10 4.5-2.5v9L16 14"/>',
+  music: '<path d="M9 18V5.5l11-2V16"/><circle cx="6.5" cy="18" r="2.5"/><circle cx="17.5" cy="16" r="2.5"/>',
+  file: '<path d="M13.5 3.5H7A1.5 1.5 0 0 0 5.5 5v14A1.5 1.5 0 0 0 7 20.5h10a1.5 1.5 0 0 0 1.5-1.5V8.5Z"/><path d="M13.5 3.5v5h5"/>',
+};
+/** A small app icon: colour says what it is at a glance, as on the phone. */
+function appIcon(kind, color) {
+  var s = document.createElement("span");
+  s.className = "appicon sm " + color;
+  s.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true">' + (ICONS[kind] || ICONS.file) + "</svg>";
+  return s;
+}
 
 function bytes(n) {
   if (n === null || n === undefined) return "-";
@@ -1343,7 +1018,7 @@ function renderChannel(m, used, cap, pct) {
     '</span></div>' +
     '<div class="ch-bar">' + seg + '</div>' +
     '<div class="ch-legend">' + legend + '</div>' +
-    (pct >= 70 ? '<p class="ch-hint">The Wi-Fi is nearly full. For more, a USB-C cable beats any Wi-Fi (Settings &rarr; Fastest link).</p>' : '');
+    (pct >= 70 ? '<p class="ch-hint">The Wi-Fi is nearly full. The direct link (Home) gives a channel of its own; a USB-C cable has no radio at all.</p>' : '');
 }
 
 function bars(level) {
@@ -1362,7 +1037,8 @@ function drawMonitor(samples) {
   var g = c.getContext("2d");
   g.scale(dpr, dpr);
   g.clearRect(0, 0, w, h);
-  g.strokeStyle = "rgba(255,255,255,.09)"; g.lineWidth = 1; g.setLineDash([2, 4]);
+  var css = getComputedStyle(document.documentElement);
+  g.strokeStyle = css.getPropertyValue("--line") || "rgba(128,128,128,.2)"; g.lineWidth = 1; g.setLineDash([2, 4]);
   for (var k = 1; k < 4; k++) { g.beginPath(); g.moveTo(0, h * k / 4); g.lineTo(w, h * k / 4); g.stroke(); }
   g.setLineDash([]);
   if (samples.length < 2) return;
@@ -1376,16 +1052,15 @@ function drawMonitor(samples) {
       var x = x0 + step * i, y = h - h * pick(s) / top;
       if (i) g.lineTo(x, y); else g.moveTo(x, y);
     });
-    g.save(); g.shadowBlur = 10; g.shadowColor = color;
-    g.strokeStyle = color; g.lineWidth = 2; g.lineJoin = "round"; g.stroke();
-    g.restore();
+    g.strokeStyle = color; g.lineWidth = 2.2; g.lineJoin = "round"; g.stroke();
     g.lineTo(x0 + step * (samples.length - 1), h); g.lineTo(x0, h); g.closePath();
     var gr = g.createLinearGradient(0, 0, 0, h);
     gr.addColorStop(0, fill); gr.addColorStop(1, "rgba(0,0,0,0)");
     g.fillStyle = gr; g.fill();
   }
-  line(function (s) { return s.inBps; }, "#FFD60A", "rgba(255,214,10,.28)");
-  line(function (s) { return s.outBps; }, "#0A84FF", "rgba(10,132,255,.28)");
+  var inC = css.getPropertyValue("--orange").trim() || "#FF7A1A", outC = css.getPropertyValue("--blue").trim() || "#1F78FF";
+  line(function (s) { return s.inBps; }, inC, inC + "40");
+  line(function (s) { return s.outBps; }, outC, outC + "40");
 }
 
 function selectTab(id) {
@@ -1401,120 +1076,6 @@ function selectTab(id) {
     p.hidden = p.dataset.panel !== id;
   });
   if (id === "music") musicOpen();
-}
-
-// ------------------------------------------------------------------ liquid lens
-//
-// Every row of choices -- the sidebar's tabs and each segmented control -- has one glass
-// lens that slides to the current choice with a little overshoot. Press and drag along
-// the row and the lens follows the pointer, swelling slightly; whatever it rests on when
-// you let go is chosen. The same as the phone's tab bar.
-
-function liquid(host) {
-  if (!host || host._lens) return;
-  var lens = document.createElement("i");
-  lens.className = "lens";
-  host.classList.add("liquid");
-  var drag = null;
-  function items() { return Array.prototype.filter.call(host.children, function (c) { return c.tagName === "BUTTON"; }); }
-  function vertical() { return getComputedStyle(host).flexDirection === "column"; }
-  function place(el, instant) {
-    if (lens.parentNode !== host) host.insertBefore(lens, host.firstChild);
-    if (!el || !el.offsetWidth) { lens.style.opacity = 0; return; }
-    if (instant) lens.classList.add("instant");
-    lens.style.opacity = 1;
-    lens.style.transform = "translate(" + el.offsetLeft + "px," + el.offsetTop + "px)";
-    lens.style.width = el.offsetWidth + "px";
-    lens.style.height = el.offsetHeight + "px";
-    if (instant) { void lens.offsetWidth; lens.classList.remove("instant"); }
-  }
-  function update() {
-    if (drag) return;
-    place(items().filter(function (b) { return b.classList.contains("on"); })[0], lens.style.opacity === "");
-  }
-  function nearest(its, p, v) {
-    var best = its[0], bd = Infinity;
-    its.forEach(function (b) {
-      var c = v ? b.offsetTop + b.offsetHeight / 2 : b.offsetLeft + b.offsetWidth / 2;
-      if (Math.abs(c - p) < bd) { bd = Math.abs(c - p); best = b; }
-    });
-    return best;
-  }
-  host.addEventListener("pointerdown", function (e) {
-    if (e.button !== 0) return;
-    drag = { x: e.clientX, y: e.clientY, moved: false, id: e.pointerId, near: null };
-  });
-  host.addEventListener("pointermove", function (e) {
-    if (!drag) return;
-    var v = vertical(), its = items();
-    if (!its.length) return;
-    var d = v ? e.clientY - drag.y : e.clientX - drag.x;
-    if (!drag.moved) {
-      if (Math.abs(d) < 6) return;
-      drag.moved = true;
-      try { host.setPointerCapture(drag.id); } catch (err) {}
-      host.classList.add("dragging");
-    }
-    var r = host.getBoundingClientRect();
-    var p = v ? e.clientY - r.top + host.scrollTop : e.clientX - r.left + host.scrollLeft;
-    var near = nearest(its, p, v);
-    var size = v ? near.offsetHeight : near.offsetWidth;
-    var lo = v ? its[0].offsetTop : its[0].offsetLeft;
-    var last = its[its.length - 1];
-    var hi = v ? last.offsetTop + last.offsetHeight - size : last.offsetLeft + last.offsetWidth - size;
-    var at = Math.max(lo, Math.min(hi, p - size / 2));
-    lens.classList.add("instant");
-    lens.style.transform = v ? "translate(" + near.offsetLeft + "px," + at + "px)" : "translate(" + at + "px," + near.offsetTop + "px)";
-    lens.style.width = near.offsetWidth + "px";
-    lens.style.height = near.offsetHeight + "px";
-    its.forEach(function (b) { b.classList.toggle("lit", b === near); });
-    drag.near = near;
-  });
-  function end() {
-    if (!drag) return;
-    var d = drag;
-    drag = null;
-    host.classList.remove("dragging");
-    lens.classList.remove("instant");
-    items().forEach(function (b) { b.classList.remove("lit"); });
-    if (d.moved && d.near) d.near.click();
-    update();
-  }
-  host.addEventListener("pointerup", end);
-  host.addEventListener("pointercancel", end);
-  new MutationObserver(function () { if (!drag) requestAnimationFrame(update); })
-    .observe(host, { childList: true, subtree: true, attributes: true, attributeFilter: ["class"] });
-  window.addEventListener("resize", update);
-  host._lens = { update: update };
-  requestAnimationFrame(update);
-}
-
-/** The liquid switch: tap, Space or Enter flips it; the knob can also be dragged across. */
-function wireSwitch(sw, onChange) {
-  var knob = sw.querySelector(".lswitch-knob"), drag = null;
-  function travel() { return sw.clientWidth - knob.offsetWidth + 8; }
-  function flip() { onChange(!sw.classList.contains("on")); }
-  sw.addEventListener("keydown", function (e) { if (e.key === " " || e.key === "Enter") { e.preventDefault(); flip(); } });
-  sw.addEventListener("pointerdown", function (e) { drag = { x: e.clientX, on: sw.classList.contains("on"), moved: false, id: e.pointerId }; });
-  sw.addEventListener("pointermove", function (e) {
-    if (!drag) return;
-    var d = e.clientX - drag.x;
-    if (!drag.moved) { if (Math.abs(d) < 5) return; drag.moved = true; try { sw.setPointerCapture(drag.id); } catch (err) {} sw.classList.add("dragging"); }
-    var t = travel(), at = Math.max(0, Math.min(t, (drag.on ? t : 0) + d));
-    knob.style.transform = "translateX(" + (at - 4) + "px)";
-    drag.at = at / t;
-  });
-  function end() {
-    if (!drag) return;
-    var d = drag; drag = null;
-    sw.classList.remove("dragging");
-    knob.style.transform = "";
-    if (!d.moved) { flip(); return; }
-    var now = d.at > 0.5;
-    if (now !== d.on) onChange(now);
-  }
-  sw.addEventListener("pointerup", end);
-  sw.addEventListener("pointercancel", end);
 }
 
 // ------------------------------------------------------------------ clipboard
@@ -1552,9 +1113,7 @@ function copyText(text) {
 function setupClipboard() {
   $("clip-note").textContent = window.isSecureContext
     ? "Text appears on the phone straight away, and is put on the phone's clipboard ready to paste."
-    : "Served over plain HTTP, so the browser will not grant clipboard access. Copy uses a " +
-      "fallback, and to paste into the box you have to press Ctrl+V yourself. Downloads are " +
-      "also limited to one connection here. All of it lifts as soon as this page is served over HTTPS.";
+    : "Pasting needs Ctrl+V on this page, and downloads use one connection. The laptop helper (Settings) lifts both.";
 
   $("clip-send").addEventListener("click", async function () {
     var res = await api("/api/clipboard", {
@@ -2204,6 +1763,8 @@ async function startDownload(entry, existingRow) {
     }
     row.state = "done"; row.status = "saved"; row.transferred = row.size; row.bps = 0;
   } catch (err) {
+    // The other ranges would otherwise keep writing into a file that is being abandoned.
+    row.streams.forEach(function (s) { if (s.abort) s.abort.abort(); });
     if (writable) { try { await writable.abort(); } catch (e) {} }
     row.state = "paused";
     row.status = "interrupted - " + (err && err.message ? err.message : "network error");
@@ -2266,6 +1827,8 @@ function updateDock(active, totalBps) {
   var dock = $("dock");
   dock.hidden = transfers.length === 0;
   $("dock-rate").textContent = active ? rate(totalBps) : "-";
+  $("hero-rate").textContent = active ? rate(totalBps) : "Idle";
+  $("hero-rate-sub").textContent = active ? (active + (active === 1 ? " transfer" : " transfers")) : "Nothing moving";
   $("dock-label").textContent = active
     ? (active + (active === 1 ? " transfer" : " transfers"))
     : (transfers.length ? "Idle" : "");
@@ -2281,77 +1844,75 @@ function btn(label, fn, cls) {
   return b;
 }
 
+var rowEls = {};
+
 function renderTransfers() {
   var host = $("transfers");
-  if (!transfers.length) { host.innerHTML = ""; $("dock").hidden = true; return; }
-  $("dock").hidden = false;
-  host.innerHTML = "";
-  transfers.forEach(function (row) {
-    var pct = row.size ? Math.min(100, (row.transferred / row.size) * 100) : 0;
-
-    var d = document.createElement("div");
-    d.className = "row";
-
-    var g = document.createElement("div");
-    g.className = "glyph";
-    g.textContent = row.kind === "folder" ? "▤" : row.dir === "up" ? "↑" : "↓";
-    d.appendChild(g);
-
-    var body = document.createElement("div");
-    body.className = "body";
-
-    var t = document.createElement("div");
-    t.className = "title";
-    t.textContent = row.name;
-    body.appendChild(t);
-
-    var m = document.createElement("div");
-    m.className = "meta";
-    m.textContent = bytes(row.transferred) + " / " + bytes(row.size) +
-      (row.bps ? "   " + rate(row.bps) + "   " + eta(row.size - row.transferred, row.bps) : "") +
-      (row.kind === "folder" ? "   " + folderSummary(row) : "") +
-      (row.status && !(row.kind === "folder" && row.status === "done") ? "   " + row.status : "");
-    if (row.state === "paused" || row.state === "error") m.style.color = "var(--danger)";
-    if (row.state === "done") m.style.color = "var(--good)";
-    body.appendChild(m);
-
-    var track = document.createElement("div");
-    track.className = "track";
-    var fill = document.createElement("i");
-    fill.style.width = pct + "%";
-    track.appendChild(fill);
-    body.appendChild(track);
-
-    if (row.streams && row.streams.length > 1) {
-      var lanes = document.createElement("div");
-      lanes.className = "lanes";
-      row.streams.forEach(function (s) {
-        var o = document.createElement("i"), inner = document.createElement("b");
-        inner.style.width = (s.length ? Math.min(100, (s.live / s.length) * 100) : 0) + "%";
-        o.appendChild(inner); lanes.appendChild(o);
-      });
-      body.appendChild(lanes);
-    }
-
-    var acts = document.createElement("div");
-    acts.className = "actions";
-    acts.style.marginTop = "10px";
-    if (row.state === "active") acts.appendChild(btn("Pause", function () { pauseRow(row); }));
-    if (row.state === "paused") acts.appendChild(btn("Resume", function () { resumeRow(row); }, ""));
-    if (row.state === "needs-file") acts.appendChild(btn("Choose file", function () { rechoose(row); }, ""));
-    if (row.state === "done") {
-      acts.appendChild(btn("Clear", function () {
-        transfers = transfers.filter(function (r) { return r !== row; });
-        renderTransfers();
-      }));
-    } else {
-      acts.appendChild(btn("Cancel", function () { cancelRow(row); }, "ghost danger"));
-    }
-    body.appendChild(acts);
-
-    d.appendChild(body);
-    host.appendChild(d);
+  $("dock").hidden = !transfers.length;
+  var keep = {};
+  transfers.forEach(function (row, idx) {
+    var el = rowEls[row.id];
+    if (!el) { el = buildTransferRow(row); rowEls[row.id] = el; }
+    keep[row.id] = true;
+    updateTransferRow(el, row);
+    if (host.children[idx] !== el) host.insertBefore(el, host.children[idx] || null);
   });
+  Object.keys(rowEls).forEach(function (id) {
+    if (!keep[id]) { rowEls[id].remove(); delete rowEls[id]; }
+  });
+}
+
+function buildTransferRow(row) {
+  var d = document.createElement("div");
+  d.className = "row";
+  d.appendChild(appIcon(row.kind === "folder" ? "folder" : row.dir === "up" ? "up" : "down", row.dir === "up" ? "green" : "orange"));
+  var body = document.createElement("div");
+  body.className = "body";
+  d._t = document.createElement("div"); d._t.className = "title";
+  d._m = document.createElement("div"); d._m.className = "meta";
+  var track = document.createElement("div"); track.className = "track";
+  d._fill = document.createElement("i"); track.appendChild(d._fill);
+  d._lanes = document.createElement("div"); d._lanes.className = "lanes";
+  d._acts = document.createElement("div"); d._acts.className = "actions";
+  [d._t, d._m, track, d._lanes, d._acts].forEach(function (x) { body.appendChild(x); });
+  d.appendChild(body);
+  return d;
+}
+
+function updateTransferRow(d, row) {
+  var pct = row.size ? Math.min(100, (row.transferred / row.size) * 100) : 0;
+  d.className = "row " + (row.state === "done" ? "done" : row.state === "paused" || row.state === "error" ? "paused" : "");
+  d._t.textContent = row.name;
+  d._m.textContent = bytes(row.transferred) + " / " + bytes(row.size) +
+    (row.bps ? "   " + rate(row.bps) + "   " + eta(row.size - row.transferred, row.bps) : "") +
+    (row.kind === "folder" ? "   " + folderSummary(row) : "") +
+    (row.status && !(row.kind === "folder" && row.status === "done") ? "   " + row.status : "");
+  d._fill.style.width = pct + "%";
+
+  var n = row.streams && row.streams.length > 1 ? row.streams.length : 0;
+  if (d._lanes.children.length !== n) {
+    d._lanes.innerHTML = "";
+    for (var k = 0; k < n; k++) { var o = document.createElement("i"); o.appendChild(document.createElement("b")); d._lanes.appendChild(o); }
+  }
+  for (var j = 0; j < n; j++) {
+    var s = row.streams[j];
+    d._lanes.children[j].firstChild.style.width = (s.length ? Math.min(100, (s.live / s.length) * 100) : 0) + "%";
+  }
+
+  if (d._state === row.state) return;
+  d._state = row.state;
+  d._acts.innerHTML = "";
+  if (row.state === "active") d._acts.appendChild(btn("Pause", function () { pauseRow(row); }));
+  if (row.state === "paused") d._acts.appendChild(btn("Resume", function () { resumeRow(row); }, ""));
+  if (row.state === "needs-file") d._acts.appendChild(btn("Choose file", function () { rechoose(row); }, ""));
+  if (row.state === "done") {
+    d._acts.appendChild(btn("Clear", function () {
+      transfers = transfers.filter(function (r) { return r !== row; });
+      renderTransfers();
+    }));
+  } else {
+    d._acts.appendChild(btn("Cancel", function () { cancelRow(row); }, "ghost danger"));
+  }
 }
 
 function renderFiles() {
@@ -2362,11 +1923,11 @@ function renderFiles() {
     var d = document.createElement("div");
     d.className = "row";
 
-    var g = document.createElement("div");
-    g.className = "glyph";
-    g.textContent = (f.mime || "").indexOf("image/") === 0 ? "▣"
-      : (f.mime || "").indexOf("video/") === 0 ? "▶" : "▬";
-    d.appendChild(g);
+    var mime = f.mime || "";
+    d.appendChild(mime.indexOf("image/") === 0 ? appIcon("image", "purple")
+      : mime.indexOf("video/") === 0 ? appIcon("video", "red")
+      : mime.indexOf("audio/") === 0 ? appIcon("music", "red")
+      : appIcon("file", f.origin === "PHONE" ? "green" : "orange"));
 
     var body = document.createElement("div");
     body.className = "body";
@@ -2374,17 +1935,16 @@ function renderFiles() {
     t.className = "title"; t.textContent = f.name;
     var m = document.createElement("div");
     m.className = "meta";
-    m.textContent = bytes(f.size) + (f.origin === "PHONE" ? "   from the phone" : "   from this computer");
+    m.textContent = bytes(f.size) + (f.origin === "PHONE" ? " · from the phone" : " · sent from a computer");
     body.appendChild(t); body.appendChild(m);
 
     var acts = document.createElement("div");
     acts.className = "actions";
     var mode = downloadMode(f.size);
     acts.appendChild(btn(
-      mode === "native" ? "Download" : "Download (" + state.streams + " streams)",
+      "Download",
       function () { startDownload(f); }, ""
     ));
-    if (mode !== "native") acts.appendChild(btn("Plain download", function () { nativeDownload(f); }));
     acts.appendChild(btn("Delete", async function () {
       await api("/api/files/" + encodeURIComponent(f.id), { method: "DELETE" });
       refreshState();
@@ -2426,9 +1986,8 @@ function renderHelperState() {
   var local = location.hostname === "localhost" || location.hostname === "127.0.0.1";
   el.className = "banner" + (local ? "" : " bad");
   el.textContent = local
-    ? "You are on the fast path: this page is running through the laptop helper."
-    : "This page is on plain HTTP, so large downloads from the phone are limited to one connection. " +
-      "The laptop helper removes that limit.";
+    ? "Running through the laptop helper: full speed, and the direct link joins by itself."
+    : "Not running. Without it, downloads from the phone use one connection and the direct link has to be joined by hand.";
 }
 
 async function measure() {
@@ -2487,13 +2046,18 @@ async function measure() {
 function connectEvents() {
   if (events) events.close();
   events = new EventSource("/events", { withCredentials: true });
-  function live() { $("conn").textContent = "Live"; $("dot").classList.add("on"); }
+  function live() {
+    $("conn").textContent = "Live"; $("dot").classList.add("on");
+    $("hero-state").textContent = "Connected"; $("hero-dot").classList.add("on");
+  }
   events.addEventListener("open", live);
   events.addEventListener("ping", live);
   events.addEventListener("error", function () {
     $("conn").textContent = "Reconnecting"; $("dot").classList.remove("on");
+    $("hero-state").textContent = "Reconnecting"; $("hero-dot").classList.remove("on");
   });
-  events.addEventListener("theme", function (e) { applyTheme(e.data === "oled"); });
+  events.addEventListener("theme", function (e) { applyTheme(e.data); });
+  events.addEventListener("direct", function () { refreshDirect(); });
   events.addEventListener("files", function (e) {
     try { state.files = JSON.parse(e.data); renderFiles(); } catch (err) {}
   });
@@ -2512,7 +2076,7 @@ async function refreshState() {
   state.files = s.files || [];
   state.maxUpload = s.maxUploadSize || 0;
   state.device = s.deviceName || "";
-  applyTheme(!!s.oled);
+  applyTheme(s.theme || "system");
   state.parallelThreshold = s.parallelThreshold || state.parallelThreshold;
 
   var saved = null;
@@ -2521,15 +2085,13 @@ async function refreshState() {
 
   $("hero-title").textContent = state.device || "Phone";
   $("status-device").textContent = state.device || "Phone";
-  $("hero-sub").textContent =
-    "Move text and files between this computer and the phone. The phone is the server; " +
-    "nothing is installed here, and nothing leaves your network.";
+  renderRoute();
   // The phone sends Long.MAX_VALUE for "no limit"; only its free space counts then.
   var unlimited = state.maxUpload > 1e15;
   $("limit").textContent = !state.maxUpload ? ""
     : (unlimited ? "No size limit: anything that fits in the phone's free space."
                  : "Up to " + bytes(state.maxUpload) + " per file.") +
-      " Transfers resume by themselves if the connection drops, and survive a reload.";
+      " Transfers pick up by themselves if the connection drops.";
   if (document.activeElement !== $("clip") && !$("clip").value) $("clip").value = s.clipboard || "";
   renderStreams();
   renderFiles();
@@ -2549,31 +2111,116 @@ function renderSizeSeg() {
 // other computer changes all of them live. The last value is also kept locally, only so
 // the page does not flash the wrong theme for a frame while it loads.
 
-/** Liquid glass always; the shared choice is only the backdrop: aurora, or OLED black. */
-function applyTheme(oled) {
-  document.body.classList.add("glass");
-  document.body.classList.toggle("oled", !!oled);
-  var sw = $("theme-switch");
-  if (sw) {
-    sw.classList.toggle("on", !!oled);
-    sw.setAttribute("aria-checked", oled ? "true" : "false");
-    sw.querySelector(".lswitch-label").textContent = oled ? "OLED" : "Aurora";
-  }
-  try { localStorage.setItem("blazeit.oled", oled ? "1" : "0"); } catch (e) {}
+/** "system" follows this computer's light or dark mode; "light" and "dark" pin it. */
+function applyTheme(theme) {
+  if (theme !== "light" && theme !== "dark") theme = "system";
+  if (theme === "system") document.documentElement.removeAttribute("data-theme");
+  else document.documentElement.setAttribute("data-theme", theme);
+  Array.prototype.forEach.call(document.querySelectorAll("[data-theme-choice]"), function (b) {
+    b.classList.toggle("on", b.dataset.themeChoice === theme);
+  });
+  try { localStorage.setItem("blazeit.theme", theme); } catch (e) {}
+  if (!$("mon-sheet").hidden) pollMonitor();
 }
 
-async function setOled(oled) {
-  applyTheme(oled);
+async function setTheme(theme) {
+  applyTheme(theme);
   try {
     await api("/api/theme", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ oled: oled }),
+      body: JSON.stringify({ theme: theme }),
     });
   } catch (e) {}
 }
 
-function toggleTheme() { setOled(!document.body.classList.contains("oled")); }
+// ------------------------------------------------------------------ direct link
+//
+// The phone's own offline network. Started here or on the phone; the laptop helper then
+// joins it by itself, and this page (served by the helper on localhost) carries on over
+// it without a reload. Without the helper, the card shows the name and password to join
+// by hand and the address to open afterwards.
+
+var direct = { state: "off", info: null, message: null, kind: "direct" };
+var BOLT = '<svg viewBox="0 0 24 24"><path d="M13.5 2.5 5 13.5h6.5l-1 8 8.5-11h-6.5l1-8Z"/></svg>';
+var WAVES = '<svg viewBox="0 0 24 24"><path d="M12 13.2a1.3 1.3 0 1 1 0 2.6a1.3 1.3 0 1 1 0-2.6Z"/><path d="M8.2 11.6a5.4 5.4 0 0 1 7.6 0"/><path d="M5.2 8.6a9.6 9.6 0 0 1 13.6 0"/><path d="M12 16v4.5"/></svg>';
+var viaHelper = location.hostname === "localhost" || location.hostname === "127.0.0.1";
+
+async function refreshDirect() {
+  try { direct = await (await api("/api/direct")).json(); } catch (e) { return; }
+  renderDirect();
+}
+
+function renderDirect() {
+  var tile = $("direct-tile"), d = direct, on = d.state === "on" && d.info;
+  var hotspot = d.kind === "hotspot";
+  // In hotspot mode the tile is the phone's hotspot, which keeps this laptop online.
+  tile.classList.toggle("blue", !hotspot); tile.classList.toggle("purple", hotspot);
+  $("direct-icon").className = "appicon " + (hotspot ? "purple" : "blue");
+  if (tile._kind !== d.kind) { $("direct-icon").innerHTML = hotspot ? WAVES : BOLT; tile._kind = d.kind; }
+  $("direct-name").textContent = hotspot ? "Hotspot" : "Direct link";
+  tile.title = hotspot ? "The phone's hotspot: fast, and this laptop keeps its internet" : "The phone's own offline network: the fastest wireless link";
+  tile.classList.toggle("on", !!on || d.state === "starting");
+  tile.classList.toggle("busy", d.state === "starting");
+  $("direct-detail").textContent = hotspot
+    ? (on ? "On · internet stays on" : (d.message || "Turn it on on the phone"))
+    : d.state === "on" ? "On · tap to stop" :
+      d.state === "starting" ? "Starting..." :
+      d.state === "failed" ? (d.message || "Could not start") : "Fastest. Works offline";
+  $("direct-stop").hidden = hotspot;
+  $("direct-card").hidden = !on;
+  renderRoute();
+  if (!on) return;
+  var f = $("direct-fields");
+  f.innerHTML = "";
+  // The password is Android's own and cannot be shorter; groups of four make it easy to type.
+  var pw = (d.info.passphrase || "").replace(/(.{4})(?=.)/g, "$1 ");
+  [["Network", d.info.ssid, d.info.ssid], ["Password", d.info.passphrase, pw], ["Then open", "http://" + d.info.host + ":" + d.info.port]].forEach(function (kv) {
+    var b = document.createElement("button");
+    b.className = "field"; b.type = "button"; b.title = "Copy";
+    b.innerHTML = "<span></span><b></b>";
+    b.firstChild.textContent = kv[0]; b.lastChild.textContent = kv[2] || kv[1];
+    b.onclick = function () { copyText(kv[1]).then(function () { b.firstChild.textContent = kv[0] + " · copied"; setTimeout(function () { b.firstChild.textContent = kv[0]; }, 1500); }); };
+    f.appendChild(b);
+  });
+  var here = location.hostname === d.info.host;
+  if (hotspot) {
+    $("direct-title").textContent = "The phone's hotspot is on";
+    $("direct-sub").textContent = "Fast, and this laptop keeps its internet through the phone.";
+    $("direct-note").textContent = viaHelper
+      ? "The laptop helper moves this laptop onto it by itself, and back to your Wi-Fi when the hotspot goes off."
+      : "Join the Wi-Fi network above, then open the address. Or run the laptop helper (Settings) and it joins by itself.";
+    return;
+  }
+  $("direct-sub").textContent = "The phone's own offline network, one hop, nobody else on it.";
+  $("direct-title").textContent = here ? "You are on the direct link" : "Direct link is on";
+  $("direct-note").textContent =
+    here ? "This laptop is talking to the phone directly. It has no internet while it is on this network." :
+    !d.laptop ? "Started for a phone-to-phone send, so this laptop stays on its own Wi-Fi." :
+    viaHelper ? "The laptop helper is moving this laptop onto it now. The page carries on by itself; there is no internet on it." :
+    "Join the Wi-Fi network above with its password, then open the address. Or run the laptop helper (Settings) and it joins by itself.";
+}
+
+/** How this page reaches the phone, for the card at the top of Home. */
+function renderRoute() {
+  var host = location.hostname, d = direct;
+  $("hero-sub").textContent =
+    viaHelper ? "Through the laptop helper" + (d.state === "on" && d.laptop ? (d.kind === "hotspot" ? ", on the phone's hotspot" : ", on the direct link") : "") :
+    d.info && host === d.info.host ? "On the direct link, " + host :
+    "Over your network, " + host;
+}
+
+async function toggleDirect() {
+  // Only the phone can switch its own hotspot; the tile says so and looks again shortly.
+  if (direct.kind === "hotspot") { refreshDirect(); return; }
+  var on = direct.state === "on" || direct.state === "starting";
+  direct = { state: on ? "off" : "starting", info: null };
+  renderDirect();
+  try {
+    direct = await (await api(on ? "/api/direct/stop" : "/api/direct/start", { method: "POST" })).json();
+  } catch (e) {}
+  renderDirect();
+}
 
 // ------------------------------------------------------------------ music
 //
@@ -3199,18 +2846,13 @@ function showApp() {
     setupDock();
     setupPlayer();
     wireMonitor();
-    $("theme-toggle").onclick = toggleTheme;
     $("measure").addEventListener("click", measure);
-    // The sidebar folds down to a rail of icons; this computer remembers which.
-    var setRail = function (on) {
-      document.body.classList.toggle("side-collapsed", on);
-      $("side-collapse").title = on ? "Expand the sidebar" : "Collapse the sidebar";
-      try { localStorage.setItem("blazeit.rail", on ? "1" : "0"); } catch (e) {}
-    };
-    $("side-collapse").addEventListener("click", function () { setRail(!document.body.classList.contains("side-collapsed")); });
-    try { setRail(localStorage.getItem("blazeit.rail") === "1"); } catch (e) {}
-    $("usb-link").addEventListener("click", function (e) { e.preventDefault(); selectTab("settings"); });
-    wireSwitch($("theme-switch"), function (on) { setOled(on); });
+    Array.prototype.forEach.call(document.querySelectorAll("[data-theme-choice]"), function (b) {
+      b.addEventListener("click", function () { setTheme(b.dataset.themeChoice); });
+    });
+    $("direct-tile").addEventListener("click", toggleDirect);
+    $("direct-stop").addEventListener("click", toggleDirect);
+    $("send-tile").addEventListener("click", function () { $("file-input").click(); });
     Array.prototype.forEach.call($("size-seg").children, function (b) {
       b.addEventListener("click", async function () {
         var gb = parseInt(b.dataset.gb, 10);
@@ -3223,11 +2865,15 @@ function showApp() {
         refreshState();
       });
     });
-    [["tabs"], ["music-view"], ["streams-seg"], ["size-seg"]].forEach(function (x) { liquid($(x[0])); });
     renderPending();
   } else setMonitor(monitorWanted());
   refreshState();
+  refreshDirect();
   connectEvents();
+  // The phone's hotspot going on or off raises no event, so in hotspot mode look now and then.
+  if (!showApp._poll) showApp._poll = setInterval(function () {
+    if (direct.kind === "hotspot" && document.visibilityState === "visible") refreshDirect();
+  }, 5000);
 }
 
 function pairStop() {
@@ -3328,11 +2974,12 @@ window.addEventListener("beforeunload", function (e) {
 $("pair").addEventListener("click", pair);
 $("pair-cancel").addEventListener("click", pairReset);
 
-try { if (localStorage.getItem("blazeit.oled") === "1") document.body.classList.add("oled"); } catch (e) {}
 
 (async function boot() {
   // Paint the last-known theme immediately; the phone's real setting follows a moment later.
-  applyTheme(true);
+  var saved = "system";
+  try { saved = localStorage.getItem("blazeit.theme") || "system"; } catch (e) {}
+  applyTheme(saved);
   try {
     var res = await fetch("/api/ping", { credentials: "same-origin" });
     var info = await res.json();
@@ -3342,5 +2989,6 @@ try { if (localStorage.getItem("blazeit.oled") === "1") document.body.classList.
   } catch (e) { showLogin(); }
 })();
 </script>
+
 </body>
 </html>
