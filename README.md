@@ -15,17 +15,27 @@
 
 ## ⚡ Speed
 
-| | Phone → laptop | Laptop → phone |
-| :--- | ---: | ---: |
-| **BlazeIt, over the phone's Wi-Fi 6 hotspot** | **67–72 MB/s** | **64–69 MB/s** |
-| Through a typical home router | ~10 MB/s | ~15 MB/s |
+| | Phone → laptop | Laptop → phone | Laptop internet |
+| :--- | ---: | ---: | :--- |
+| **USB-C cable (USB 3), USB tethering** | **224–235 MB/s** | **257–271 MB/s** | Yes |
+| BlazeIt direct link (the phone's own offline network) | 55–101 MB/s | 54–115 MB/s | No |
+| The phone's hotspot (hotspot mode) | 59–68 MB/s | 64–65 MB/s | Yes, through the phone |
+| Through the home router the two were sharing | 2.5 MB/s | 3.3 MB/s | Yes |
 
-Measured with real 2 GB files between a Xiaomi 15 and a Wi-Fi 7 laptop on 5 GHz, 80 MHz
-(a 1201 Mbps link). That is within a few percent of what the radio link itself carries.
-No cloud upload, no relay: the laptop talks to the phone directly, uploads and downloads
-run over **several connections at once**, and files stream straight to disk in large
-blocks without ever being held in memory. A 4 GB video crosses in about a minute. Files of
-**up to 64 GB** are accepted (Setup → *Largest file accepted*), or **no limit** at all, where only the phone's free space counts.
+Measured on 24–25 September 2026 between a Xiaomi 15 (Android 16) and a Realtek Wi-Fi 7 laptop,
+with the phone generating and discarding the data so only the link counts; the cable's upper
+figures are a real 2 GB file through the app, storage included. A USB 2 cable (most charging
+cables) holds the same port to about 40 MB/s. Wi-Fi ran on 5 GHz, 80 MHz, Wi-Fi 6 (a 1201 Mbps
+link), which is as far as a phone-hosted network goes here; the spread between runs is the air.
+
+**A USB 3 cable is the fastest way by far**, and with the phone's Wi-Fi off the laptop gets the
+phone's mobile data over the same cable while files move at full speed.
+
+**The direct link** is a Wi-Fi network the phone hosts for itself: tap *Direct link* on Home (or
+on the page) and the phone starts it, with no trip to Settings and no internet shared. The laptop
+helper sees it, moves the laptop onto it, and moves it back to your Wi-Fi when you stop. One hop,
+no router taking turns, nobody else on the channel. Files of any size, resumable, over several
+connections at once, straight to disk.
 
 <p align="center">
   <img src="docs/images/web-home.png" width="760" alt="Home: clipboard, files and the monitor">
@@ -48,26 +58,19 @@ blocks without ever being held in memory. A 4 GB video crosses in about a minute
 
 ## Features, one by one
 
-### 1. Liquid Glass, on both sides
+### 1. One clean look, on both sides
 
-The app and the page share one look: sheets of glass over a softly lit backdrop, a rim
-that catches the light, capsule buttons, one line-icon set, and the brand yellow as the
-only accent.
+The app and the page look the same, and at home next to the phone's own apps: solid
+surfaces on a quiet background, big clear type, and colour used the way a home screen uses
+it, as small bright tiles that say what a thing is. Home opens on a yellow card with the
+address in large type, then the *Direct link* and *Send files* tiles. Nothing is blurred
+or refracted, so nothing costs a frame.
 
-On the phone, the tab bar and the monitor are **liquid glass, not frosted glass**. The
-screen is recorded every frame and drawn again under them through a lens shader (AGSL,
-Android 13+). The middle stays clear. Near the rounded edge the content bends inwards,
-the way it does through a thick drop of glass, with a faint colour fringe where the bend
-is strongest. A specular rim and a sheen along the top sit on the surface. Older phones
-get a blurred glass instead.
+**Automatic, light or dark.** It follows the phone (or the computer) by default; dark is
+true black. Pick one in *Settings → Appearance* on the phone or on the page; the phone and
+every open page follow.
 
-On a laptop the page uses the whole screen: a floating glass sidebar on the left, the
-page across the middle, the monitor docked as a panel on the right while it is on, and
-the player floating along the bottom.
-
-**Aurora or OLED black.** The backdrop is either the colourful aurora or true black, with
-the same glass on top. Switch it in *Setup → Appearance* on the phone or *Settings* on the
-page; the phone and every open page follow.
+*The screenshots below are from 0.4 and still show the old glass look.*
 
 | Home | Monitor | Phones | Control |
 | --- | --- | --- | --- |
@@ -87,7 +90,7 @@ remove any of them.
 Everything you move lives on one screen, on both sides.
 
 - **Clipboard.** Type or paste on either side and send it across. On the phone, **Paste**
-  grabs what you last copied. Through the laptop helper (see 7) the page reads and writes
+  grabs what you last copied. Through the laptop helper (see 8) the page reads and writes
   the laptop's own clipboard directly.
 - **Files to the phone.** Drop files **or whole folders** on the page, or use *Choose
   files* / *Choose a folder*. A folder arrives as the same folder, subfolders included.
@@ -99,7 +102,7 @@ Everything you move lives on one screen, on both sides.
 
 ### 4. A live monitor over every screen
 
-Tap the pulse button on the phone and a small glass capsule floats over whatever you are
+Tap the pulse button on the phone and a small pill floats over whatever you are
 doing: speed each way, **ping**, and signal strength. Drag it out of the way; tap it for
 the full picture. On a laptop, **Monitor** in the sidebar docks the full picture as a
 panel on the right.
@@ -126,7 +129,39 @@ its link every 2 s only while someone is watching (every 15 s otherwise), and th
 trackpad channel drops to a keep-alive every 25 s whenever the phone's Control tab is
 closed. The screen-on and low-latency Wi-Fi locks are held only while Control is open.
 
-### 5. Phone to phone
+### 5. The direct link
+
+*Direct link* on Home starts a private Wi-Fi network hosted by the phone (Android's
+local-only hotspot, started by the app itself). Its card shows the network's name, password
+and address, and a QR code a phone camera joins from.
+
+- **With the laptop helper running**, the laptop joins it by itself within a second or two,
+  the page carries on over it without a reload, and the laptop goes back to its previous
+  Wi-Fi when you stop the link. While on it the laptop has no internet.
+- **Without the helper**, join the network by hand and open the address shown.
+- The phone stays on its own Wi-Fi alongside; the direct link shares that channel.
+
+What was tried and measured before settling on this, so nobody repeats it blindly:
+
+- **Pinning a channel** comes up at 40 MHz, half the width. Leaving the channel to the phone
+  gives 80 MHz, so the app does that.
+- **160 MHz, 6 GHz and Wi-Fi 7** are not reachable: this phone's hotspot offers no 6 GHz
+  channels for its country (IN), the laptop's Mobile Hotspot does not support 6 GHz, and the
+  phone's hotspot runs Wi-Fi 6.
+- **Two links at once** (laptop on the phone's direct link *and* phone on the laptop's
+  hotspot) measured 61 MB/s on one link and 65 MB/s on both. Each device has one Wi-Fi
+  radio and puts its hotspot on the channel it is already connected on, so both links end up
+  on one channel and take turns.
+
+**Hotspot mode, for staying online.** In *Settings → Laptop link* choose *Hotspot* and enter
+the phone's hotspot name and password once (Android does not let an app read them). Turn the
+hotspot on in the phone's settings and the laptop helper joins it the same way, but the laptop
+keeps its internet through the phone. About a third slower than the direct link.
+
+The helper only ever removes the Wi-Fi profiles it created itself (`AndroidShare_…`); a network
+you saved on the laptop is joined as it is and left alone.
+
+### 6. Phone to phone
 
 The **Phones** tab lists other phones running BlazeIt on the same Wi-Fi (or on one
 phone's hotspot), found automatically. Tap **Connect**, allow it on the other phone
@@ -134,12 +169,14 @@ with the same 4-digit code, and from then on send files or the clipboard text wi
 tap. Files go over the same parallel, resumable upload the browser uses. If a router
 blocks discovery, *Connect by address* takes the other phone's IP.
 
-Two phones do not add up to double the speed, even with each hosting a hotspot for the
-other. Each phone has one Wi-Fi chip: on one band both links take turns on the same
-channel, and on two bands the chip splits its antennas and the second link has to use
-2.4 GHz. Expect the same ~65–70 MB/s per link.
+**Send over a direct link** (on by default): when you send files, the other phone starts
+its direct link and this one joins it (Android asks you to allow it once per send), so the
+files go one hop instead of two through the router. If anything fails along the way, the
+files go the ordinary way. A link started for a phone says so, and a laptop helper nearby
+stays on its own Wi-Fi. Phone to phone over the direct link has not been measured yet; it
+needs two phones.
 
-### 6. The phone as the laptop's trackpad and keyboard
+### 7. The phone as the laptop's trackpad and keyboard
 
 The **Control** tab is one large trackpad with Windows gestures, plus the phone's own
 keyboard typing straight into the laptop.
@@ -158,7 +195,7 @@ tap then drag to hold. The dial in the pad's corner cycles the pointer through S
 and Fast.
 
 
-### 7. The laptop helper (one file, nothing installed)
+### 8. The laptop helper (one file, nothing installed)
 
 A browser tab may not move the cursor, and a page on plain `http://` may not use every
 connection for downloads or touch the clipboard. The helper fixes both. Get
@@ -169,20 +206,25 @@ connection for downloads or touch the clipboard. The helper fixes both. Get
 3. serves the page at `http://localhost:8787`, which the browser treats as secure, so
    downloads run over every connection and the clipboard works directly;
 4. turns the phone's **Control** tab into this laptop's trackpad and keyboard;
-5. reports the laptop's Wi-Fi link and ping to the monitor.
+5. reports the laptop's Wi-Fi link and ping to the monitor;
+6. joins the phone's direct link when you start it (or its hotspot, in hotspot mode), and goes
+   back to your Wi-Fi when it stops;
+7. switches to a USB cable whenever one is plugged in with USB tethering on.
+
+Only one helper runs at a time; a second copy says so and stops.
 
 It is plain PowerShell and C# that Windows already has, so there is nothing to install and
 no admin rights are needed. Close its window to stop it.
 
 <img src="docs/images/web-settings.png" width="620" alt="Settings: helper, parallel connections, measure">
 
-### 8. Measure the link
+### 9. Measure the link
 
 **Settings → Measure now** tests the network alone for five seconds each way, with the
 phone generating and discarding the data so storage is out of the picture. Compare it
 with a real transfer: close means the network is the ceiling, far below means storage is.
 
-### 9. Stream your music library
+### 10. Stream your music library
 
 The **Music** tab lists every song on the phone, with search and an album view. Tracks
 stream straight from the phone with range requests: playback starts after the first few
@@ -192,9 +234,9 @@ Media keys, the Windows media overlay, shuffle and repeat all work.
 
 The now-playing turntable uses the album cover as the record's label: the arm drops when
 you press play, the disc spins, and pausing freezes it exactly where it is. The player
-floats at the bottom as its own piece of glass.
+sits along the bottom of the page.
 
-| Aurora | OLED black |
+| Light | Dark |
 | --- | --- |
 | <img src="docs/images/web-music.png" width="420" alt="Music, aurora"> | <img src="docs/images/web-oled.png" width="420" alt="Music, OLED black"> |
 
@@ -208,20 +250,20 @@ Albums open like iOS Music: the cover large, the artist, the length, and Play or
 
 1. Download the APK from [Releases](../../releases/latest) and install it on the phone
    (Android 10 or later; allow installing from your browser or file manager when asked).
-2. Open **BlazeIt**, go to **Setup** and pick a **destination folder** for received files.
+2. Open **BlazeIt**, go to **Settings** and pick a **destination folder** for received files.
    Allow notifications, and allow music access if you want the Music tab.
 3. Flip the switch on **Home**. The phone shows an address such as `http://192.168.1.11:8787`.
 4. Open that address on the laptop and click **Ask to connect**. Tap **Allow** on the phone.
 5. For full speed, laptop control and the laptop side of the monitor, open **Settings**
    on the page, get **blazeit-pc.bat**, and run it.
 
-**For the most speed, connect the laptop to the phone's hotspot.** Through a home router
-every byte crosses the air twice and competes for the router's time; the phone's hotspot
-is a direct link. It works with mobile data off, so BlazeIt keeps working with no internet
-at all.
+**For the most speed, tap Direct link** (on the phone's Home or the page's Home) with the
+laptop helper running. Through a home router every byte crosses the air twice and competes
+for the router's time; the direct link is one hop on a network of its own. It needs no
+internet at all.
 
 **Fastest of all: a USB-C cable.** Plug the phone into the laptop and turn on USB tethering
-(Setup → *Fastest of all: a USB-C cable* → *Set up*); BlazeIt shows the cable's address on
+(Settings → *USB-C cable* → *Set up*); BlazeIt shows the cable's address on
 Home. A cable has no radio to share and no interference. The page's Settings has the same
 steps. For developers, `tools/blazeit-usb.bat` (or `.sh`) forwards the port with `adb` instead.
 
@@ -241,7 +283,8 @@ steps. For developers, `tools/blazeit-usb.bat` (or `.sh`) forwards the port with
  │     └ control stream for the trackpad  │          │  ├ SendInput for pointer    │
  │ NSD: finds other phones running it     │          │  │  and keyboard            │
  │ Storage: SAF folder, MediaStore        │          │  └ Wi-Fi link + ping report │
- │ UI: Jetpack Compose + Haze blur        │          │                             │
+ │ Direct link: local-only hotspot        │          │  ├ joins the direct link    │
+ │ UI: Jetpack Compose                    │          │                             │
  └────────────────────────────────────────┘          └─────────────────────────────┘
 ```
 
@@ -255,8 +298,12 @@ steps. For developers, `tools/blazeit-usb.bat` (or `.sh`) forwards the port with
 - **Live updates.** Server-Sent Events push file lists and clipboard changes to every open page.
 - **Monitor.** Byte counters on every transfer path, sampled once a second over the real
   elapsed time; the phone's link comes from `WifiManager`, the laptop's from the helper.
+- **Direct link.** `WifiManager.startLocalOnlyHotspotWithConfiguration` on 5 GHz with the
+  channel left to the phone (Android 16; older versions take the default band). The page and
+  the helper read it from `/api/direct` and hear about changes over the event stream.
 - **Phone to phone.** Each phone advertises `_blazeit._tcp` over NSD; pairing and uploads
-  reuse the same endpoints a browser uses.
+  reuse the same endpoints a browser uses. Over a direct link the sender joins the other
+  phone's network with `WifiNetworkSpecifier` and sends over that network only.
 - **Music.** Read from Android's media index (audio permission only).
 - **Laptop control.** The trackpad turns gestures into short text lines on one long-lived
   HTTP response; the helper replays them with Windows `SendInput`.
@@ -289,7 +336,6 @@ adb install -r app/build/outputs/apk/debug/app-debug.apk
 | --- | --- |
 | Language | Kotlin 2.1, Jetpack Compose |
 | Server | Ktor 3.1 (CIO) |
-| Blur | [Haze](https://github.com/chrisbanes/haze) |
 | Android | minSdk 29 (Android 10), targetSdk 36 |
 | Browser page | One HTML file, no build step, no dependencies |
 
@@ -315,8 +361,9 @@ app/src/main/
       Music.kt             music library, covers, range streaming
       Control.kt           trackpad event stream, discovery beacon
     service/BridgeService.kt   foreground service, notification, locks
-    ui/                    Compose: Home, Phones, Control, Setup, monitor overlay, theme
+    ui/                    Compose: Home, Phones, Control, Settings, monitor overlay, theme
     net/NetInfo.kt         which addresses the phone can be reached on
+    net/DirectLink.kt      the direct link: hosting one, and joining another phone's
 tools/                     USB shortcuts
 docs/images/               icon and screenshots
 ```
@@ -325,9 +372,13 @@ docs/images/               icon and screenshots
 
 ## Known limits
 
-- Wi-Fi 6 on 5 GHz is the ceiling on this pair: the phone's hotspot does not offer Wi-Fi 7
-  or 6 GHz where the SIM's country disables it, and both radios are 2×2. A Wi-Fi 7 router
-  with 160 MHz channels and a wired laptop is the way past ~70 MB/s.
+- Wi-Fi 6 at 80 MHz on 5 GHz is the ceiling for any phone-hosted link on this pair: no 6 GHz
+  channels for the country (hotspot and Wi-Fi Direct alike), Wi-Fi 7 hosting is off in the
+  vendor's configuration, and a 160 MHz request from an app is accepted and then discarded by
+  Android. A second, reverse link does not add speed. For more, use a USB 3 cable.
+- While the laptop is on the direct link it has no internet; it comes back when the link stops.
+- Phone to phone over a direct link asks for approval on the sending phone each time, because
+  Android gives the network a new name every time it starts.
 - Laptop control and the helper are Windows only for now.
 - Windows ignores simulated input in administrator windows unless the helper itself runs
   as administrator.
