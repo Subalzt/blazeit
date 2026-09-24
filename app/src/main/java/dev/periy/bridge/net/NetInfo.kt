@@ -35,6 +35,13 @@ enum class LinkKind(val label: String, val hint: String) {
         "Speed depends on the band and the distance to the router. 5 or 6 GHz is several times 2.4 GHz.",
     ),
 
+    /** BlazeIt's own offline network, started from the app. Listed after Wi-Fi so the
+     *  everyday address stays the one shown; the direct link has its own card. */
+    DIRECT(
+        "Direct link",
+        "The phone's own offline network: one hop, nobody else on it.",
+    ),
+
     /** Mobile data. Reachable in principle, but metered and behind carrier NAT. */
     CELLULAR(
         "Mobile data",
@@ -124,14 +131,26 @@ data class LinkEstimate(
  */
 object NetInfo {
 
+    /** The direct link's address while it is up, so it is labelled as such. */
+    @Volatile
+    var directHost: String? = null
+
+    /** Interfaces an access point runs on: swlan/ap/softap, or a second wlan. */
+    fun isHotspotInterface(name: String): Boolean {
+        val n = name.lowercase()
+        return n.startsWith("ap") || n.startsWith("swlan") || n.startsWith("softap") ||
+            (n.length > 4 && n.startsWith("wlan") && n[4].isDigit() && n[4] != '0')
+    }
+
     fun addresses(): List<Address> {
         val out = mutableListOf<Address>()
         val ifaces = runCatching { NetworkInterface.getNetworkInterfaces() }.getOrNull() ?: return out
         for (nif in ifaces) {
             if (!runCatching { nif.isUp }.getOrDefault(false)) continue
             if (runCatching { nif.isLoopback }.getOrDefault(true)) continue
-            val kind = classify(nif.name)
+            val ifaceKind = classify(nif.name)
             for (addr in nif.inetAddresses) {
+                val kind = if (addr.hostAddress == directHost) LinkKind.DIRECT else ifaceKind
                 if (addr.isLoopbackAddress || addr.isLinkLocalAddress) continue
                 when (addr) {
                     is Inet4Address -> out += Address(
@@ -240,9 +259,9 @@ object NetInfo {
             n.startsWith("rndis") || n.startsWith("ncm") || n.startsWith("usb") ||
                 n.startsWith("eth") -> LinkKind.USB
 
-            // Hotspot interfaces. swlan/softap on Qualcomm, ap on several others.
-            n.startsWith("ap") || n.startsWith("swlan") || n.startsWith("softap") ||
-                n.startsWith("wlan1") -> LinkKind.HOTSPOT
+            // Hotspot interfaces. swlan/softap on Qualcomm, ap on several others, and the
+            // second or third wlan when the phone runs an access point beside its Wi-Fi.
+            isHotspotInterface(n) -> LinkKind.HOTSPOT
 
             n.startsWith("wlan") || n.startsWith("wifi") || n.startsWith("wl") -> LinkKind.WIFI
 

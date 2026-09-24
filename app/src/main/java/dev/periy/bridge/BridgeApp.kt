@@ -33,17 +33,19 @@ class Container(ctx: Context) {
     val devices = DeviceRegistry(app)
     val pairing = PairingManager(app, devices)
     val music = MusicLibrary(app)
-    val peers = PeerManager(app, ::deviceName) { prefs.uploadStreams }
+    val direct = dev.periy.bridge.net.DirectLink(app)
+    val peers = PeerManager(app, ::deviceName, { prefs.uploadStreams }, direct) { prefs.phoneDirect }
 
-    private val _oled = MutableStateFlow(prefs.oled)
+    private val _theme = MutableStateFlow(prefs.theme)
 
-    /** The shared appearance: OLED black, or the colourful backdrop. The app and every page follow it. */
-    val oled: StateFlow<Boolean> = _oled
+    /** The shared appearance: "system", "light" or "dark". The app and every page follow it. */
+    val theme: StateFlow<String> = _theme
 
-    fun setOled(on: Boolean) {
-        prefs.oled = on
-        _oled.value = on
-        EventBus.emit("theme", if (on) "oled" else "aurora")
+    fun setTheme(value: String) {
+        val v = value.takeIf { it in THEMES } ?: return
+        prefs.theme = v
+        _theme.value = v
+        EventBus.emit("theme", v)
     }
 
     @Volatile
@@ -62,12 +64,14 @@ class Container(ctx: Context) {
             port = prefs.port,
             sessionKey = { prefs.sessionKey() },
             uploadStreams = { prefs.uploadStreams },
-            oled = { _oled.value },
-            setOled = ::setOled,
+            theme = { _theme.value },
+            setTheme = ::setTheme,
+            laptopLink = { prefs.laptopLink },
+            hotspot = { prefs.hotspotSsid to prefs.hotspotPass },
             setMaxUpload = { prefs.tusMaxSize = it },
             deviceName = deviceName(),
         )
-        return BridgeServer(app, config, storage, tus, index, clipboard, devices, pairing, music)
+        return BridgeServer(app, config, storage, tus, index, clipboard, devices, pairing, music, direct)
             .also { server = it }
     }
 
@@ -76,6 +80,8 @@ class Container(ctx: Context) {
         server = null
     }
 }
+
+val THEMES = setOf("system", "light", "dark")
 
 class BridgeApp : Application() {
     lateinit var container: Container

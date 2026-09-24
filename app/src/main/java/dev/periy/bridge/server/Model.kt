@@ -37,8 +37,8 @@ data class StateDto(
     val deviceName: String,
     /** How many parallel connections the page should open. See TusStore's class comment. */
     val uploadStreams: Int = 4,
-    /** Shared theme: flipping it on the phone or on any computer changes all of them. */
-    val oled: Boolean = false,
+    /** Shared appearance, "system", "light" or "dark": changing it anywhere changes all of them. */
+    val theme: String = "system",
     /** Smallest file worth splitting; below this the round trips cost more than they save. */
     val parallelThreshold: Long = 16L * 1024 * 1024,
 )
@@ -59,8 +59,11 @@ class ServerConfig(
     val port: Int,
     val sessionKey: () -> ByteArray,
     val uploadStreams: () -> Int,
-    val oled: () -> Boolean,
-    val setOled: (Boolean) -> Unit,
+    val theme: () -> String,
+    val setTheme: (String) -> Unit,
+    /** "direct" or "hotspot", and the hotspot's name and password; see Prefs.laptopLink. */
+    val laptopLink: () -> String = { "direct" },
+    val hotspot: () -> Pair<String, String> = { "" to "" },
     /** Sets the largest upload accepted; Long.MAX_VALUE means only free space counts. */
     val setMaxUpload: (Long) -> Unit,
     val sessionTtlMs: Long = 30L * 24 * 60 * 60 * 1000,
@@ -114,10 +117,26 @@ data class PairStartDto(val id: String, val code: String, val name: String)
 @Serializable
 data class PairStatusDto(val state: String)
 
-@Serializable data class ThemeRequest(val oled: Boolean = false)
+@Serializable data class ThemeRequest(val theme: String = "system")
 
 /** From the page's Settings: a size in GB, or no limit. */
 @Serializable data class MaxUploadRequest(val gb: Int = 0, val unlimited: Boolean = false)
 
 /** A browser reporting the round trip it measured to this phone. */
 @Serializable data class RttReport(val ms: Int = -1)
+
+/** The phone's own offline network, for a laptop helper or another phone to join. */
+@Serializable
+data class DirectDto(
+    /** off, starting, on or failed. */
+    val state: String,
+    val info: dev.periy.bridge.net.DirectLink.Info? = null,
+    val message: String? = null,
+    /** False when it was started for a phone-to-phone send: laptops should not join it. */
+    val laptop: Boolean = true,
+    /**
+     * "direct" for the phone's own offline network, "hotspot" for its ordinary hotspot,
+     * which shares internet. Laptops join either the same way.
+     */
+    val kind: String = "direct",
+)

@@ -9,6 +9,16 @@
     <!-- Lets the laptop helper find the phone by broadcast, even with the screen off. -->
     <uses-permission android:name="android.permission.CHANGE_WIFI_MULTICAST_STATE" />
 
+    <!-- The direct link: an offline hotspot the app starts itself, and joining another
+         phone's. Android 13+ asks for nearby Wi-Fi devices (never used for location);
+         older versions only allow it with location. -->
+    <uses-permission android:name="android.permission.CHANGE_WIFI_STATE" />
+    <uses-permission android:name="android.permission.CHANGE_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.NEARBY_WIFI_DEVICES"
+        android:usesPermissionFlags="neverForLocation" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"
+        android:maxSdkVersion="32" />
+
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <!-- See the long comment on <service> below for why specialUse and not dataSync. -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />

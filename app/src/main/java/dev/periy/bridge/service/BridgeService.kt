@@ -108,6 +108,7 @@ class BridgeService : Service() {
 
     override fun onDestroy() {
         _running.value = false
+        container.direct.stop()
         container.peers.stopAdvertising()
         container.stopServer()
         releaseLocks()
@@ -129,6 +130,7 @@ class BridgeService : Service() {
 
     private fun stopEverything() {
         _running.value = false
+        container.direct.stop()
         container.peers.stopAdvertising()
         container.stopServer()
         releaseLocks()

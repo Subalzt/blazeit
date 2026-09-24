@@ -11,7 +11,10 @@ exit /b
 #  2. Serves the BlazeIt page at http://localhost:8787. Chrome treats localhost as secure, so
 #     downloads use every connection and the clipboard works without extra clicks.
 #  3. Turns the phone's Control tab into this laptop's trackpad and keyboard.
-# Close this window to stop all three.
+#  4. Joins the phone's direct link (its own offline Wi-Fi) when you start it, or its hotspot in
+#     hotspot mode (the laptop keeps internet), and goes back to your Wi-Fi when it stops.
+#  5. Switches to a USB cable whenever one is plugged in with USB tethering on: the fastest link.
+# Close this window to stop all of it.
 
 $ErrorActionPreference = 'Stop'
 $source = @'
@@ -36,6 +39,8 @@ public static class BlazeItPc
     static readonly ManualResetEvent relayReady = new ManualResetEvent(false);
 
     static volatile string phone;
+    /** Held for as long as this helper runs, so a second copy knows to stop. */
+    static Mutex single;
     // The folder keeps the app's earlier name, so a laptop paired before the rename stays paired.
     static readonly string Dir = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Xoosh");
@@ -47,6 +52,14 @@ public static class BlazeItPc
         // go-ahead the phone never sends, so the request times out.
         ServicePointManager.Expect100Continue = false;
         Directory.CreateDirectory(Dir);
+        bool first;
+        single = new Mutex(true, "Local\\BlazeItLaptopHelper", out first);
+        if (!first)
+        {
+            Say("The BlazeIt helper is already running in another window. Close that one first; this one will stop.");
+            Thread.Sleep(6000);
+            return;
+        }
         Say("BlazeIt laptop helper. Keep this window open; close it to stop.");
         FindPhone(true);
 
@@ -57,6 +70,10 @@ public static class BlazeItPc
         Thread link = new Thread(LinkLoop);
         link.IsBackground = true;
         link.Start();
+
+        Thread direct = new Thread(DirectLoop);
+        direct.IsBackground = true;
+        direct.Start();
 
         ControlLoop();
     }
@@ -86,11 +103,32 @@ public static class BlazeItPc
         catch { return false; }
     }
 
-    static List<string> Candidates()
+    /**
+     * The phone's address over a USB cable (USB tethering), if one is plugged in: the
+     * gateway of the phone's network adapter. Measured at 225-270 MB/s with a USB 3 cable,
+     * several times any Wi-Fi link, so it always comes first.
+     */
+    static List<string> UsbGateways()
     {
         List<string> list = new List<string>();
+        foreach (NetworkInterface ni in NetworkInterface.GetAllNetworkInterfaces())
+        {
+            if (ni.OperationalStatus != OperationalStatus.Up) continue;
+            string d = ni.Description;
+            if (d.IndexOf("NDIS", StringComparison.OrdinalIgnoreCase) < 0 &&
+                d.IndexOf("NCM", StringComparison.OrdinalIgnoreCase) < 0 &&
+                d.IndexOf("Android", StringComparison.OrdinalIgnoreCase) < 0) continue;
+            foreach (GatewayIPAddressInformation g in ni.GetIPProperties().GatewayAddresses)
+                if (g.Address.AddressFamily == AddressFamily.InterNetwork) list.Add(g.Address.ToString());
+        }
+        return list;
+    }
+
+    static List<string> Candidates()
+    {
+        List<string> list = UsbGateways();
         string saved = Path.Combine(Dir, "phone.txt");
-        if (File.Exists(saved)) list.Add(File.ReadAllText(saved).Trim());
+        if (File.Exists(saved) && !list.Contains(File.ReadAllText(saved).Trim())) list.Add(File.ReadAllText(saved).Trim());
 
         // On the phone's hotspot, the phone *is* the gateway.
         foreach (NetworkInterface ni in NetworkInterface.GetAllNetworkInterfaces())
@@ -149,9 +187,24 @@ public static class BlazeItPc
                 {
                     if (phone != c) Say("Found the phone at " + c + ".");
                     phone = c;
-                    File.WriteAllText(Path.Combine(Dir, "phone.txt"), c);
+                    // The direct link's address is not where to look next time.
+                    if (directSsid == null && !UsbGateways().Contains(c)) File.WriteAllText(Path.Combine(Dir, "phone.txt"), c);
                     return;
                 }
+            }
+            // Closed last time while on a direct link that has since ended: go home first.
+            if (File.Exists(DirectFile))
+            {
+                string[] rec = File.ReadAllText(DirectFile).Split('\n');
+                string was = rec[0].Trim();
+                bool added = rec.Length >= 2 && rec[1].Trim() == "added";
+                string home = File.Exists(HomeFile) ? File.ReadAllText(HomeFile).Trim() : "";
+                try { File.Delete(DirectFile); } catch { }
+                Say("Going back to " + (home.Length > 0 ? home : "your Wi-Fi") + " from an earlier direct link.");
+                if (home.Length > 0) RunNetsh("wlan connect name=\"" + home + "\"");
+                if (was.Length > 0 && added && was.StartsWith("AndroidShare")) RunNetsh("wlan delete profile name=\"" + was + "\"");
+                Thread.Sleep(4000);
+                continue;
             }
             if (firstTime)
             {
@@ -336,6 +389,177 @@ public static class BlazeItPc
         if (r.EndsWith("ac")) return "Wi-Fi 5";
         if (r.EndsWith("n")) return "Wi-Fi 4";
         return r;
+    }
+
+    // ------------------------------------------------------------------ direct link and hotspot
+    //
+    // When the phone offers a fast link for laptops, this laptop joins it: either the
+    // phone's direct link (its own offline network, fastest) or, in hotspot mode, the
+    // phone's ordinary hotspot, which shares the phone's internet so this laptop stays
+    // online. The page keeps working because it talks to localhost, and the relay follows
+    // the phone to its address on the new network. When the link goes away, the laptop goes
+    // back to the Wi-Fi it was on. A link started only for a phone-to-phone send says so
+    // ("laptop":false), and this laptop stays where it is.
+
+    /** The direct link's network name while this laptop is on it; null otherwise. */
+    static volatile string directSsid;
+    /** The Wi-Fi profile to go back to. */
+    static string homeProfile;
+    /** True when this helper created the profile it joined, so it may delete it afterwards. */
+    static bool addedProfile;
+    /** A network that could not be joined, so it is not retried every few seconds. */
+    static string gaveUpOn;
+
+    static string DirectFile { get { return Path.Combine(Dir, "direct-wifi.txt"); } }
+    static string HomeFile { get { return Path.Combine(Dir, "home-wifi.txt"); } }
+
+    static void DirectLoop()
+    {
+        if (File.Exists(HomeFile)) homeProfile = File.ReadAllText(HomeFile).Trim();
+        if (File.Exists(DirectFile))
+        {
+            string[] rec = File.ReadAllText(DirectFile).Split('\n');
+            directSsid = rec[0].Trim();
+            // Only a profile this helper recorded as its own may be deleted; older helpers
+            // wrote one line, and a profile of unknown origin is always kept.
+            addedProfile = rec.Length >= 2 && rec[1].Trim() == "added";
+        }
+        int misses = 0;
+        while (true)
+        {
+            Thread.Sleep(2500);
+            try
+            {
+                string cookie = session;
+                if (cookie == null || phone == null) continue;
+
+                // A USB cable beats every Wi-Fi link: switch to it, and leave the direct link.
+                string usb = null;
+                foreach (string g in UsbGateways()) { if (Ping(g)) { usb = g; break; } }
+                if (usb != null)
+                {
+                    if (directSsid != null) LeaveDirect();
+                    if (phone != usb)
+                    {
+                        phone = usb;
+                        Say("USB cable to the phone found: using it. It is several times faster than any Wi-Fi link.");
+                    }
+                    continue;
+                }
+                string body = null;
+                try { using (HttpWebResponse r = Http("GET", "/api/direct", cookie, 3000)) body = Body(r); } catch { }
+                if (body == null)
+                {
+                    // On the link and the phone has gone quiet: the link was stopped.
+                    if (directSsid != null && ++misses >= 3) { LeaveDirect(); misses = 0; }
+                    continue;
+                }
+                misses = 0;
+                bool on = body.Contains("\"state\":\"on\"") && !body.Contains("\"laptop\":false");
+                string ssid = Field(body, "ssid"), host = Field(body, "host");
+                if (on && ssid.Length > 0 && host.Length > 0 && directSsid != ssid && gaveUpOn != ssid)
+                    JoinDirect(ssid, Field(body, "passphrase"), host, Field(body, "security"), Field(body, "kind") == "hotspot");
+                else if (!on && directSsid != null) LeaveDirect();
+                if (!on) gaveUpOn = null;
+            }
+            catch (Exception e) { Say("Direct link: " + e.Message); }
+        }
+    }
+
+    static string Field(string json, string key)
+    {
+        Match m = Regex.Match(json, "\"" + key + "\":\"((?:[^\"\\\\]|\\\\.)*)\"");
+        return m.Success ? Regex.Unescape(m.Groups[1].Value) : "";
+    }
+
+    static string Xml(string s) { return System.Security.SecurityElement.Escape(s); }
+
+    static string RunNetsh(string args)
+    {
+        ProcessStartInfo psi = new ProcessStartInfo("netsh", args);
+        psi.UseShellExecute = false;
+        psi.RedirectStandardOutput = true;
+        psi.CreateNoWindow = true;
+        using (Process pr = Process.Start(psi))
+        {
+            string text = pr.StandardOutput.ReadToEnd();
+            pr.WaitForExit(10000);
+            return text;
+        }
+    }
+
+    static void JoinDirect(string ssid, string pass, string host, string security, bool hotspot)
+    {
+        // A network this laptop already knows (the phone's hotspot, often) is joined with the
+        // saved profile, which is left exactly as it was.
+        bool known = !RunNetsh("wlan show profile name=\"" + ssid + "\"").Contains("is not found");
+        if (!known && pass.Length == 0)
+        {
+            Say("The phone's hotspot is on, but this laptop does not know its password. Add it in the phone's Settings (Laptop link).");
+            gaveUpOn = ssid;
+            return;
+        }
+        string current = Get(Netsh(), "Profile");
+        if (current.Length > 0 && current != ssid)
+        {
+            homeProfile = current;
+            File.WriteAllText(HomeFile, current);
+        }
+        Say(hotspot
+            ? "The phone's hotspot is on. Moving this laptop onto it; the internet stays on through the phone."
+            : "The phone started its direct link. Moving this laptop onto it; there is no internet while on it.");
+        addedProfile = !known;
+        if (known) { JoinAndFind(ssid, host, hotspot); return; }
+        string xml = "<?xml version=\"1.0\"?><WLANProfile xmlns=\"http://www.microsoft.com/networking/WLAN/profile/v1\">" +
+            "<name>" + Xml(ssid) + "</name><SSIDConfig><SSID><name>" + Xml(ssid) + "</name></SSID></SSIDConfig>" +
+            "<connectionType>ESS</connectionType><connectionMode>manual</connectionMode><MSM><security>" +
+            "<authEncryption><authentication>" + (security == "WPA3" ? "WPA3SAE" : "WPA2PSK") + "</authentication>" +
+            "<encryption>AES</encryption><useOneX>false</useOneX></authEncryption>" +
+            "<sharedKey><keyType>passPhrase</keyType><protected>false</protected><keyMaterial>" + Xml(pass) + "</keyMaterial></sharedKey>" +
+            "</security></MSM></WLANProfile>";
+        string file = Path.Combine(Path.GetTempPath(), "blazeit-direct.xml");
+        try
+        {
+            File.WriteAllText(file, xml);
+            RunNetsh("wlan add profile filename=\"" + file + "\" user=current");
+        }
+        finally { try { File.Delete(file); } catch { } }
+        JoinAndFind(ssid, host, hotspot);
+    }
+
+    static void JoinAndFind(string ssid, string host, bool hotspot)
+    {
+        directSsid = ssid;
+        File.WriteAllText(DirectFile, ssid + "\n" + (addedProfile ? "added" : "saved"));
+        RunNetsh("wlan connect name=\"" + ssid + "\" ssid=\"" + ssid + "\"");
+        for (int i = 0; i < 50; i++)
+        {
+            Thread.Sleep(500);
+            if (Ping(host))
+            {
+                phone = host;
+                Say(hotspot ? "On the phone's hotspot. The page carries on over it, and the internet works."
+                            : "On the direct link. The page carries on over it at full speed.");
+                return;
+            }
+        }
+        Say("Could not reach the phone on " + (hotspot ? "its hotspot" : "its direct link") + "; going back.");
+        gaveUpOn = ssid;
+        LeaveDirect();
+    }
+
+    static void LeaveDirect()
+    {
+        string ssid = directSsid;
+        directSsid = null;
+        try { File.Delete(DirectFile); } catch { }
+        if (!string.IsNullOrEmpty(homeProfile)) RunNetsh("wlan connect name=\"" + homeProfile + "\"");
+        // Only a network this helper added itself (the direct link's, never one you saved) goes.
+        if (ssid != null && addedProfile && ssid.StartsWith("AndroidShare")) RunNetsh("wlan delete profile name=\"" + ssid + "\"");
+        addedProfile = false;
+        Say("The phone's link ended. Back on " + (string.IsNullOrEmpty(homeProfile) ? "your Wi-Fi" : homeProfile) + ".");
+        Thread.Sleep(3000);
+        FindPhone(false);
     }
 
     // ------------------------------------------------------------------ trackpad and keyboard

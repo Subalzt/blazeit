@@ -46,10 +46,39 @@ class Prefs(ctx: Context) {
      * where a single stream already runs close to capacity; eight helps on a busy or
      * distant Wi-Fi link where any one connection spends most of its time in recovery.
      */
-    /** OLED black instead of the colourful backdrop; shared by the app and every connected page. */
-    var oled: Boolean
-        get() = sp.getBoolean(K_OLED, false)
-        set(v) = sp.edit { putBoolean(K_OLED, v) }
+    /**
+     * Appearance, shared by the app and every connected page: "system", "light" or "dark".
+     * Earlier versions stored an OLED switch; that choice carries over as dark.
+     */
+    var theme: String
+        get() = sp.getString(K_THEME, null) ?: if (sp.getBoolean(K_OLED, false)) "dark" else "system"
+        set(v) = sp.edit { putString(K_THEME, v) }
+
+    /** Sends to another phone set up a direct link first (Android asks once per send). */
+    var phoneDirect: Boolean
+        get() = sp.getBoolean(K_PHONE_DIRECT, true)
+        set(v) = sp.edit { putBoolean(K_PHONE_DIRECT, v) }
+
+    /**
+     * How the laptop reaches the phone at speed: "direct" (the phone's own offline network,
+     * fastest, the laptop has no internet while on it) or "hotspot" (the phone's ordinary
+     * hotspot, which shares the phone's internet, so the laptop stays online).
+     */
+    var laptopLink: String
+        get() = sp.getString(K_LAPTOP_LINK, "direct").takeIf { it == "hotspot" } ?: "direct"
+        set(v) = sp.edit { putString(K_LAPTOP_LINK, if (v == "hotspot") "hotspot" else "direct") }
+
+    /**
+     * The phone's hotspot name and password, typed in once. Android does not let an app read
+     * them, and the laptop helper needs them to join (unless the laptop already knows the network).
+     */
+    var hotspotSsid: String
+        get() = sp.getString(K_HOTSPOT_SSID, "").orEmpty()
+        set(v) = sp.edit { putString(K_HOTSPOT_SSID, v.trim()) }
+
+    var hotspotPass: String
+        get() = sp.getString(K_HOTSPOT_PASS, "").orEmpty()
+        set(v) = sp.edit { putString(K_HOTSPOT_PASS, v) }
 
     /** Whether the live monitor floats over the app's screens. */
     var showMonitor: Boolean
@@ -84,6 +113,11 @@ class Prefs(ctx: Context) {
         const val K_FORCE_STAGE = "force_staged_copy"
         const val K_STREAMS = "upload_streams"
         const val K_OLED = "oled"
+        const val K_THEME = "theme"
+        const val K_PHONE_DIRECT = "phone_direct"
+        const val K_LAPTOP_LINK = "laptop_link"
+        const val K_HOTSPOT_SSID = "hotspot_ssid"
+        const val K_HOTSPOT_PASS = "hotspot_pass"
         const val K_MONITOR = "show_monitor"
     }
 }

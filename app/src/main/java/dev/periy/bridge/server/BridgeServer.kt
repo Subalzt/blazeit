@@ -53,6 +53,7 @@ import io.ktor.utils.io.writeStringUtf8
 import io.ktor.utils.io.writer
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -92,6 +93,7 @@ class BridgeServer(
     private val devices: DeviceRegistry,
     private val pairing: PairingManager,
     private val music: MusicLibrary,
+    private val direct: dev.periy.bridge.net.DirectLink,
 ) {
     private val json = Json { ignoreUnknownKeys = true; encodeDefaults = true }
     private val outbound = OutboundTracker()
@@ -195,6 +197,8 @@ class BridgeServer(
             themeRoutes()
             controlRoutes()
             monitorRoutes()
+            directRoutes()
+            p2pTrial()
         }
     }
 
@@ -278,6 +282,93 @@ class BridgeServer(
         }
     }
 
+    // ------------------------------------------------------------------ direct link
+
+    /**
+     * The phone's own offline network. A paired laptop (through its helper) or phone reads
+     * the name and password here and joins it by itself; the page offers the same button.
+     */
+    private fun io.ktor.server.routing.Route.directRoutes() {
+        get("/api/direct") {
+            call.response.header(HttpHeaders.CacheControl, "no-store")
+            call.respond(directDto())
+        }
+        post("/api/direct/start") {
+            // In hotspot mode only the phone can turn its hotspot on; say so.
+            if (config.laptopLink() == "hotspot" && call.request.queryParameters["for"] != "phone") {
+                call.respond(directDto())
+                return@post
+            }
+            // "for=phone" when another phone asks for it for a send; a laptop then stays put.
+            direct.start(config.port, laptop = call.request.queryParameters["for"] != "phone")
+            // Starting takes a second or two; wait for it so the caller gets the details.
+            withTimeoutOrNull(8_000) {
+                direct.state.first { it is dev.periy.bridge.net.DirectLink.State.On && it.info.host.isNotEmpty() ||
+                    it is dev.periy.bridge.net.DirectLink.State.Failed }
+            }
+            call.respond(directDto())
+        }
+        post("/api/direct/stop") {
+            if (config.laptopLink() == "hotspot" && direct.state.value !is dev.periy.bridge.net.DirectLink.State.On) {
+                call.respond(directDto())
+                return@post
+            }
+            direct.stop()
+            // stop() finishes on the main thread; answer with the state it leaves behind.
+            withTimeoutOrNull(2_000) { direct.state.first { it !is dev.periy.bridge.net.DirectLink.State.On } }
+            call.respond(directDto())
+        }
+    }
+
+    /** Wi-Fi Direct, being tried as a faster way to host the direct link. Debug builds only. */
+    private val p2p by lazy { dev.periy.bridge.net.P2pLink(ctx) }
+
+    private fun io.ktor.server.routing.Route.p2pTrial() {
+        if (!dev.periy.bridge.BuildConfig.DEBUG) return
+        post("/api/direct/p2p") {
+            val band = call.request.queryParameters["band"]?.toIntOrNull() ?: 0
+            val freq = call.request.queryParameters["freq"]?.toIntOrNull() ?: 0
+            val (info, err) = runCatching { p2p.start(band, freq) }.getOrElse { null to (it.message ?: "failed") }
+            call.respond(if (info != null) ApiResult(true, json.encodeToString(info)) else ApiResult(false, err))
+        }
+        post("/api/direct/p2p/stop") {
+            p2p.stop()
+            call.respond(ApiResult(true))
+        }
+    }
+
+    private fun directDto(): DirectDto {
+        if (config.laptopLink() == "hotspot" && direct.state.value !is dev.periy.bridge.net.DirectLink.State.On) return hotspotDto()
+        return directLinkDto()
+    }
+
+    /**
+     * The phone's ordinary hotspot, described like the direct link so a laptop helper joins
+     * it the same way. The phone decides whether it is on; the app only sees whether its
+     * interface is up.
+     */
+    private fun hotspotDto(): DirectDto {
+        val (ssid, pass) = config.hotspot()
+        val up = dev.periy.bridge.net.NetInfo.hotspotAddress()
+        return when {
+            ssid.isBlank() -> DirectDto("off", kind = "hotspot",
+                message = "Add the hotspot's name and password in the phone's Settings")
+            up == null -> DirectDto("off", kind = "hotspot", message = "Turn on the hotspot on the phone")
+            else -> DirectDto(
+                "on",
+                dev.periy.bridge.net.DirectLink.Info(ssid, pass, up.host, config.port, "WPA2"),
+                kind = "hotspot",
+            )
+        }
+    }
+
+    private fun directLinkDto(): DirectDto = when (val s = direct.state.value) {
+        is dev.periy.bridge.net.DirectLink.State.On -> DirectDto("on", s.info, laptop = direct.forLaptop)
+        is dev.periy.bridge.net.DirectLink.State.Failed -> DirectDto("failed", message = s.reason)
+        dev.periy.bridge.net.DirectLink.State.Starting -> DirectDto("starting")
+        dev.periy.bridge.net.DirectLink.State.Off -> DirectDto("off")
+    }
+
     // ------------------------------------------------------------------ laptop control
 
     private fun io.ktor.server.routing.Route.controlRoutes() {
@@ -338,7 +429,7 @@ class BridgeServer(
         }
         post("/api/theme") {
             val body = runCatching { call.receive<ThemeRequest>() }.getOrDefault(ThemeRequest())
-            config.setOled(body.oled)
+            config.setTheme(body.theme)
             call.respond(ApiResult(true))
         }
     }
@@ -431,7 +522,7 @@ class BridgeServer(
                     maxUploadSize = tus.maxUploadSize,
                     deviceName = config.deviceName,
                     uploadStreams = config.uploadStreams(),
-                    oled = config.oled(),
+                    theme = config.theme(),
                 )
             )
         }
@@ -498,7 +589,7 @@ class BridgeServer(
             // Immediate snapshot so a reconnecting tab is correct before anything changes.
             send(data = json.encodeToString(index.entries), event = "files")
             send(data = clipboard.text, event = "clipboard")
-            send(data = if (config.oled()) "oled" else "aurora", event = "theme")
+            send(data = config.theme(), event = "theme")
 
             val pump = CoroutineScope(coroutineContext).launch {
                 EventBus.events.collect { send(data = it.data, event = it.name) }

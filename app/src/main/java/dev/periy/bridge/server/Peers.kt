@@ -59,7 +59,14 @@ sealed interface PeerStatus {
  * phones except finding each other, which uses the network's own service discovery
  * (mDNS, "_blazeit._tcp").
  */
-class PeerManager(ctx: Context, private val deviceName: () -> String, private val streams: () -> Int) {
+class PeerManager(
+    ctx: Context,
+    private val deviceName: () -> String,
+    private val streams: () -> Int,
+    private val direct: dev.periy.bridge.net.DirectLink,
+    /** Whether sends to another phone set up a direct link between the two first. */
+    private val useDirect: () -> Boolean,
+) {
 
     private val app = ctx.applicationContext
     private val nsd = app.getSystemService(NsdManager::class.java)
@@ -72,6 +79,10 @@ class PeerManager(ctx: Context, private val deviceName: () -> String, private va
 
     private val _peers = MutableStateFlow(load())
     val peers: StateFlow<List<Peer>> = _peers.asStateFlow()
+
+    private val _route = MutableStateFlow<Map<String, String>>(emptyMap())
+    /** How a send to each phone is going out right now, by phone name, for the screen. */
+    val route: StateFlow<Map<String, String>> = _route.asStateFlow()
 
     private val _status = MutableStateFlow<Map<String, PeerStatus>>(emptyMap())
     /** Connection attempts in progress or failed, by host. */
@@ -241,34 +252,89 @@ class PeerManager(ctx: Context, private val deviceName: () -> String, private va
         }
     }
 
-    /** Sends files one after another; each file goes over several connections when large. */
+    /**
+     * Sends files one after another; each file goes over several connections when large.
+     *
+     * First, when allowed, the two phones get a network of their own: the other phone starts
+     * its direct link and this one joins it (Android asks once, with its own prompt). That
+     * is one hop instead of two through a router, and nobody else is on the channel. If any
+     * step fails the files go the ordinary way instead.
+     */
     fun sendFiles(peer: Peer, uris: List<Uri>) {
-        scope.launch { for (uri in uris) runCatching { sendOne(peer, uri) }.onFailure { Log.w(TAG, "Send failed", it) } }
+        scope.launch {
+            val route = if (useDirect()) runCatching { directRoute(peer) }.getOrNull() else null
+            setRoute(peer, if (route != null) "Direct link" else "Wi-Fi")
+            try {
+                for (uri in uris) runCatching { sendOne(peer, uri, route) }.onFailure { Log.w(TAG, "Send failed", it) }
+            } finally {
+                route?.close()
+                setRoute(peer, null)
+            }
+        }
     }
 
-    private suspend fun sendOne(peer: Peer, uri: Uri) {
+    /** A private network to the other phone, and its address on it. */
+    private inner class Route(
+        val target: NearbyPhone,
+        val joined: dev.periy.bridge.net.DirectLink.Joined,
+        /** Stop the other phone's link afterwards: it was off before this send started it. */
+        val stopAfter: Boolean,
+        val cookie: String,
+    ) : AutoCloseable {
+        val network get() = joined.network
+        override fun close() {
+            if (stopAfter) runCatching { request("POST", target, "/api/direct/stop", cookie, null, network = network) }
+            joined.close()
+        }
+    }
+
+    private suspend fun directRoute(peer: Peer): Route? {
+        setRoute(peer, "Setting up a direct link")
+        val was = runCatching {
+            json.parseToJsonElement(request("GET", peer.asTarget(), "/api/direct", peer.cookie, null).body)
+                .jsonObject["state"]!!.jsonPrimitive.content
+        }.getOrNull() ?: return null
+        val started = request("POST", peer.asTarget(), "/api/direct/start?for=phone", peer.cookie, null)
+        if (started.code !in 200..299) return null
+        val dto = json.decodeFromString<DirectDto>(started.body)
+        val info = dto.info?.takeIf { dto.state == "on" && it.host.isNotEmpty() } ?: return null
+        setRoute(peer, "Joining the direct link of " + peer.name)
+        val joined = direct.join(info) ?: run {
+            if (was != "on") runCatching { request("POST", peer.asTarget(), "/api/direct/stop", peer.cookie, null) }
+            return null
+        }
+        return Route(NearbyPhone(peer.name, info.host, info.port), joined, stopAfter = was != "on", cookie = peer.cookie)
+    }
+
+    private fun setRoute(peer: Peer, note: String?) {
+        _route.value = if (note == null) _route.value - peer.name else _route.value + (peer.name to note)
+    }
+
+    private suspend fun sendOne(peer: Peer, uri: Uri, route: Route?) {
         val (name, size) = describe(uri)
         val id = UUID.randomUUID().toString()
+        val to = route?.target ?: peer.asTarget()
+        val net = route?.network
         Transfers.begin(id, name + "  →  " + peer.name, Direction.OUTBOUND, size)
         try {
             val meta = "filename " + b64(name) + ",filetype " + b64(app.contentResolver.getType(uri) ?: "application/octet-stream")
             val n = if (size >= PARALLEL_THRESHOLD) streams().coerceIn(1, 8) else 1
             val windows: List<Triple<String, Long, Long>> = if (n > 1) {
-                val r = request("POST", peer.asTarget(), "/tus/parallel", peer.cookie, null, null,
-                    mapOf("Tus-Resumable" to "1.0.0", "Upload-Length" to "$size", "Upload-Metadata" to meta, "Bridge-Streams" to "$n"))
+                val r = request("POST", to, "/tus/parallel", peer.cookie, null, null,
+                    mapOf("Tus-Resumable" to "1.0.0", "Upload-Length" to "$size", "Upload-Metadata" to meta, "Bridge-Streams" to "$n"), net)
                 if (r.code !in 200..299) error(message(r.body) ?: "Refused (${r.code})")
                 json.parseToJsonElement(r.body).jsonObject["streams"]!!.jsonArray.map {
                     val o = it.jsonObject
                     Triple(o.str("url"), o["base"]!!.jsonPrimitive.long, o["length"]!!.jsonPrimitive.long)
                 }
             } else {
-                val r = request("POST", peer.asTarget(), "/tus", peer.cookie, null, null,
-                    mapOf("Tus-Resumable" to "1.0.0", "Upload-Length" to "$size", "Upload-Metadata" to meta))
+                val r = request("POST", to, "/tus", peer.cookie, null, null,
+                    mapOf("Tus-Resumable" to "1.0.0", "Upload-Length" to "$size", "Upload-Metadata" to meta), net)
                 if (r.code !in 200..299) error(message(r.body) ?: "Refused (${r.code})")
                 listOf(Triple(r.location ?: error("No upload address came back"), 0L, size))
             }
             val sent = AtomicLong()
-            coroutineScopeAll(windows) { (url, base, length) -> sendWindow(peer, uri, url, base, length, id, sent) }
+            coroutineScopeAll(windows) { (url, base, length) -> sendWindow(peer, to, net, uri, url, base, length, id, sent) }
             Transfers.progress(id, size)
             Transfers.finish(id, ok = true)
         } catch (t: Throwable) {
@@ -281,14 +347,17 @@ class PeerManager(ctx: Context, private val deviceName: () -> String, private va
         kotlinx.coroutines.coroutineScope { items.map { async(Dispatchers.IO) { block(it) } }.awaitAll() }
 
     /** One window of the file, streamed from its own descriptor in 64 MB requests. */
-    private fun sendWindow(peer: Peer, uri: Uri, url: String, base: Long, length: Long, id: String, sent: AtomicLong) {
+    private fun sendWindow(
+        peer: Peer, to: NearbyPhone, net: android.net.Network?, uri: Uri,
+        url: String, base: Long, length: Long, id: String, sent: AtomicLong,
+    ) {
         app.contentResolver.openFileDescriptor(uri, "r")!!.use { pfd ->
             val ch = FileInputStream(pfd.fileDescriptor).channel
             val buf = ByteBuffer.allocate(1 shl 20)
             var offset = 0L
             while (offset < length) {
                 val len = minOf(CHUNK, length - offset)
-                val conn = open("PATCH", peer.asTarget(), url, peer.cookie)
+                val conn = open("PATCH", to, url, peer.cookie, net)
                 conn.setRequestProperty("Tus-Resumable", "1.0.0")
                 conn.setRequestProperty("Content-Type", "application/offset+octet-stream")
                 conn.setRequestProperty("Upload-Offset", "$offset")
@@ -329,8 +398,10 @@ class PeerManager(ctx: Context, private val deviceName: () -> String, private va
 
     private fun Peer.asTarget() = NearbyPhone(name, host, port)
 
-    private fun open(method: String, to: NearbyPhone, path: String, cookie: String?): HttpURLConnection {
-        val conn = URL("http://${to.host}:${to.port}$path").openConnection() as HttpURLConnection
+    private fun open(method: String, to: NearbyPhone, path: String, cookie: String?, network: android.net.Network? = null): HttpURLConnection {
+        val url = URL("http://${to.host}:${to.port}$path")
+        // On a direct link the connection has to go out over that network specifically.
+        val conn = (network?.openConnection(url) ?: url.openConnection()) as HttpURLConnection
         // Android's HttpURLConnection accepts PATCH; if a build ever refuses it, fall back to
         // tus's standard override, which the server also understands.
         try {
@@ -350,8 +421,9 @@ class PeerManager(ctx: Context, private val deviceName: () -> String, private va
     private fun request(
         method: String, to: NearbyPhone, path: String, cookie: String?, body: ByteArray?,
         type: String? = null, headers: Map<String, String> = emptyMap(),
+        network: android.net.Network? = null,
     ): Response {
-        val conn = open(method, to, path, cookie)
+        val conn = open(method, to, path, cookie, network)
         headers.forEach { (k, v) -> conn.setRequestProperty(k, v) }
         if (body != null) {
             conn.doOutput = true
