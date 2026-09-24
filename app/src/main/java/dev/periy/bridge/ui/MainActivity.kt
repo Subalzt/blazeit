@@ -580,7 +580,7 @@ private fun ClipboardPanel(shared: String, status: String, vm: MainViewModel) {
             ) {
                 Icon(BlazeIcons.Upload, null, tint = Bridge.OnYellow, modifier = Modifier.size(17.dp))
                 Spacer(Modifier.width(6.dp))
-                Text("Send to computer", style = TextStyle(fontSize = 14.5.sp, fontWeight = FontWeight.SemiBold), color = Bridge.OnYellow, maxLines = 1)
+                Text("Send", style = TextStyle(fontSize = 14.5.sp, fontWeight = FontWeight.SemiBold), color = Bridge.OnYellow, maxLines = 1)
             }
         }
         if (status.isNotEmpty()) {
