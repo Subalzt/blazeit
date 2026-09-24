@@ -12,6 +12,11 @@ import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputConnection
 import android.view.inputmethod.InputMethodManager
 import androidx.compose.foundation.background
+import androidx.compose.material3.Icon
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.foundation.Canvas
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.awaitEachGesture
@@ -375,44 +380,58 @@ private fun Trackpad(pad: PadState, status: String, live: Boolean, modifier: Mod
                 .align(Alignment.TopEnd)
                 .onGloballyPositioned { speedArea = it.boundsInParent() },
         )
-        Text(
-            "Move with one finger · tap to click\nTwo fingers scroll · pinch zooms · tap for right click\n" +
-                "Three fingers: up Task View · down desktop · sideways switch apps\n" +
-                "Four fingers sideways switch desktops",
-            style = BodyStyle,
-            color = Bridge.Muted,
-            textAlign = TextAlign.Center,
-            modifier = Modifier.padding(24.dp),
-        )
+        Column(Modifier.padding(horizontal = 16.dp, vertical = 28.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+            Icon(BlazeIcons.Trackpad, null, tint = Bridge.Faint, modifier = Modifier.size(34.dp))
+            Spacer(Modifier.height(12.dp))
+            Text("Trackpad", style = TitleStyle, color = Bridge.Muted)
+            Spacer(Modifier.height(4.dp))
+            Text(
+                "Tap to click · two-finger tap to right-click\nTwo fingers scroll · pinch to zoom\nThree fingers for apps · four for desktops",
+                style = BodyStyle.copy(fontSize = 13.sp, lineHeight = 19.sp),
+                color = Bridge.Faint,
+                textAlign = TextAlign.Center,
+            )
+        }
     }
 }
 
 /**
- * Pointer speed as one quiet control in the pad's corner: three bars and a word, and a
- * tap moves to the next speed.
+ * Pointer speed as one quiet control in the pad's corner: a small dial whose needle
+ * sweeps further for faster, and the word. A tap moves to the next speed.
  */
 @Composable
 private fun SpeedControl(pad: PadState, modifier: Modifier) {
     val view = LocalView.current
     val level = SPEEDS.indexOfFirst { abs(it.second - pad.speed) < 0.01f }.coerceAtLeast(0)
-    Row(
-        modifier
-            .clickable {
-                view.performHapticFeedback(HapticFeedbackConstants.CLOCK_TICK)
-                pad.chooseSpeed(SPEEDS[(level + 1) % SPEEDS.size].second)
+    val sweep by animateFloatAsState(0.18f + 0.64f * level / (SPEEDS.size - 1), label = "needle")
+    val track = Bridge.Faint
+    val fill = Bridge.Yellow
+    val needle = Bridge.Text
+    Box(modifier.padding(8.dp)) {
+        Row(
+            Modifier
+                .glass(ButtonShape)
+                .clickable {
+                    view.performHapticFeedback(HapticFeedbackConstants.CLOCK_TICK)
+                    pad.chooseSpeed(SPEEDS[(level + 1) % SPEEDS.size].second)
+                }
+                .padding(start = 9.dp, end = 12.dp, top = 6.dp, bottom = 6.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Canvas(Modifier.size(width = 22.dp, height = 14.dp)) {
+                val w = 2.dp.toPx()
+                val r = size.width / 2 - w
+                val c = Offset(size.width / 2, size.height - w / 2)
+                val box = androidx.compose.ui.geometry.Rect(c.x - r, c.y - r, c.x + r, c.y + r)
+                drawArc(track, 180f, 180f, false, box.topLeft, box.size, style = Stroke(w, cap = StrokeCap.Round))
+                drawArc(fill, 180f, 180f * sweep, false, box.topLeft, box.size, style = Stroke(w, cap = StrokeCap.Round))
+                val a = Math.PI * (1 + sweep)
+                val tip = Offset(c.x + (r - w) * kotlin.math.cos(a).toFloat(), c.y + (r - w) * kotlin.math.sin(a).toFloat())
+                drawLine(needle, c, tip, strokeWidth = 1.6.dp.toPx(), cap = StrokeCap.Round)
+                drawCircle(needle, 1.8.dp.toPx(), c)
             }
-            .padding(12.dp),
-        verticalAlignment = Alignment.Bottom,
-    ) {
-        Text(SPEEDS[level].first.uppercase(), style = LabelStyle.copy(fontSize = 10.sp), color = Bridge.Muted)
-        Spacer(Modifier.width(6.dp))
-        SPEEDS.indices.forEach { i ->
-            Box(
-                Modifier
-                    .padding(start = 2.dp)
-                    .size(width = 3.dp, height = (5 + i * 3).dp)
-                    .background(if (i <= level) Bridge.Yellow else Bridge.Chip),
-            )
+            Spacer(Modifier.width(7.dp))
+            Text(SPEEDS[level].first, style = LabelStyle.copy(fontSize = 12.5.sp), color = Bridge.Text)
         }
     }
 }
