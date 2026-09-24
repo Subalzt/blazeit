@@ -46,10 +46,10 @@ class Prefs(ctx: Context) {
      * where a single stream already runs close to capacity; eight helps on a busy or
      * distant Wi-Fi link where any one connection spends most of its time in recovery.
      */
-    /** Glass appearance, shared by the app and every connected browser. */
-    var glass: Boolean
-        get() = sp.getBoolean(K_GLASS, false)
-        set(v) = sp.edit { putBoolean(K_GLASS, v) }
+    /** OLED black instead of the colourful backdrop; shared by the app and every connected page. */
+    var oled: Boolean
+        get() = sp.getBoolean(K_OLED, false)
+        set(v) = sp.edit { putBoolean(K_OLED, v) }
 
     /** Whether the live monitor floats over the app's screens. */
     var showMonitor: Boolean
@@ -83,7 +83,7 @@ class Prefs(ctx: Context) {
         const val K_AUTOSTART = "autostart"
         const val K_FORCE_STAGE = "force_staged_copy"
         const val K_STREAMS = "upload_streams"
-        const val K_GLASS = "glass"
+        const val K_OLED = "oled"
         const val K_MONITOR = "show_monitor"
     }
 }

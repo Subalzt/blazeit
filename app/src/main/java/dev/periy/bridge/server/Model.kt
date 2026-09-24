@@ -38,7 +38,7 @@ data class StateDto(
     /** How many parallel connections the page should open. See TusStore's class comment. */
     val uploadStreams: Int = 4,
     /** Shared theme: flipping it on the phone or on any computer changes all of them. */
-    val glass: Boolean = false,
+    val oled: Boolean = false,
     /** Smallest file worth splitting; below this the round trips cost more than they save. */
     val parallelThreshold: Long = 16L * 1024 * 1024,
 )
@@ -59,8 +59,8 @@ class ServerConfig(
     val port: Int,
     val sessionKey: () -> ByteArray,
     val uploadStreams: () -> Int,
-    val glass: () -> Boolean,
-    val setGlass: (Boolean) -> Unit,
+    val oled: () -> Boolean,
+    val setOled: (Boolean) -> Unit,
     val sessionTtlMs: Long = 30L * 24 * 60 * 60 * 1000,
     val deviceName: String,
 )
@@ -112,7 +112,7 @@ data class PairStartDto(val id: String, val code: String, val name: String)
 @Serializable
 data class PairStatusDto(val state: String)
 
-@Serializable data class ThemeRequest(val glass: Boolean = false)
+@Serializable data class ThemeRequest(val oled: Boolean = false)
 
 /** A browser reporting the round trip it measured to this phone. */
 @Serializable data class RttReport(val ms: Int = -1)

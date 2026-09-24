@@ -35,15 +35,15 @@ class Container(ctx: Context) {
     val music = MusicLibrary(app)
     val peers = PeerManager(app, ::deviceName) { prefs.uploadStreams }
 
-    private val _glass = MutableStateFlow(prefs.glass)
+    private val _oled = MutableStateFlow(prefs.oled)
 
-    /** The shared appearance. The app and every connected page follow it. */
-    val glass: StateFlow<Boolean> = _glass
+    /** The shared appearance: OLED black, or the colourful backdrop. The app and every page follow it. */
+    val oled: StateFlow<Boolean> = _oled
 
-    fun setGlass(on: Boolean) {
-        prefs.glass = on
-        _glass.value = on
-        EventBus.emit("theme", if (on) "glass" else "classic")
+    fun setOled(on: Boolean) {
+        prefs.oled = on
+        _oled.value = on
+        EventBus.emit("theme", if (on) "oled" else "aurora")
     }
 
     @Volatile
@@ -62,8 +62,8 @@ class Container(ctx: Context) {
             port = prefs.port,
             sessionKey = { prefs.sessionKey() },
             uploadStreams = { prefs.uploadStreams },
-            glass = { _glass.value },
-            setGlass = ::setGlass,
+            oled = { _oled.value },
+            setOled = ::setOled,
             deviceName = deviceName(),
         )
         return BridgeServer(app, config, storage, tus, index, clipboard, devices, pairing, music)

@@ -179,6 +179,7 @@ private fun BlazeItUi(vm: MainViewModel) {
     val devices by vm.devices.collectAsStateWithLifecycle()
     val live by vm.liveDevices.collectAsStateWithLifecycle()
     val monitor by Monitor.snapshot.collectAsStateWithLifecycle()
+    val oled by vm.oled.collectAsStateWithLifecycle()
     val nearby by peers.nearby.collectAsStateWithLifecycle()
     val paired by peers.peers.collectAsStateWithLifecycle()
     val peerStatus by peers.status.collectAsStateWithLifecycle()
@@ -228,7 +229,7 @@ private fun BlazeItUi(vm: MainViewModel) {
         Box(Modifier.fillMaxSize()) {
           // Everything the floating glass (tab bar, monitor) blurs as it passes over.
           Box(Modifier.fillMaxSize().then(if (liquidGlassSupported) Modifier.backdropSource(backdrop) else Modifier.hazeSource(haze))) {
-            Backdrop()
+            Backdrop(oled = oled)
             Column(Modifier.fillMaxSize()) {
                 Header(if (tab == 0) "BlazeIt" else TABS[tab].first, running, showMonitor) { setMonitor(!showMonitor) }
                 // Room for the monitor capsule, so by default it covers nothing.
@@ -275,7 +276,7 @@ private fun BlazeItUi(vm: MainViewModel) {
                             },
                         )
                         else -> setupTab(
-                            state, vm,
+                            state, vm, oled,
                             pickFolder = { pickFolder.launch(null) },
                             requestNotifications = { requestNotifications.launch(android.Manifest.permission.POST_NOTIFICATIONS) },
                             requestMusic = { requestMusic.launch(musicPermission()) },
@@ -777,12 +778,23 @@ private fun TransferRow(t: Transfer) {
 private fun LazyListScope.setupTab(
     state: UiState,
     vm: MainViewModel,
+    oled: Boolean,
     pickFolder: () -> Unit,
     requestNotifications: () -> Unit,
     requestMusic: () -> Unit,
     openSettings: (Intent) -> Unit,
     showOem: () -> Unit,
 ) {
+    item { SectionBar("Appearance") }
+    item {
+        GroupCard {
+            SettingRow("Background", "OLED black turns the pixels off behind the glass. Every open page follows.", first = true) {}
+            Box(Modifier.padding(start = 16.dp, end = 16.dp, bottom = 12.dp)) {
+                SegmentedRow(listOf("Aurora", "OLED black"), if (oled) 1 else 0) { vm.setOled(it == 1) }
+            }
+        }
+    }
+
     item { SectionBar("Receiving") }
     item {
         GroupCard {

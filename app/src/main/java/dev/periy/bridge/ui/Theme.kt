@@ -191,10 +191,12 @@ val NumberStyle = TextStyle(fontSize = 28.sp, fontWeight = FontWeight.SemiBold, 
  * Glass is only as good as what shows through it, so this carries real colour.
  */
 @Composable
-fun Backdrop(modifier: Modifier = Modifier) {
+fun Backdrop(modifier: Modifier = Modifier, oled: Boolean = false) {
     Canvas(modifier.fillMaxSize()) {
         val d = size.maxDimension
-        drawRect(Color(0xFF06060A))
+        // OLED: true black, so the pixels are off; the glass keeps its rims and gloss.
+        drawRect(if (oled) Color.Black else Color(0xFF06060A))
+        if (oled) return@Canvas
         fun glow(color: Color, x: Float, y: Float, r: Float) = drawRect(
             Brush.radialGradient(listOf(color, Color.Transparent), Offset(size.width * x, size.height * y), d * r)
         )

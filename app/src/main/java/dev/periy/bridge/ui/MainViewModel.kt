@@ -157,11 +157,11 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     val pairRequests: StateFlow<List<PairRequest>>
         get() = getApplication<Application>().container.pairing.pending
 
-    /** The shared appearance: the app and every connected page follow it. */
-    val glass: StateFlow<Boolean>
-        get() = getApplication<Application>().container.glass
+    /** OLED black or the colourful backdrop: the app and every connected page follow it. */
+    val oled: StateFlow<Boolean>
+        get() = getApplication<Application>().container.oled
 
-    fun setGlass(on: Boolean) = getApplication<Application>().container.setGlass(on)
+    fun setOled(on: Boolean) = getApplication<Application>().container.setOled(on)
 
     /** Every computer that has been allowed in. */
     val devices: StateFlow<List<PairedDevice>>
