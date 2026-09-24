@@ -36,6 +36,7 @@ import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -141,22 +142,33 @@ private val RimBrush = Brush.linearGradient(
 /** The glossy fill: a little more light at the top, as if lit from above. */
 private val FillBrush = Brush.verticalGradient(listOf(Color(0x2EFFFFFF), Color(0x12FFFFFF)))
 
-/** A sheet of glass in [shape]. [strong] for floating glass that sits over content. */
+/** Floating glass is clearer than a card: less fill, and a bright specular band along the top. */
+private val FloatFillBrush = Brush.verticalGradient(
+    0f to Color(0x33FFFFFF),
+    0.35f to Color(0x0FFFFFFF),
+    1f to Color(0x0AFFFFFF),
+)
+
+/** A sheet of glass in [shape]. [strong] for floating glass that sits over content and blurs it. */
 @Composable
 fun Modifier.glass(shape: Shape = CardShape, strong: Boolean = false): Modifier {
     val haze = LocalHaze.current
     return this
+        .then(
+            if (strong) Modifier.shadow(18.dp, shape, ambientColor = Color.Black, spotColor = Color.Black)
+            else Modifier
+        )
         .clip(shape)
         .then(
             if (strong && haze != null) Modifier.hazeEffect(state = haze) {
-                blurRadius = 26.dp
+                blurRadius = 22.dp
                 backgroundColor = Color(0xFF0B0B12)
-                tints = listOf(HazeTint(Color(0x33101018)))
-                noiseFactor = 0.06f
+                tints = listOf(HazeTint(Color(0x14FFFFFF)))
+                noiseFactor = 0.03f
             } else Modifier
         )
-        .background(FillBrush)
-        .border(BorderStroke(1.dp, RimBrush), shape)
+        .background(if (strong) FloatFillBrush else FillBrush)
+        .border(BorderStroke(if (strong) 1.2.dp else 1.dp, RimBrush), shape)
 }
 
 /** A card: glass inset from the screen edges. */
@@ -202,13 +214,13 @@ fun SectionBar(
     trailing: @Composable RowScope.() -> Unit = {},
 ) {
     Row(
-        modifier.fillMaxWidth().padding(start = 32.dp, end = 28.dp, top = 22.dp, bottom = 8.dp),
+        modifier.fillMaxWidth().padding(start = 30.dp, end = 28.dp, top = 24.dp, bottom = 9.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(
-            title.uppercase(),
-            style = TextStyle(fontSize = 12.sp, fontWeight = FontWeight.SemiBold, letterSpacing = 0.7.sp),
-            color = Bridge.Muted,
+            title,
+            style = TextStyle(fontSize = 15.sp, fontWeight = FontWeight.SemiBold, letterSpacing = (-0.1).sp),
+            color = Bridge.Text.copy(alpha = 0.86f),
             modifier = Modifier.weight(1f),
         )
         trailing()
@@ -232,10 +244,10 @@ fun BridgeButton(
             )
             .border(BorderStroke(1.dp, Brush.verticalGradient(listOf(Color(0xB3FFFFFF), Color(0x00FFFFFF)))), ButtonShape)
             .then(if (enabled) Modifier.clickable(onClick = onClick) else Modifier)
-            .padding(horizontal = 20.dp, vertical = 14.dp),
+            .padding(horizontal = 20.dp, vertical = 12.dp),
         contentAlignment = Alignment.Center,
     ) {
-        Text(label, style = TextStyle(fontSize = 16.sp, fontWeight = FontWeight.SemiBold), color = if (enabled) Bridge.OnYellow else Bridge.Muted)
+        Text(label, style = TextStyle(fontSize = 15.sp, fontWeight = FontWeight.SemiBold), color = if (enabled) Bridge.OnYellow else Bridge.Muted)
     }
 }
 
@@ -248,10 +260,39 @@ fun GhostButton(
     onClick: () -> Unit,
 ) {
     Box(
-        modifier.glass(ButtonShape).clickable(onClick = onClick).padding(horizontal = 16.dp, vertical = 12.dp),
+        modifier.glass(ButtonShape).clickable(onClick = onClick).padding(horizontal = 16.dp, vertical = 10.dp),
         contentAlignment = Alignment.Center,
     ) {
-        Text(label, style = TextStyle(fontSize = 15.sp, fontWeight = FontWeight.Medium), color = if (danger) Bridge.Danger else Bridge.Text)
+        Text(label, style = TextStyle(fontSize = 14.sp, fontWeight = FontWeight.Medium), color = if (danger) Bridge.Danger else Bridge.Text)
+    }
+}
+
+/**
+ * A tappable row inside a card: an icon in a tinted circle, a title with a line of detail,
+ * and a chevron. For actions that are not the one primary thing on screen.
+ */
+@Composable
+fun ActionRow(
+    icon: ImageVector,
+    title: String,
+    detail: String? = null,
+    tint: Color = Bridge.Yellow,
+    onClick: () -> Unit,
+) {
+    Row(
+        Modifier.fillMaxWidth().clickable(onClick = onClick).padding(horizontal = 16.dp, vertical = 13.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Box(
+            Modifier.size(38.dp).clip(CircleShape).background(tint.copy(alpha = 0.18f)),
+            contentAlignment = Alignment.Center,
+        ) { Icon(icon, null, tint = tint, modifier = Modifier.size(20.dp)) }
+        Spacer(Modifier.width(14.dp))
+        Column(Modifier.weight(1f)) {
+            Text(title, style = TextStyle(fontSize = 15.5.sp, fontWeight = FontWeight.SemiBold), color = Bridge.Text)
+            if (detail != null) Text(detail, style = BodyStyle.copy(fontSize = 13.sp, lineHeight = 17.sp), color = Bridge.Muted)
+        }
+        Icon(BlazeIcons.Chevron, null, tint = Bridge.Faint, modifier = Modifier.size(18.dp))
     }
 }
 
@@ -471,24 +512,31 @@ fun GlassTabBar(
 ) {
     Row(
         modifier
-            .padding(horizontal = 18.dp)
+            .padding(horizontal = 22.dp)
             .fillMaxWidth()
-            .glass(ButtonShape, strong = true)
-            .padding(5.dp),
+            .liquidGlass(blur = 6.dp, tint = Color(0x2E08080C))
+            .padding(4.dp),
     ) {
         items.forEachIndexed { i, (label, icon) ->
             val on = i == selected
             Column(
                 Modifier
                     .weight(1f)
-                    .then(if (on) Modifier.glass(ButtonShape) else Modifier.clip(ButtonShape))
-                    .clickable { onSelect(i) }
-                    .padding(vertical = 7.dp),
+                    .clip(ButtonShape)
+                    .then(
+                        // The current tab sits under a lens: a clearer, brighter drop of glass.
+                        if (on) Modifier
+                            .background(Brush.verticalGradient(listOf(Color(0x40FFFFFF), Color(0x14FFFFFF))))
+                            .border(BorderStroke(1.dp, RimBrush), ButtonShape)
+                        else Modifier
+                    )
+                    .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) { onSelect(i) }
+                    .padding(vertical = 6.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
-                Icon(icon, label, tint = if (on) Bridge.Yellow else Bridge.Text, modifier = Modifier.size(23.dp))
-                Spacer(Modifier.height(2.dp))
-                Text(label, style = TextStyle(fontSize = 10.5.sp, fontWeight = FontWeight.Medium), color = if (on) Bridge.Yellow else Bridge.Muted)
+                Icon(icon, label, tint = if (on) Bridge.Yellow else Bridge.Text, modifier = Modifier.size(22.dp))
+                Spacer(Modifier.height(3.dp))
+                Text(label, style = TextStyle(fontSize = 10.5.sp, fontWeight = FontWeight.SemiBold), color = if (on) Bridge.Yellow else Bridge.Text.copy(alpha = 0.8f))
             }
         }
     }

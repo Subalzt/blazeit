@@ -94,7 +94,7 @@ fun MonitorOverlay(m: MonitorSnapshot, running: Boolean, onClose: () -> Unit) {
                         dy = (dy + drag.y).coerceIn(-50f, maxY)
                     }
                 }
-                .glass(ButtonShape, strong = true)
+                .liquidGlass(depth = 12.dp, blur = 6.dp, tint = Color(0x3308080C))
                 .clickable { expanded = true }
                 .padding(horizontal = 14.dp, vertical = 9.dp)
         ) { Capsule(m, running) }
@@ -120,7 +120,7 @@ fun MonitorOverlay(m: MonitorSnapshot, running: Boolean, onClose: () -> Unit) {
 
 @Composable
 private fun Capsule(m: MonitorSnapshot, running: Boolean) {
-    val num = TextStyle(fontSize = 13.sp, fontFamily = FontFamily.Monospace, fontWeight = FontWeight.SemiBold)
+    val num = TextStyle(fontSize = 13.5.sp, fontWeight = FontWeight.SemiBold, fontFeatureSettings = "tnum")
     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
         Box(Modifier.size(7.dp).clip(CircleShape).background(if (!running) Bridge.Faint else if (m.activeTransfers > 0) Bridge.Good else Bridge.Muted))
         if (!running) {
@@ -141,7 +141,7 @@ private fun Sheet(m: MonitorSnapshot, running: Boolean, onHide: () -> Unit, onCl
             .padding(horizontal = 12.dp, vertical = 56.dp)
             .fillMaxWidth()
             .heightIn(max = 640.dp)
-            .glass(CardShape, strong = true)
+            .liquidGlass(cornerRadius = 28.dp, depth = 20.dp, blur = 20.dp, tint = Color(0x8C0E0E14))
             .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) {}
             .verticalScroll(rememberScrollState())
             .padding(vertical = 14.dp)
@@ -167,12 +167,8 @@ private fun Sheet(m: MonitorSnapshot, running: Boolean, onHide: () -> Unit, onCl
             }
         }
         Box(Modifier.padding(horizontal = 20.dp)) { Graph(m) }
-        Row(Modifier.padding(horizontal = 20.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-            Dot(Bridge.Yellow); Text("  Receiving", style = LabelStyle, color = Bridge.Muted)
-            Spacer(Modifier.width(16.dp))
-            Dot(Bridge.Blue); Text("  Sending", style = LabelStyle, color = Bridge.Muted)
-            Spacer(Modifier.weight(1f))
-            Text("last minute", style = LabelStyle, color = Bridge.Faint)
+        Row(Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 8.dp), horizontalArrangement = Arrangement.End) {
+            Text("Last minute", style = LabelStyle, color = Bridge.Faint)
         }
 
         Stat("Peak", "↓ " + mbps(m.peakInBps) + "   ↑ " + mbps(m.peakOutBps), first = true)

@@ -13,6 +13,16 @@ import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.compose.foundation.Image
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.material3.Icon
+import androidx.compose.foundation.layout.RowScope
+import androidx.compose.foundation.Canvas
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.LinearEasing
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -41,9 +51,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Close
-import androidx.compose.material.icons.rounded.Home
-import androidx.compose.material.icons.rounded.Phone
-import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.material.icons.rounded.Share
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -148,10 +155,10 @@ class MainActivity : ComponentActivity() {
 }
 
 private val TABS = listOf(
-    "Home" to Icons.Rounded.Home,
-    "Phones" to Icons.Rounded.Phone,
+    "Home" to BlazeIcons.Home,
+    "Phones" to BlazeIcons.Phones,
     "Control" to BlazeIcons.Trackpad,
-    "Setup" to Icons.Rounded.Settings,
+    "Setup" to BlazeIcons.Sliders,
 )
 private const val TAB_PHONES = 1
 private const val TAB_CONTROL = 2
@@ -183,6 +190,7 @@ private fun BlazeItUi(vm: MainViewModel) {
     var showMonitor by remember { mutableStateOf(ctx.container.prefs.showMonitor) }
     val setMonitor = { on: Boolean -> showMonitor = on; ctx.container.prefs.showMonitor = on }
     val haze = rememberHazeState()
+    val backdrop = rememberBackdrop()
 
     // A computer asking to connect is waiting on you, so jump to where the answer is.
     LaunchedEffect(requests.size) { if (requests.isNotEmpty()) { tab = 0; showOem = false } }
@@ -216,10 +224,10 @@ private fun BlazeItUi(vm: MainViewModel) {
     val tabBarSpace = 84.dp + bottomInset
     val imeUp = WindowInsets.isImeVisible
 
-    CompositionLocalProvider(LocalPalette provides GlassPalette, LocalHaze provides haze) {
+    CompositionLocalProvider(LocalPalette provides GlassPalette, LocalHaze provides haze, LocalBackdrop provides backdrop) {
         Box(Modifier.fillMaxSize()) {
           // Everything the floating glass (tab bar, monitor) blurs as it passes over.
-          Box(Modifier.fillMaxSize().hazeSource(haze)) {
+          Box(Modifier.fillMaxSize().then(if (liquidGlassSupported) Modifier.backdropSource(backdrop) else Modifier.hazeSource(haze))) {
             Backdrop()
             Column(Modifier.fillMaxSize()) {
                 Header(if (tab == 0) "BlazeIt" else TABS[tab].first, running, showMonitor) { setMonitor(!showMonitor) }
@@ -362,7 +370,7 @@ private fun ServerCard(state: UiState, running: Boolean, onToggle: () -> Unit) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
                     url.removePrefix("http://").removeSuffix("/"),
-                    style = TextStyle(fontSize = 17.sp, fontFamily = FontFamily.Monospace, fontWeight = FontWeight.SemiBold),
+                    style = TextStyle(fontSize = 20.sp, fontWeight = FontWeight.SemiBold, letterSpacing = (-0.2).sp, fontFeatureSettings = "tnum"),
                     color = Bridge.Text,
                     maxLines = 1, overflow = TextOverflow.Ellipsis,
                     modifier = Modifier.weight(1f).clickable(onClick = copy),
@@ -477,31 +485,23 @@ private fun LazyListScope.homeTab(
 
     item { SectionBar("Files") }
     item {
-        Column(Modifier.fillMaxWidth().panel().padding(14.dp)) {
-            BridgeButton("Send files to the computer", Modifier.fillMaxWidth(), onClick = pickFiles)
-            Spacer(Modifier.height(8.dp))
-            Text(
-                sendStatus.ifEmpty { "Or share into BlazeIt from any app. Files from the computer land here too." },
-                style = BodyStyle, color = if (sendStatus.isEmpty()) Bridge.Muted else Bridge.Good,
-                modifier = Modifier.padding(horizontal = 4.dp),
+        GroupCard {
+            ActionRow(
+                BlazeIcons.Upload,
+                "Send files to the computer",
+                sendStatus.ifEmpty { "Or share into BlazeIt from any app" },
+                onClick = pickFiles,
             )
-        }
-    }
-    if (files.isNotEmpty()) {
-        item { Spacer(Modifier.height(10.dp)) }
-        item {
-            GroupCard {
-                files.forEachIndexed { i, f ->
-                    SettingRow(
-                        f.name,
-                        formatBytes(f.size) + " · " + (if (f.origin == "PHONE") "sent from this phone" else "received") +
-                            (if (!f.owned) " · original" else ""),
-                        first = i == 0,
-                    ) {
-                        IconChip(Icons.Rounded.Close, "Delete ${f.name}", tint = Bridge.Danger) { vm.removeFile(f.id) }
-                    }
+            files.forEach { f ->
+                SettingRow(
+                    f.name,
+                    formatBytes(f.size) + " · " + (if (f.origin == "PHONE") "sent from this phone" else "received") +
+                        (if (!f.owned) " · original" else ""),
+                ) {
+                    IconChip(Icons.Rounded.Close, "Delete ${f.name}", tint = Bridge.Muted) { vm.removeFile(f.id) }
                 }
             }
+            if (files.isEmpty()) SettingRow("Nothing here yet", "Files from the computer land here too.")
         }
     }
 
@@ -579,46 +579,46 @@ private fun LazyListScope.phonesTab(
     sendFilesTo: (Peer) -> Unit,
     sendTextTo: (Peer) -> Unit,
 ) {
-    item { Spacer(Modifier.height(4.dp)) }
-    item { SectionBar("Phones with BlazeIt") }
+    item { Spacer(Modifier.height(12.dp)) }
     val pairedNames = paired.map { it.name }.toSet()
     val unpaired = nearby.filter { it.name !in pairedNames }
-    if (paired.isEmpty() && unpaired.isEmpty()) {
-        item {
-            Blank(
-                if (!running) "Turn BlazeIt on (switch on Home) so other phones can find this one, and it can find them."
-                else "Looking for phones running BlazeIt on this network. Both need BlazeIt on, on the same Wi-Fi or one phone's hotspot."
-            )
-        }
-    } else {
+    item { NearbyRadar(running, found = paired.size + unpaired.size) }
+
+    if (paired.isNotEmpty()) {
+        item { SectionBar("My phones") }
         item {
             GroupCard {
-                var first = true
-                paired.forEach { p ->
+                paired.forEachIndexed { i, p ->
                     val here = nearby.any { it.name == p.name }
-                    SettingRow(p.name, if (here) "Connected · nearby" else "Connected · not seen right now", first = first) {
-                        IconChip(Icons.Rounded.Share, "Send text to ${p.name}") { sendTextTo(p) }
+                    PhoneRow(p.name, if (here) "Nearby · ready" else "Not seen right now", here, first = i == 0) {
+                        IconChip(BlazeIcons.Upload, "Send files to ${p.name}", tint = Bridge.Yellow) { sendFilesTo(p) }
                         Spacer(Modifier.width(8.dp))
-                        TextPill("Send files") { sendFilesTo(p) }
+                        IconChip(Icons.Rounded.Share, "Send text to ${p.name}") { sendTextTo(p) }
                         Spacer(Modifier.width(8.dp))
                         IconChip(Icons.Rounded.Close, "Forget ${p.name}", tint = Bridge.Muted) { forget(p) }
                     }
-                    first = false
                 }
-                unpaired.forEach { n ->
+            }
+        }
+    }
+    if (unpaired.isNotEmpty()) {
+        item { SectionBar("Nearby") }
+        item {
+            GroupCard {
+                unpaired.forEachIndexed { i, n ->
                     val s = peerStatus[n.host]
-                    SettingRow(
+                    PhoneRow(
                         n.name,
                         when (s) {
-                            is PeerStatus.Waiting -> "Allow it on ${n.name}. Code ${s.code}"
+                            is PeerStatus.Waiting -> "Allow it on ${n.name} · code ${s.code}"
                             is PeerStatus.Failed -> s.message
                             null -> n.host
                         },
-                        first = first,
+                        live = true,
+                        first = i == 0,
                     ) {
                         if (s !is PeerStatus.Waiting) TextPill("Connect") { connect(n) }
                     }
-                    first = false
                 }
             }
         }
@@ -639,10 +639,82 @@ private fun LazyListScope.phonesTab(
             )
         }
     }
+    item { Spacer(Modifier.height(14.dp)) }
     item { ConnectByAddress(connect) }
 
     transfersSection(transfers)
+}
 
+/**
+ * The top of the Phones tab: this phone in the middle of expanding rings while it looks for
+ * others, with a line saying what is going on.
+ */
+@Composable
+private fun NearbyRadar(running: Boolean, found: Int) {
+    val yellow = Bridge.Yellow
+    val t by rememberInfiniteTransition(label = "radar").animateFloat(
+        0f, 1f, infiniteRepeatable(tween(2400, easing = LinearEasing)), label = "ring",
+    )
+    Column(
+        Modifier.fillMaxWidth().panel().padding(vertical = 22.dp, horizontal = 20.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Box(Modifier.size(120.dp), contentAlignment = Alignment.Center) {
+            if (running) Canvas(Modifier.fillMaxSize()) {
+                for (k in 0 until 3) {
+                    val p = (t + k / 3f) % 1f
+                    drawCircle(yellow.copy(alpha = 0.45f * (1f - p)), radius = size.minDimension / 2 * (0.35f + 0.65f * p), style = Stroke(1.5.dp.toPx()))
+                }
+            }
+            Box(
+                Modifier.size(56.dp).glass(CircleShape),
+                contentAlignment = Alignment.Center,
+            ) { Icon(BlazeIcons.Phones, null, tint = if (running) yellow else Bridge.Muted, modifier = Modifier.size(28.dp)) }
+        }
+        Spacer(Modifier.height(6.dp))
+        Text(
+            when {
+                !running -> "BlazeIt is off"
+                found == 0 -> "Looking for nearby phones"
+                found == 1 -> "1 phone"
+                else -> "$found phones"
+            },
+            style = TitleStyle.copy(fontSize = 18.sp), color = Bridge.Text,
+        )
+        Spacer(Modifier.height(4.dp))
+        Text(
+            if (!running) "Turn it on from Home so other phones can find this one."
+            else "Phones running BlazeIt on the same Wi-Fi, or on this phone's hotspot, appear here.",
+            style = BodyStyle, color = Bridge.Muted, textAlign = TextAlign.Center,
+        )
+    }
+}
+
+/** A phone in a list: its icon, name and state, and actions on the right. */
+@Composable
+private fun PhoneRow(
+    name: String,
+    detail: String,
+    live: Boolean,
+    first: Boolean,
+    trailing: @Composable RowScope.() -> Unit,
+) {
+    if (!first) Box(Modifier.fillMaxWidth().padding(start = 68.dp).height(0.5.dp).background(Bridge.Outline))
+    Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
+        Box(Modifier.size(38.dp).clip(CircleShape).background(Bridge.Chip), contentAlignment = Alignment.Center) {
+            Icon(BlazeIcons.Phones, null, tint = Bridge.Text, modifier = Modifier.size(20.dp))
+            Box(
+                Modifier.align(Alignment.BottomEnd).size(10.dp).clip(CircleShape)
+                    .background(if (live) Bridge.Good else Bridge.Faint)
+            )
+        }
+        Spacer(Modifier.width(12.dp))
+        Column(Modifier.weight(1f)) {
+            Text(name, style = TextStyle(fontSize = 15.5.sp, fontWeight = FontWeight.SemiBold), color = Bridge.Text, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Text(detail, style = BodyStyle.copy(fontSize = 13.sp), color = Bridge.Muted, maxLines = 2)
+        }
+        trailing()
+    }
 }
 
 /**
@@ -653,16 +725,12 @@ private fun LazyListScope.phonesTab(
 private fun ConnectByAddress(connect: (NearbyPhone) -> Unit) {
     var open by remember { mutableStateOf(false) }
     var text by remember { mutableStateOf("") }
-    Column(Modifier.fillMaxWidth().padding(top = 8.dp).padding(horizontal = 16.dp)) {
+    Column(Modifier.fillMaxWidth().panel()) {
         if (!open) {
-            Text(
-                "Not listed? Connect by address",
-                style = LabelStyle, color = Bridge.Yellow,
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp).clickable { open = true },
-            )
+            ActionRow(BlazeIcons.Link, "Connect by address", "If a phone is not listed, type the address on its Home", tint = Bridge.Blue) { open = true }
             return@Column
         }
-        Row(verticalAlignment = Alignment.CenterVertically) {
+        Row(Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
             BridgeTextField(text, { text = it }, Modifier.weight(1f), placeholder = "192.168.1.20", minHeight = 44.dp, mono = true)
             Spacer(Modifier.width(8.dp))
             TextPill("Connect") {
