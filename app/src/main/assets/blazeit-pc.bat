@@ -14,6 +14,7 @@ exit /b
 #  4. Joins the phone's direct link (its own offline Wi-Fi) when you start it, or its hotspot in
 #     hotspot mode (the laptop keeps internet), and goes back to your Wi-Fi when it stops.
 #  5. Switches to a USB cable whenever one is plugged in with USB tethering on: the fastest link.
+#  6. Keeps the clipboard in step with the phone (text; the phone's Settings can turn it off).
 # Close this window to stop all of it.
 
 $ErrorActionPreference = 'Stop'
@@ -51,6 +52,9 @@ public static class BlazeItPc
         // .NET otherwise sends "Expect: 100-continue" with every POST body and waits for a
         // go-ahead the phone never sends, so the request times out.
         ServicePointManager.Expect100Continue = false;
+        // .NET allows two connections per server by default, and two are always open to the
+        // phone (the trackpad stream and the live events), so everything else would queue.
+        ServicePointManager.DefaultConnectionLimit = 32;
         Directory.CreateDirectory(Dir);
         bool first;
         single = new Mutex(true, "Local\\BlazeItLaptopHelper", out first);
@@ -74,6 +78,16 @@ public static class BlazeItPc
         Thread direct = new Thread(DirectLoop);
         direct.IsBackground = true;
         direct.Start();
+
+        // The Windows clipboard may only be touched from a single-threaded apartment.
+        Thread clip = new Thread(ClipLoop);
+        clip.IsBackground = true;
+        clip.SetApartmentState(ApartmentState.STA);
+        clip.Start();
+
+        Thread events = new Thread(EventsLoop);
+        events.IsBackground = true;
+        events.Start();
 
         ControlLoop();
     }
@@ -562,6 +576,155 @@ public static class BlazeItPc
         FindPhone(false);
     }
 
+    // ------------------------------------------------------------------ clipboard sync
+    //
+    // Copy on this laptop and it is on the phone, ready to paste; copy on the phone and it
+    // lands in this laptop's clipboard (the phone sends it when BlazeIt opens or its tile is
+    // tapped). The phone's Settings can turn it off. Text only.
+
+    [DllImport("user32.dll")]
+    static extern uint GetClipboardSequenceNumber();
+
+    static readonly Queue<string> clipToSet = new Queue<string>();
+    /** The last text seen on, or put on, this laptop's clipboard; never sent back. */
+    static volatile string lastClip;
+    static volatile bool clipSync = true;
+
+    static void ClipLoop()
+    {
+        uint seq = GetClipboardSequenceNumber();
+        while (true)
+        {
+            Thread.Sleep(350);
+            try
+            {
+                string pending = null;
+                lock (clipToSet) { if (clipToSet.Count > 0) pending = clipToSet.Dequeue(); }
+                if (pending != null)
+                {
+                    for (int i = 0; i < 5; i++)
+                    {
+                        try { System.Windows.Forms.Clipboard.SetText(pending); break; }
+                        catch { Thread.Sleep(120); } // another app has the clipboard open
+                    }
+                    lastClip = pending;
+                    seq = GetClipboardSequenceNumber();
+                    continue;
+                }
+                uint now = GetClipboardSequenceNumber();
+                if (now == seq) continue;
+                seq = now;
+                if (!clipSync || session == null || phone == null) continue;
+                string text = null;
+                try { if (System.Windows.Forms.Clipboard.ContainsText()) text = System.Windows.Forms.Clipboard.GetText(); } catch { }
+                if (string.IsNullOrEmpty(text) || text == lastClip || text.Length > 200000) continue;
+                lastClip = text;
+                SendClip(text);
+            }
+            catch { }
+        }
+    }
+
+    static void SendClip(string text)
+    {
+        try
+        {
+            HttpWebRequest r = (HttpWebRequest)WebRequest.Create("http://" + phone + ":" + PhonePort + "/api/clipboard");
+            r.Method = "POST";
+            r.Proxy = null;
+            r.UserAgent = Ua;
+            r.Timeout = 4000;
+            r.KeepAlive = false;
+            r.ContentType = "application/json";
+            r.Headers["Cookie"] = session;
+            r.Headers["Bridge-Auto"] = "1";
+            byte[] body = Encoding.UTF8.GetBytes("{\"text\":" + Json(text) + "}");
+            r.ContentLength = body.Length;
+            using (Stream o = r.GetRequestStream()) o.Write(body, 0, body.Length);
+            using (WebResponse resp = r.GetResponse()) { }
+        }
+        catch { }
+    }
+
+    static string Json(string v)
+    {
+        StringBuilder b = new StringBuilder("\"");
+        foreach (char c in v)
+        {
+            if (c == '"') b.Append("\\\"");
+            else if (c == '\\') b.Append("\\\\");
+            else if (c == '\n') b.Append("\\n");
+            else if (c == '\r') b.Append("\\r");
+            else if (c == '\t') b.Append("\\t");
+            else if (c < ' ') b.Append("\\u").Append(((int)c).ToString("x4"));
+            else b.Append(c);
+        }
+        return b.Append('"').ToString();
+    }
+
+    /**
+     * The phone's live event stream: the phone's clipboard, and the sync switch. The first
+     * clipboard event after connecting is only the phone's stored text, so it never
+     * overwrites this laptop's clipboard; only changes after that do.
+     */
+    static void EventsLoop()
+    {
+        while (true)
+        {
+            try
+            {
+                string cookie = session, at = phone;
+                if (cookie == null || at == null) { Thread.Sleep(2000); continue; }
+                using (HttpWebResponse st = Http("GET", "/api/state", cookie, 5000))
+                    clipSync = !Body(st).Contains("\"clipSync\":false");
+                HttpWebRequest req = (HttpWebRequest)WebRequest.Create("http://" + at + ":" + PhonePort + "/events");
+                req.Proxy = null;
+                req.UserAgent = Ua;
+                req.Timeout = 5000;
+                req.ReadWriteTimeout = 40000; // the phone sends a heartbeat every 15 s
+                req.Headers["Cookie"] = cookie;
+                using (WebResponse resp = req.GetResponse())
+                using (StreamReader rd = new StreamReader(resp.GetResponseStream(), Encoding.UTF8))
+                {
+                    string ev = null, line;
+                    StringBuilder data = new StringBuilder();
+                    bool snapshot = true;
+                    while ((line = rd.ReadLine()) != null)
+                    {
+                        if (phone != at) break; // moved to another link (cable, direct link): reconnect there
+                        if (line.Length == 0)
+                        {
+                            string d = data.ToString();
+                            if (ev == "clipsync") clipSync = d == "on";
+                            else if (ev == "clipboard")
+                            {
+                                if (snapshot) { snapshot = false; if (lastClip == null) lastClip = d; }
+                                else if (clipSync && d.Length > 0 && d != lastClip)
+                                {
+                                    lastClip = d;
+                                    lock (clipToSet) clipToSet.Enqueue(d);
+                                }
+                            }
+                            ev = null;
+                            data.Length = 0;
+                            continue;
+                        }
+                        if (line.StartsWith("event:")) ev = line.Substring(6).Trim();
+                        else if (line.StartsWith("data:"))
+                        {
+                            string d = line.Substring(5);
+                            if (d.StartsWith(" ")) d = d.Substring(1);
+                            if (data.Length > 0) data.Append('\n');
+                            data.Append(d);
+                        }
+                    }
+                }
+            }
+            catch { }
+            Thread.Sleep(1500);
+        }
+    }
+
     // ------------------------------------------------------------------ trackpad and keyboard
 
     static void ControlLoop()
@@ -821,5 +984,5 @@ public static class BlazeItPc
 }
 '@
 
-Add-Type -TypeDefinition $source -Language CSharp
+Add-Type -TypeDefinition $source -Language CSharp -ReferencedAssemblies System.Windows.Forms
 [BlazeItPc]::Run()

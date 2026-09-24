@@ -121,6 +121,15 @@ class MainActivity : ComponentActivity() {
         vm.refresh()
     }
 
+    /** With clipboard sync on, opening BlazeIt sends what was last copied on the phone. */
+    override fun onWindowFocusChanged(hasFocus: Boolean) {
+        super.onWindowFocusChanged(hasFocus)
+        if (!hasFocus) return
+        if (ClipSync.sendFromPhone(this) == "Sent to the laptop") {
+            Toast.makeText(this, "Clipboard sent to the laptop", Toast.LENGTH_SHORT).show()
+        }
+    }
+
     /**
      * Accepts content handed over by the share sheet.
      *
@@ -1055,6 +1064,27 @@ private fun LazyListScope.settingsTab(
                 "Plug the phone into the laptop and turn on USB tethering. BlazeIt then shows the cable's address on Home.",
                 onClick = { vm.tetherSettingsIntent()?.let(openSettings) },
             ) { Text("Set up", style = LabelStyle, color = Bridge.Blue) }
+        }
+    }
+
+    item { SectionBar("Laptop access") }
+    item {
+        GroupCard {
+            SettingRow(
+                "Browse this phone",
+                if (state.browsable) "On. The laptop page can see and download the phone's files, never change them. " +
+                    "Turn it off on the same screen."
+                else if (Build.VERSION.SDK_INT < 30) "Needs Android 11 or later."
+                else "Let the laptop page show the phone's folders (DCIM, Download...) and download from them. Read-only.",
+                first = true, icon = BlazeIcons.File, iconColor = Bridge.Orange,
+                onClick = { vm.allFilesIntent()?.let(openSettings) },
+            ) { if (state.browsable) Check(true) else Text("Allow", style = LabelStyle, color = Bridge.Blue) }
+            SettingRow(
+                "Sync clipboard automatically",
+                "With the laptop helper running, what you copy on the laptop is ready to paste here, and what you " +
+                    "copy here goes over when you open BlazeIt or tap its quick-settings tile.",
+                icon = BlazeIcons.Paste, iconColor = Bridge.Yellow,
+            ) { Toggle(state.clipSync) { vm.setClipSync(it) } }
         }
     }
 

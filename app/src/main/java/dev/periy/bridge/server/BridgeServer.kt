@@ -37,6 +37,7 @@ import io.ktor.server.response.header
 import io.ktor.server.response.respond
 import io.ktor.server.response.respondBytes
 import io.ktor.server.response.respondBytesWriter
+import io.ktor.server.response.respondOutputStream
 import io.ktor.server.routing.delete
 import io.ktor.server.routing.get
 import io.ktor.server.routing.head
@@ -199,6 +200,7 @@ class BridgeServer(
             monitorRoutes()
             directRoutes()
             p2pTrial()
+            phoneFileRoutes()
         }
     }
 
@@ -317,6 +319,60 @@ class BridgeServer(
             // stop() finishes on the main thread; answer with the state it leaves behind.
             withTimeoutOrNull(2_000) { direct.state.first { it !is dev.periy.bridge.net.DirectLink.State.On } }
             call.respond(directDto())
+        }
+    }
+
+    // ------------------------------------------------------------------ the phone's storage
+
+    private val phoneFiles = PhoneFiles()
+
+    /**
+     * Read-only browsing of the phone's shared storage from the page. Every route sits behind
+     * the pairing gate like the rest, and nothing is reachable until the phone's owner turns on
+     * "All files access" for BlazeIt.
+     */
+    private fun io.ktor.server.routing.Route.phoneFileRoutes() {
+        get("/api/fs") {
+            call.response.header(HttpHeaders.CacheControl, "no-store")
+            call.respond(withContext(Dispatchers.IO) { phoneFiles.list(call.request.queryParameters["path"]) })
+        }
+        get("/api/fs/file") {
+            val f = phoneFiles.resolve(call.request.queryParameters["path"])
+            if (!phoneFiles.granted() || f == null || !f.isFile) {
+                call.respond(HttpStatusCode.NotFound, ApiResult(false, "No such file"))
+                return@get
+            }
+            call.response.header(
+                HttpHeaders.ContentDisposition,
+                ContentDisposition.Attachment.withParameter(ContentDisposition.Parameters.FileName, f.name).toString(),
+            )
+            call.respond(FileRangeContent(f, runCatching { ContentType.parse(PhoneFiles.mimeOf(f.name)) }.getOrDefault(ContentType.Application.OctetStream)))
+        }
+        get("/api/fs/thumb") {
+            val f = phoneFiles.resolve(call.request.queryParameters["path"])
+            val bytes = if (phoneFiles.granted() && f != null && f.isFile) withContext(Dispatchers.IO) { phoneFiles.thumbnail(f, 240) } else null
+            if (bytes == null) {
+                call.respond(HttpStatusCode.NotFound)
+                return@get
+            }
+            call.response.header(HttpHeaders.CacheControl, "private, max-age=86400")
+            call.respondBytes(bytes, ContentType.Image.JPEG)
+        }
+        // A whole folder as one zip, streamed as it is made: no size up front, nothing staged.
+        get("/api/fs/zip") {
+            val dir = phoneFiles.resolve(call.request.queryParameters["path"])
+            if (!phoneFiles.granted() || dir == null || !dir.isDirectory) {
+                call.respond(HttpStatusCode.NotFound, ApiResult(false, "No such folder"))
+                return@get
+            }
+            val name = (if (dir == phoneFiles.root) "Phone" else dir.name) + ".zip"
+            call.response.header(
+                HttpHeaders.ContentDisposition,
+                ContentDisposition.Attachment.withParameter(ContentDisposition.Parameters.FileName, name).toString(),
+            )
+            call.respondOutputStream(ContentType.parse("application/zip")) {
+                runCatching { phoneFiles.zip(dir, this) }
+            }
         }
     }
 
@@ -523,12 +579,18 @@ class BridgeServer(
                     deviceName = config.deviceName,
                     uploadStreams = config.uploadStreams(),
                     theme = config.theme(),
+                    clipSync = config.clipSync(),
                 )
             )
         }
 
         post("/api/clipboard") {
             val body = runCatching { call.receive<ClipboardRequest>() }.getOrDefault(ClipboardRequest())
+            // The laptop helper's automatic copies are marked; with sync off they are ignored.
+            if (call.request.header("Bridge-Auto") == "1" && !config.clipSync()) {
+                call.respond(ApiResult(false, "Clipboard sync is off on the phone"))
+                return@post
+            }
             if (!clipboard.set(body.text)) {
                 call.respond(
                     HttpStatusCode.PayloadTooLarge,

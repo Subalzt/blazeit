@@ -43,6 +43,10 @@ data class UiState(
     val hotspotActive: Boolean = false,
     /** Mobile data is the only route out, so nothing can reach this phone. */
     val onlyCellular: Boolean = false,
+    /** Android's "All files access" is on, so the laptop page can browse the phone. */
+    val browsable: Boolean = false,
+    /** Clipboard follows between phone and laptop without pressing Send. */
+    val clipSync: Boolean = true,
     /** Music permission granted, and how many tracks the library holds. */
     val musicGranted: Boolean = false,
     val musicTracks: Int = 0,
@@ -103,6 +107,8 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                 onlyCellular = NetInfo.onlyCellular(),
                 hotspotActive = NetInfo.hotspotActive(),
                 musicGranted = app.container.music.granted(),
+                browsable = Build.VERSION.SDK_INT >= 30 && android.os.Environment.isExternalStorageManager(),
+                clipSync = prefs.clipSync,
                 musicTracks = withContext(Dispatchers.IO) { app.container.music.tracks(refresh = true).size },
             )
         }
@@ -236,6 +242,21 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     fun setMaxUploadSize(bytes: Long) {
         getApplication<Application>().container.prefs.tusMaxSize = bytes
         refresh()
+    }
+
+    fun setClipSync(on: Boolean) {
+        getApplication<Application>().container.prefs.clipSync = on
+        dev.periy.bridge.server.EventBus.emit("clipsync", if (on) "on" else "off")
+        refresh()
+    }
+
+    /** Android's own screen for "All files access", where browsing is allowed or taken back. */
+    fun allFilesIntent(): Intent? {
+        if (Build.VERSION.SDK_INT < 30) return null
+        val app = getApplication<Application>()
+        return Intent(android.provider.Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION, Uri.parse("package:" + app.packageName))
+            .takeIf { runCatching { app.packageManager.resolveActivity(it, 0) != null }.getOrDefault(false) }
+            ?: Intent(android.provider.Settings.ACTION_MANAGE_ALL_FILES_ACCESS_PERMISSION)
     }
 
     fun setForceStagedCopy(force: Boolean) {

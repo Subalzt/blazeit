@@ -80,6 +80,15 @@ class Prefs(ctx: Context) {
         get() = sp.getString(K_HOTSPOT_PASS, "").orEmpty()
         set(v) = sp.edit { putString(K_HOTSPOT_PASS, v) }
 
+    /**
+     * Clipboard follows between the phone and a laptop running the helper without pressing
+     * Send: copy on the laptop, paste on the phone, and the phone's latest copy goes over
+     * whenever BlazeIt opens or its quick-settings tile is tapped.
+     */
+    var clipSync: Boolean
+        get() = sp.getBoolean(K_CLIP_SYNC, true)
+        set(v) = sp.edit { putBoolean(K_CLIP_SYNC, v) }
+
     /** Whether the live monitor floats over the app's screens. */
     var showMonitor: Boolean
         get() = sp.getBoolean(K_MONITOR, false)
@@ -116,6 +125,7 @@ class Prefs(ctx: Context) {
         const val K_THEME = "theme"
         const val K_PHONE_DIRECT = "phone_direct"
         const val K_LAPTOP_LINK = "laptop_link"
+        const val K_CLIP_SYNC = "clip_sync"
         const val K_HOTSPOT_SSID = "hotspot_ssid"
         const val K_HOTSPOT_PASS = "hotspot_pass"
         const val K_MONITOR = "show_monitor"

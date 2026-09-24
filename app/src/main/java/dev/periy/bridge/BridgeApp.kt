@@ -68,6 +68,7 @@ class Container(ctx: Context) {
             setTheme = ::setTheme,
             laptopLink = { prefs.laptopLink },
             hotspot = { prefs.hotspotSsid to prefs.hotspotPass },
+            clipSync = { prefs.clipSync },
             setMaxUpload = { prefs.tusMaxSize = it },
             deviceName = deviceName(),
         )

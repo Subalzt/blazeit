@@ -39,6 +39,8 @@ data class StateDto(
     val uploadStreams: Int = 4,
     /** Shared appearance, "system", "light" or "dark": changing it anywhere changes all of them. */
     val theme: String = "system",
+    /** Clipboard follows between phone and laptop helper without pressing Send. */
+    val clipSync: Boolean = true,
     /** Smallest file worth splitting; below this the round trips cost more than they save. */
     val parallelThreshold: Long = 16L * 1024 * 1024,
 )
@@ -64,6 +66,7 @@ class ServerConfig(
     /** "direct" or "hotspot", and the hotspot's name and password; see Prefs.laptopLink. */
     val laptopLink: () -> String = { "direct" },
     val hotspot: () -> Pair<String, String> = { "" to "" },
+    val clipSync: () -> Boolean = { true },
     /** Sets the largest upload accepted; Long.MAX_VALUE means only free space counts. */
     val setMaxUpload: (Long) -> Unit,
     val sessionTtlMs: Long = 30L * 24 * 60 * 60 * 1000,

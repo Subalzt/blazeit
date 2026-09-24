@@ -35,6 +35,12 @@
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"
         android:maxSdkVersion="32" />
 
+    <!-- Browsing the phone's storage from the laptop page (read-only). Android 11+ grants it
+         only through its own "All files access" screen, which the owner opens from Settings.
+         A sideloaded build; Play restricts this permission to file managers. -->
+    <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE"
+        tools:ignore="ScopedStorage" />
+
     <!-- Sideloaded / personal build. Google Play restricts this permission to apps whose
          core function genuinely breaks under Doze, which this one does: an idle HTTP
          listener gets its sockets torn down. If this app is ever shipped through Play,
@@ -98,6 +104,27 @@
                 <data android:mimeType="*/*" />
             </intent-filter>
         </activity>
+
+        <!-- Sends the phone's latest copy to the laptop: invisible, because Android lets an
+             app read the clipboard only while it has the screen. Opened by the tile below. -->
+        <activity
+            android:name=".ui.ClipSendActivity"
+            android:exported="false"
+            android:excludeFromRecents="true"
+            android:noHistory="true"
+            android:taskAffinity=""
+            android:theme="@android:style/Theme.Translucent.NoTitleBar" />
+
+        <service
+            android:name=".ui.ClipTileService"
+            android:exported="true"
+            android:icon="@drawable/ic_notification"
+            android:label="Send clipboard"
+            android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
+            <intent-filter>
+                <action android:name="android.service.quicksettings.action.QS_TILE" />
+            </intent-filter>
+        </service>
 
         <!--
           foregroundServiceType: specialUse, deliberately, not dataSync.
