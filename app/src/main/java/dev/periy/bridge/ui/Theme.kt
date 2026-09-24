@@ -415,21 +415,18 @@ fun SegmentedRow(
     modifier: Modifier = Modifier,
     onSelect: (Int) -> Unit,
 ) {
-    Row(
-        modifier.fillMaxWidth().clip(ButtonShape).background(Color(0x33000000)).padding(3.dp),
-        horizontalArrangement = Arrangement.spacedBy(2.dp),
-    ) {
-        options.forEachIndexed { i, label ->
-            val on = i == selectedIndex
-            Box(
-                Modifier
-                    .weight(1f)
-                    .then(if (on) Modifier.glass(ButtonShape) else Modifier.clip(ButtonShape))
-                    .clickable { onSelect(i) }
-                    .padding(vertical = 8.dp),
-                contentAlignment = Alignment.Center,
-            ) { Text(label, style = LabelStyle, color = if (on) Bridge.Text else Bridge.Muted) }
-        }
+    // The track does not clip: the lens stands proud of it.
+    LiquidBar(
+        count = options.size,
+        selected = selectedIndex.coerceAtLeast(0),
+        onSelect = onSelect,
+        modifier = modifier.fillMaxWidth().background(Color(0x38000000), ButtonShape).padding(3.dp),
+        bulge = 3.dp,
+    ) { i, lit ->
+        Text(
+            options[i], style = LabelStyle, color = if (lit) Bridge.Text else Bridge.Muted,
+            modifier = Modifier.padding(vertical = 9.dp),
+        )
     }
 }
 
@@ -519,26 +516,14 @@ fun GlassTabBar(
             .liquidGlass(blur = 6.dp, tint = Color(0x2E08080C))
             .padding(4.dp),
     ) {
-        items.forEachIndexed { i, (label, icon) ->
-            val on = i == selected
-            Column(
-                Modifier
-                    .weight(1f)
-                    .clip(ButtonShape)
-                    .then(
-                        // The current tab sits under a lens: a clearer, brighter drop of glass.
-                        if (on) Modifier
-                            .background(Brush.verticalGradient(listOf(Color(0x40FFFFFF), Color(0x14FFFFFF))))
-                            .border(BorderStroke(1.dp, RimBrush), ButtonShape)
-                        else Modifier
-                    )
-                    .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) { onSelect(i) }
-                    .padding(vertical = 6.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-            ) {
-                Icon(icon, label, tint = if (on) Bridge.Yellow else Bridge.Text, modifier = Modifier.size(22.dp))
+        // The current tab sits under a lens that slides between tabs; drag a finger along
+        // the bar and it follows, and the tab under it when you let go opens.
+        LiquidBar(items.size, selected, onSelect, Modifier.fillMaxWidth()) { i, lit ->
+            val (label, icon) = items[i]
+            Column(Modifier.padding(vertical = 6.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                Icon(icon, label, tint = if (lit) Bridge.Yellow else Bridge.Text, modifier = Modifier.size(22.dp))
                 Spacer(Modifier.height(3.dp))
-                Text(label, style = TextStyle(fontSize = 10.5.sp, fontWeight = FontWeight.SemiBold), color = if (on) Bridge.Yellow else Bridge.Text.copy(alpha = 0.8f))
+                Text(label, style = TextStyle(fontSize = 10.5.sp, fontWeight = FontWeight.SemiBold), color = if (lit) Bridge.Yellow else Bridge.Text.copy(alpha = 0.8f))
             }
         }
     }

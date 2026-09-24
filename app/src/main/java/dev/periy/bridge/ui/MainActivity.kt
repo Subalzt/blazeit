@@ -833,8 +833,8 @@ private fun LazyListScope.setupTab(
     item {
         GroupCard {
             SettingRow("Background", "OLED black turns the pixels off behind the glass. Every open page follows.", first = true) {}
-            Box(Modifier.padding(start = 16.dp, end = 16.dp, bottom = 12.dp)) {
-                SegmentedRow(listOf("Aurora", "OLED black"), if (oled) 1 else 0) { vm.setOled(it == 1) }
+            Box(Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 4.dp, bottom = 16.dp), contentAlignment = Alignment.CenterStart) {
+                LiquidSwitch(oled, "Aurora", "OLED", BlazeIcons.Sun, BlazeIcons.Moon) { vm.setOled(it) }
             }
         }
     }

@@ -81,6 +81,17 @@ object BlazeIcons {
     /** An arrow going up and away: send. */
     val Send: ImageVector = stroked("send", "M12 19V5.5", "M6.5 11 12 5.5 17.5 11")
 
+    /** A sun: the aurora backdrop. */
+    val Sun: ImageVector = stroked(
+        "sun",
+        "M12 8a4 4 0 1 1 0 8a4 4 0 1 1 0-8Z",
+        "M12 2.5v2", "M12 19.5v2", "M2.5 12h2", "M19.5 12h2",
+        "M5.3 5.3l1.4 1.4", "M17.3 17.3l1.4 1.4", "M5.3 18.7l1.4-1.4", "M17.3 6.7l1.4-1.4",
+    )
+
+    /** A crescent: OLED black. */
+    val Moon: ImageVector = stroked("moon", "M19.5 14.5A8 8 0 1 1 9.5 4.5a6.5 6.5 0 0 0 10 10Z")
+
     /** A chevron pointing on. */
     val Chevron: ImageVector = stroked("chevron", "M9.5,5.5 L16,12 L9.5,18.5")
 
