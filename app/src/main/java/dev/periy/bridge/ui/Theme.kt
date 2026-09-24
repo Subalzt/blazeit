@@ -1,10 +1,13 @@
 package dev.periy.bridge.ui
 
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -19,20 +22,26 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.ReadOnlyComposable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -40,97 +49,68 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import dev.chrisbanes.haze.HazeState
+import dev.chrisbanes.haze.HazeTint
+import dev.chrisbanes.haze.hazeEffect
 
 /**
- * Colours by *role*, not by hue.
+ * Apple's Liquid Glass, as closely as Android allows.
  *
- * The classic theme could get away with a handful of named colours because black meant
- * the same thing everywhere. The glass theme breaks that: text turns white, bars turn
- * translucent, but text sitting on the yellow accent has to stay black in both. So every
- * colour here is named for what it is used for, and each theme fills the roles in.
- *
- * One rule survives both themes unchanged: yellow means "act on this", and there is only
- * ever one yellow thing that matters on screen.
+ * Every surface is a sheet of glass: a glossy fill that is lighter at the top, and a rim
+ * that catches light along its upper-left edge and fades across the sheet. Things that
+ * float -- the tab bar, the monitor -- also blur whatever scrolls behind them. Controls are
+ * capsules. One accent, the brand yellow, for the thing to act on.
  */
 @Immutable
 data class Palette(
-    val glass: Boolean,
     val yellow: Color,
-    /** Hero band. Solid in classic; faintly see-through in glass. */
-    val heroBg: Color,
-    /** Text and glyphs drawn on yellow. Black in both themes. */
     val onYellow: Color,
     val onYellowSoft: Color,
-    /** Primary text on panels. */
     val text: Color,
     val muted: Color,
-    /** Content panels. */
+    val faint: Color,
     val panel: Color,
-    /** List rows, a step up from the panel. */
     val row: Color,
-    /** Glyph chips, empty progress tracks, unselected options. */
     val chip: Color,
-    /** Masthead, section bars, the tab strip. */
     val bar: Color,
-    /** Non-yellow text on those bars. */
     val onBar: Color,
-    /** Hairline around panels. Transparent in classic, where solid fills need no edge. */
     val outline: Color,
     val danger: Color,
     val good: Color,
+    val blue: Color,
 )
 
-val ClassicPalette = Palette(
-    glass = false,
-    yellow = Color(0xFFFFE500),
-    heroBg = Color(0xFFFFE500),
-    onYellow = Color(0xFF0A0A0A),
-    onYellowSoft = Color(0xFF2A2A2A),
-    text = Color(0xFF0A0A0A),
-    muted = Color(0xFF5C5C5C),
-    panel = Color(0xFFFFFFFF),
-    row = Color(0xFFF0F0F0),
-    chip = Color(0xFFD2D2D2),
-    bar = Color(0xFF0A0A0A),
-    onBar = Color(0xFFFFFFFF),
-    outline = Color.Transparent,
-    danger = Color(0xFFC62828),
-    good = Color(0xFF1B7F3B),
-)
-
-/**
- * Dark frosted glass. Panels are thin washes of white over a glowing backdrop, edged with
- * a hairline so they read as sheets rather than smudges. Still square: the brief was the
- * material, not the rounded corners that usually come with it.
- */
 val GlassPalette = Palette(
-    glass = true,
-    yellow = Color(0xFFFFE500),
-    heroBg = Color(0xE6FFE500),
+    yellow = Color(0xFFFFD60A),
     onYellow = Color(0xFF0A0A0A),
-    onYellowSoft = Color(0xFF2A2A2A),
-    text = Color(0xFFF7F7F7),
-    muted = Color(0xB3FFFFFF),
-    panel = Color(0x14FFFFFF),
-    row = Color(0x1FFFFFFF),
-    chip = Color(0x33FFFFFF),
-    bar = Color(0x99000000),
+    onYellowSoft = Color(0xB30A0A0A),
+    text = Color(0xF7FFFFFF),
+    muted = Color(0xA6EBEBF5),
+    faint = Color(0x4DEBEBF5),
+    panel = Color(0x1FFFFFFF),
+    row = Color(0x1AFFFFFF),
+    chip = Color(0x2EFFFFFF),
+    bar = Color(0x59101014),
     onBar = Color(0xFFFFFFFF),
-    outline = Color(0x2EFFFFFF),
-    danger = Color(0xFFFF8A80),
-    good = Color(0xFF86EFAC),
+    outline = Color(0x26FFFFFF),
+    danger = Color(0xFFFF453A),
+    good = Color(0xFF30D158),
+    blue = Color(0xFF0A84FF),
 )
 
-val LocalPalette = staticCompositionLocalOf { ClassicPalette }
+val LocalPalette = staticCompositionLocalOf { GlassPalette }
+
+/** What floating glass blurs: everything drawn behind it. Null where no blur is set up. */
+val LocalHaze = staticCompositionLocalOf<HazeState?> { null }
 
 /** Shorthand for the current palette's roles, readable at any call site in a composable. */
 object Bridge {
     val Yellow: Color @Composable @ReadOnlyComposable get() = LocalPalette.current.yellow
-    val HeroBg: Color @Composable @ReadOnlyComposable get() = LocalPalette.current.heroBg
     val OnYellow: Color @Composable @ReadOnlyComposable get() = LocalPalette.current.onYellow
     val OnYellowSoft: Color @Composable @ReadOnlyComposable get() = LocalPalette.current.onYellowSoft
     val Text: Color @Composable @ReadOnlyComposable get() = LocalPalette.current.text
     val Muted: Color @Composable @ReadOnlyComposable get() = LocalPalette.current.muted
+    val Faint: Color @Composable @ReadOnlyComposable get() = LocalPalette.current.faint
     val Paper: Color @Composable @ReadOnlyComposable get() = LocalPalette.current.panel
     val RowBg: Color @Composable @ReadOnlyComposable get() = LocalPalette.current.row
     val Chip: Color @Composable @ReadOnlyComposable get() = LocalPalette.current.chip
@@ -139,101 +119,82 @@ object Bridge {
     val Outline: Color @Composable @ReadOnlyComposable get() = LocalPalette.current.outline
     val Danger: Color @Composable @ReadOnlyComposable get() = LocalPalette.current.danger
     val Good: Color @Composable @ReadOnlyComposable get() = LocalPalette.current.good
+    val Blue: Color @Composable @ReadOnlyComposable get() = LocalPalette.current.blue
 }
 
-/** Squared-off corners throughout, in both themes. */
-val BlockShape = RoundedCornerShape(2.dp)
+val CardShape = RoundedCornerShape(28.dp)
+val ButtonShape = RoundedCornerShape(50)
+val BlockShape = RoundedCornerShape(14.dp)
 
-/** A content panel: fill plus, in glass, the hairline that makes it read as a sheet. */
+// ---------------------------------------------------------------------------- glass
+
+/** The light-catching rim: bright at the top-left, clear through the middle, a glint at the bottom-right. */
+private val RimBrush = Brush.linearGradient(
+    0f to Color(0x99FFFFFF),
+    0.35f to Color(0x14FFFFFF),
+    0.7f to Color(0x0AFFFFFF),
+    1f to Color(0x40FFFFFF),
+    start = Offset(0f, 0f),
+    end = Offset(Float.POSITIVE_INFINITY, Float.POSITIVE_INFINITY),
+)
+
+/** The glossy fill: a little more light at the top, as if lit from above. */
+private val FillBrush = Brush.verticalGradient(listOf(Color(0x2EFFFFFF), Color(0x12FFFFFF)))
+
+/** A sheet of glass in [shape]. [strong] for floating glass that sits over content. */
 @Composable
-fun Modifier.panel(): Modifier = this
-    .background(Bridge.Paper)
-    .border(BorderStroke(1.dp, Bridge.Outline))
+fun Modifier.glass(shape: Shape = CardShape, strong: Boolean = false): Modifier {
+    val haze = LocalHaze.current
+    return this
+        .clip(shape)
+        .then(
+            if (strong && haze != null) Modifier.hazeEffect(state = haze) {
+                blurRadius = 26.dp
+                backgroundColor = Color(0xFF0B0B12)
+                tints = listOf(HazeTint(Color(0x33101018)))
+                noiseFactor = 0.06f
+            } else Modifier
+        )
+        .background(FillBrush)
+        .border(BorderStroke(1.dp, RimBrush), shape)
+}
+
+/** A card: glass inset from the screen edges. */
+@Composable
+fun Modifier.panel(): Modifier = this.padding(horizontal = 16.dp).glass(CardShape)
 
 // ---------------------------------------------------------------------------- type
 
-val TitleStyle = TextStyle(
-    fontSize = 15.sp,
-    fontWeight = FontWeight.ExtraBold,
-    letterSpacing = 0.2.sp,
-)
-
-val LabelStyle = TextStyle(
-    fontSize = 11.sp,
-    fontWeight = FontWeight.ExtraBold,
-    letterSpacing = 1.4.sp,
-)
-
-val BodyStyle = TextStyle(fontSize = 13.sp, lineHeight = 18.sp)
-
-val MonoStyle = TextStyle(
-    fontSize = 15.sp,
-    fontFamily = FontFamily.Monospace,
-    fontWeight = FontWeight.Bold,
-)
+val LargeTitleStyle = TextStyle(fontSize = 34.sp, fontWeight = FontWeight.Bold, letterSpacing = (-0.6).sp)
+val TitleStyle = TextStyle(fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
+val LabelStyle = TextStyle(fontSize = 13.sp, fontWeight = FontWeight.Medium)
+val BodyStyle = TextStyle(fontSize = 14.sp, lineHeight = 20.sp)
+val MonoStyle = TextStyle(fontSize = 15.sp, fontFamily = FontFamily.Monospace, fontWeight = FontWeight.SemiBold)
+val NumberStyle = TextStyle(fontSize = 28.sp, fontWeight = FontWeight.SemiBold, letterSpacing = (-0.5).sp)
 
 // ---------------------------------------------------------------------------- parts
 
 /**
- * What sits behind everything.
- *
- * Classic: plain white. Glass: near-black with large, soft glows of the brand yellow and
- * a warm amber, plus one cool patch for depth. This is what makes the glass read as glass
- * without a backdrop blur -- translucent panels over a smooth, glowing field look frosted,
- * because there is no detail behind them for a blur to soften anyway.
+ * The wallpaper the glass sits on: deep and dark, with large soft pools of colour. Liquid
+ * Glass is only as good as what shows through it, so this carries real colour.
  */
 @Composable
 fun Backdrop(modifier: Modifier = Modifier) {
-    val p = LocalPalette.current
-    if (!p.glass) {
-        Box(modifier.fillMaxSize().background(p.panel))
-        return
-    }
     Canvas(modifier.fillMaxSize()) {
         val d = size.maxDimension
-        drawRect(Color(0xFF07070A))
+        drawRect(Color(0xFF06060A))
         fun glow(color: Color, x: Float, y: Float, r: Float) = drawRect(
-            Brush.radialGradient(
-                colors = listOf(color, Color.Transparent),
-                center = Offset(size.width * x, size.height * y),
-                radius = d * r,
-            )
+            Brush.radialGradient(listOf(color, Color.Transparent), Offset(size.width * x, size.height * y), d * r)
         )
-        glow(Color(0x8CFFE500), 0.10f, 0.06f, 0.62f)
-        glow(Color(0x66FF9F1C), 0.98f, 0.42f, 0.55f)
-        glow(Color(0x403D5AFE), 0.85f, 1.00f, 0.55f)
-        glow(Color(0x1FFFF4C2), 0.05f, 0.92f, 0.45f)
+        glow(Color(0xA65E5CE6), 0.00f, 0.05f, 0.62f)
+        glow(Color(0x8064D2FF), 1.00f, 0.30f, 0.52f)
+        glow(Color(0x66BF5AF2), 0.85f, 0.78f, 0.50f)
+        glow(Color(0x59FFD60A), 0.10f, 0.95f, 0.55f)
+        glow(Color(0x33FF9F0A), 0.55f, 0.55f, 0.40f)
     }
 }
 
-/**
- * The diagonal hazard band. Drawn rather than tiled so it scales to any width without
- * seams, and the stripe pitch stays proportional to its height.
- */
-@Composable
-fun HazardStripe(height: Dp = 10.dp, modifier: Modifier = Modifier) {
-    val yellow = Bridge.Yellow
-    val dark = Bridge.OnYellow
-    Canvas(modifier.fillMaxWidth().height(height)) {
-        drawRect(yellow)
-        val h = size.height
-        val pitch = h * 1.7f
-        var x = -h * 2
-        while (x < size.width + h * 2) {
-            val p = Path().apply {
-                moveTo(x, h)
-                lineTo(x + h, 0f)
-                lineTo(x + h + pitch / 2f, 0f)
-                lineTo(x + pitch / 2f, h)
-                close()
-            }
-            drawPath(p, dark)
-            x += pitch
-        }
-    }
-}
-
-/** Dark bar with a shouted label. The structural divider of every screen. */
+/** A grouped-list section header: small, grey, above its card. */
 @Composable
 fun SectionBar(
     title: String,
@@ -241,28 +202,20 @@ fun SectionBar(
     trailing: @Composable RowScope.() -> Unit = {},
 ) {
     Row(
-        modifier
-            .fillMaxWidth()
-            .background(Bridge.Bar)
-            .padding(horizontal = 14.dp, vertical = 10.dp),
+        modifier.fillMaxWidth().padding(start = 32.dp, end = 28.dp, top = 22.dp, bottom = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(
             title.uppercase(),
-            style = LabelStyle,
-            color = Bridge.Yellow,
+            style = TextStyle(fontSize = 12.sp, fontWeight = FontWeight.SemiBold, letterSpacing = 0.7.sp),
+            color = Bridge.Muted,
             modifier = Modifier.weight(1f),
         )
         trailing()
     }
 }
 
-/**
- * Yellow call to action. Used only where there is a single obvious next step.
- *
- * `onClick` is last so the trailing-lambda form reads naturally. With a Boolean in that
- * position instead, `BridgeButton("Go") { ... }` silently binds the lambda to the flag.
- */
+/** The accent capsule, for the one obvious next step. Lambda last, so `BridgeButton("Go") { }` reads right. */
 @Composable
 fun BridgeButton(
     label: String,
@@ -272,20 +225,21 @@ fun BridgeButton(
 ) {
     Box(
         modifier
-            .background(if (enabled) Bridge.Yellow else Bridge.Chip, BlockShape)
+            .clip(ButtonShape)
+            .background(
+                if (enabled) Brush.verticalGradient(listOf(Color(0xFFFFE45C), Color(0xFFFFC400)))
+                else SolidColor(Bridge.Chip)
+            )
+            .border(BorderStroke(1.dp, Brush.verticalGradient(listOf(Color(0xB3FFFFFF), Color(0x00FFFFFF)))), ButtonShape)
             .then(if (enabled) Modifier.clickable(onClick = onClick) else Modifier)
-            .padding(horizontal = 18.dp, vertical = 11.dp),
+            .padding(horizontal = 20.dp, vertical = 14.dp),
         contentAlignment = Alignment.Center,
     ) {
-        Text(
-            label.uppercase(),
-            style = LabelStyle,
-            color = if (enabled) Bridge.OnYellow else Bridge.Muted,
-        )
+        Text(label, style = TextStyle(fontSize = 16.sp, fontWeight = FontWeight.SemiBold), color = if (enabled) Bridge.OnYellow else Bridge.Muted)
     }
 }
 
-/** Outlined secondary action. Same lambda-last shape as [BridgeButton]. */
+/** A glass capsule for secondary actions. */
 @Composable
 fun GhostButton(
     label: String,
@@ -293,34 +247,32 @@ fun GhostButton(
     danger: Boolean = false,
     onClick: () -> Unit,
 ) {
-    val fg = if (danger) Bridge.Danger else Bridge.Text
     Box(
-        modifier
-            .background(Bridge.Paper, BlockShape)
-            .border(BorderStroke(2.dp, fg), BlockShape)
-            .clickable(onClick = onClick)
-            .padding(horizontal = 16.dp, vertical = 10.dp),
+        modifier.glass(ButtonShape).clickable(onClick = onClick).padding(horizontal = 16.dp, vertical = 12.dp),
         contentAlignment = Alignment.Center,
     ) {
-        Text(label.uppercase(), style = LabelStyle, color = fg)
+        Text(label, style = TextStyle(fontSize = 15.sp, fontWeight = FontWeight.Medium), color = if (danger) Bridge.Danger else Bridge.Text)
     }
 }
 
-/** Small square glyph chip. */
+/** A small glass circle with an icon, for quiet actions. */
+@Composable
+fun IconChip(icon: ImageVector, description: String, tint: Color = Bridge.Text, onClick: () -> Unit) {
+    Box(
+        Modifier.size(36.dp).glass(CircleShape).clickable(onClick = onClick),
+        contentAlignment = Alignment.Center,
+    ) { Icon(icon, description, tint = tint, modifier = Modifier.size(18.dp)) }
+}
+
+/** Small round glyph. */
 @Composable
 fun Glyph(symbol: String, bg: Color = Bridge.Chip, fg: Color = Bridge.Text) {
-    Box(
-        Modifier.size(34.dp).background(bg, BlockShape),
-        contentAlignment = Alignment.Center,
-    ) {
-        Text(symbol, style = TextStyle(fontSize = 15.sp, fontWeight = FontWeight.ExtraBold), color = fg)
+    Box(Modifier.size(36.dp).clip(CircleShape).background(bg), contentAlignment = Alignment.Center) {
+        Text(symbol, style = TextStyle(fontSize = 15.sp, fontWeight = FontWeight.SemiBold), color = fg)
     }
 }
 
-/**
- * A list row: glyph, bold title, optional meta on the right.
- * `accent` paints the row yellow, for the one row that needs attention.
- */
+/** A row as its own sheet of glass. `accent` makes it the yellow one that is waiting on you. */
 @Composable
 fun BridgeRow(
     title: String,
@@ -328,41 +280,36 @@ fun BridgeRow(
     glyph: String? = null,
     meta: String? = null,
     accent: Boolean = false,
+    trailing: @Composable RowScope.() -> Unit = {},
     onClick: (() -> Unit)? = null,
     content: @Composable ColumnScope.() -> Unit = {},
 ) {
     Column(
         modifier
             .fillMaxWidth()
-            .background(if (accent) Bridge.Yellow else Bridge.RowBg)
-            .border(BorderStroke(1.dp, if (accent) Color.Transparent else Bridge.Outline))
+            .padding(horizontal = 16.dp, vertical = 5.dp)
+            .then(
+                if (accent) Modifier.clip(CardShape).background(Brush.verticalGradient(listOf(Color(0xFFFFE45C), Color(0xFFFFC400))))
+                    .border(BorderStroke(1.dp, Brush.verticalGradient(listOf(Color(0xB3FFFFFF), Color(0x00FFFFFF)))), CardShape)
+                else Modifier.glass(CardShape)
+            )
             .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier)
-            .padding(horizontal = 12.dp, vertical = 11.dp)
+            .padding(horizontal = 16.dp, vertical = 14.dp)
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             if (glyph != null) {
-                Glyph(
-                    glyph,
-                    bg = if (accent) Bridge.OnYellow else Bridge.Chip,
-                    fg = if (accent) Bridge.Yellow else Bridge.Text,
-                )
-                Spacer(Modifier.width(10.dp))
+                Glyph(glyph, bg = if (accent) Bridge.OnYellow else Bridge.Chip, fg = if (accent) Bridge.Yellow else Bridge.Text)
+                Spacer(Modifier.width(12.dp))
             }
             Text(
-                title,
-                style = TitleStyle,
-                color = if (accent) Bridge.OnYellow else Bridge.Text,
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.weight(1f),
+                title, style = TitleStyle, color = if (accent) Bridge.OnYellow else Bridge.Text,
+                maxLines = 2, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f),
             )
             if (meta != null) {
                 Spacer(Modifier.width(8.dp))
-                Text(
-                    meta, style = BodyStyle, maxLines = 1,
-                    color = if (accent) Bridge.OnYellowSoft else Bridge.Muted,
-                )
+                Text(meta, style = BodyStyle, maxLines = 1, color = if (accent) Bridge.OnYellowSoft else Bridge.Muted)
             }
+            trailing()
         }
         content()
     }
@@ -374,10 +321,7 @@ fun RowNote(text: String, color: Color = Bridge.Muted) {
     Text(text, style = BodyStyle, color = color, modifier = Modifier.padding(top = 6.dp))
 }
 
-/**
- * Text input drawn by hand rather than with a Material text field, so it follows the
- * palette and the square shape exactly.
- */
+/** A text field: a recessed well in the glass. */
 @Composable
 fun BridgeTextField(
     value: String,
@@ -392,43 +336,35 @@ fun BridgeTextField(
         modifier
             .fillMaxWidth()
             .heightIn(min = minHeight)
-            .background(Bridge.Paper, BlockShape)
-            .border(BorderStroke(2.dp, text), BlockShape)
-            .padding(10.dp)
+            .clip(RoundedCornerShape(18.dp))
+            .background(Color(0x33000000))
+            .border(BorderStroke(1.dp, Brush.verticalGradient(listOf(Color(0x1FFFFFFF), Color(0x40FFFFFF)))), RoundedCornerShape(18.dp))
+            .padding(14.dp)
     ) {
-        if (value.isEmpty() && placeholder.isNotEmpty()) {
-            Text(placeholder, style = BodyStyle, color = Bridge.Muted)
-        }
+        if (value.isEmpty() && placeholder.isNotEmpty()) Text(placeholder, style = BodyStyle, color = Bridge.Faint)
         BasicTextField(
             value = value,
             onValueChange = onValueChange,
-            textStyle = if (mono) MonoStyle.copy(color = text)
-            else BodyStyle.copy(color = text, fontSize = 14.sp),
-            cursorBrush = SolidColor(text),
+            textStyle = if (mono) MonoStyle.copy(color = text) else BodyStyle.copy(color = text, fontSize = 15.sp),
+            cursorBrush = SolidColor(Bridge.Yellow),
             modifier = Modifier.fillMaxWidth(),
         )
     }
 }
 
-/** Flat progress track, square, no animation flourish. */
+/** A thin capsule progress bar with a glowing fill. */
 @Composable
-fun BlockProgress(fraction: Float, modifier: Modifier = Modifier, height: Dp = 8.dp) {
-    Box(
-        modifier
-            .fillMaxWidth()
-            .height(height)
-            .background(Bridge.Chip)
-    ) {
+fun BlockProgress(fraction: Float, modifier: Modifier = Modifier, height: Dp = 6.dp) {
+    val shape = RoundedCornerShape(height / 2)
+    Box(modifier.fillMaxWidth().height(height).clip(shape).background(Color(0x33000000))) {
         Box(
-            Modifier
-                .fillMaxWidth(fraction.coerceIn(0f, 1f))
-                .height(height)
-                .background(Bridge.Text)
+            Modifier.fillMaxWidth(fraction.coerceIn(0f, 1f)).height(height).clip(shape)
+                .background(Brush.horizontalGradient(listOf(Color(0xFFFFC400), Color(0xFFFFE45C))))
         )
     }
 }
 
-/** Segmented control: the active segment is yellow, the rest sit on the bar. */
+/** A segmented control: a glass track with a brighter lens over the choice. */
 @Composable
 fun SegmentedRow(
     options: List<String>,
@@ -437,24 +373,122 @@ fun SegmentedRow(
     onSelect: (Int) -> Unit,
 ) {
     Row(
-        modifier.fillMaxWidth().background(Bridge.Bar),
-        horizontalArrangement = Arrangement.spacedBy(0.dp),
+        modifier.fillMaxWidth().clip(ButtonShape).background(Color(0x33000000)).padding(3.dp),
+        horizontalArrangement = Arrangement.spacedBy(2.dp),
     ) {
         options.forEachIndexed { i, label ->
             val on = i == selectedIndex
             Box(
                 Modifier
                     .weight(1f)
-                    .background(if (on) Bridge.Yellow else Color.Transparent)
+                    .then(if (on) Modifier.glass(ButtonShape) else Modifier.clip(ButtonShape))
                     .clickable { onSelect(i) }
-                    .padding(vertical = 12.dp),
+                    .padding(vertical = 8.dp),
                 contentAlignment = Alignment.Center,
+            ) { Text(label, style = LabelStyle, color = if (on) Bridge.Text else Bridge.Muted) }
+        }
+    }
+}
+
+/** The iOS switch: green when on, a white knob that slides. */
+@Composable
+fun IosSwitch(on: Boolean, modifier: Modifier = Modifier, onChange: (Boolean) -> Unit) {
+    val track by animateColorAsState(if (on) Bridge.Good else Color(0x52787880), label = "track")
+    val x by animateFloatAsState(if (on) 1f else 0f, label = "knob")
+    Box(
+        modifier
+            .width(51.dp)
+            .height(31.dp)
+            .clip(ButtonShape)
+            .background(track)
+            .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) { onChange(!on) }
+            .padding(2.dp),
+    ) {
+        Box(
+            Modifier
+                .padding(start = 20.dp * x)
+                .size(27.dp)
+                .clip(CircleShape)
+                .background(Brush.verticalGradient(listOf(Color.White, Color(0xFFE9E9EE))))
+        )
+    }
+}
+
+/** Rows of a grouped list sharing one sheet of glass, with hairlines between them. */
+@Composable
+fun GroupCard(content: @Composable ColumnScope.() -> Unit) {
+    Column(Modifier.fillMaxWidth().panel(), content = content)
+}
+
+/** One setting: title, optional detail underneath, and a control or value on the right. */
+@Composable
+fun SettingRow(
+    title: String,
+    detail: String? = null,
+    first: Boolean = false,
+    titleColor: Color = Bridge.Text,
+    onClick: (() -> Unit)? = null,
+    trailing: @Composable RowScope.() -> Unit = {},
+) {
+    if (!first) Box(Modifier.fillMaxWidth().padding(start = 18.dp).height(0.5.dp).background(Bridge.Outline))
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier)
+            .padding(horizontal = 18.dp, vertical = 14.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Column(Modifier.weight(1f)) {
+            Text(title, style = TextStyle(fontSize = 15.sp), color = titleColor, maxLines = 2, overflow = TextOverflow.Ellipsis)
+            if (detail != null) Text(detail, style = BodyStyle.copy(fontSize = 13.sp, lineHeight = 17.sp), color = Bridge.Muted)
+        }
+        trailing()
+    }
+}
+
+/** Four bars for signal strength, filled up to [level] (0-4). */
+@Composable
+fun SignalBars(level: Int, modifier: Modifier = Modifier) {
+    val on = Bridge.Text
+    val off = Bridge.Faint
+    Row(modifier, verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(2.dp)) {
+        for (i in 0 until 4) {
+            Box(Modifier.width(3.dp).height((4 + i * 3).dp).clip(RoundedCornerShape(1.dp)).background(if (i < level) on else off))
+        }
+    }
+}
+
+/**
+ * The floating tab bar: a capsule of real, blurred glass, with a brighter lens under the
+ * current tab.
+ */
+@Composable
+fun GlassTabBar(
+    items: List<Pair<String, ImageVector>>,
+    selected: Int,
+    modifier: Modifier = Modifier,
+    onSelect: (Int) -> Unit,
+) {
+    Row(
+        modifier
+            .padding(horizontal = 18.dp)
+            .fillMaxWidth()
+            .glass(ButtonShape, strong = true)
+            .padding(5.dp),
+    ) {
+        items.forEachIndexed { i, (label, icon) ->
+            val on = i == selected
+            Column(
+                Modifier
+                    .weight(1f)
+                    .then(if (on) Modifier.glass(ButtonShape) else Modifier.clip(ButtonShape))
+                    .clickable { onSelect(i) }
+                    .padding(vertical = 7.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
             ) {
-                Text(
-                    label.uppercase(),
-                    style = LabelStyle,
-                    color = if (on) Bridge.OnYellow else Bridge.OnBar,
-                )
+                Icon(icon, label, tint = if (on) Bridge.Yellow else Bridge.Text, modifier = Modifier.size(23.dp))
+                Spacer(Modifier.height(2.dp))
+                Text(label, style = TextStyle(fontSize = 10.5.sp, fontWeight = FontWeight.Medium), color = if (on) Bridge.Yellow else Bridge.Muted)
             }
         }
     }

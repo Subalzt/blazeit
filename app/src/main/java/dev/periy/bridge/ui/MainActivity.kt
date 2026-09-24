@@ -18,6 +18,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -26,6 +27,7 @@ import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.isImeVisible
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -35,9 +37,18 @@ import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Close
+import androidx.compose.material.icons.rounded.Home
+import androidx.compose.material.icons.rounded.Phone
+import androidx.compose.material.icons.rounded.Settings
+import androidx.compose.material.icons.rounded.Share
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -46,20 +57,28 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.IntentCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import dev.periy.bridge.container
 import dev.periy.bridge.net.Reach
 import dev.periy.bridge.server.Direction
 import dev.periy.bridge.server.FileEntry
+import dev.periy.bridge.server.Monitor
+import dev.periy.bridge.server.NearbyPhone
 import dev.periy.bridge.server.PairRequest
 import dev.periy.bridge.server.PairedDevice
+import dev.periy.bridge.server.Peer
+import dev.periy.bridge.server.PeerStatus
 import dev.periy.bridge.server.Storage
 import dev.periy.bridge.server.SystemClipboard
 import dev.periy.bridge.server.Transfer
@@ -68,6 +87,8 @@ import dev.periy.bridge.server.Transfers
 import dev.periy.bridge.service.BridgeService
 import dev.periy.bridge.service.formatBytes
 import dev.periy.bridge.service.formatRate
+import dev.chrisbanes.haze.hazeSource
+import dev.chrisbanes.haze.rememberHazeState
 
 class MainActivity : ComponentActivity() {
 
@@ -75,18 +96,13 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        // The masthead is black, so the status bar needs light icons whatever the phone's
-        // own theme is. The default auto style follows the system theme and would paint
-        // dark icons onto black.
+        // Dark glass everywhere, so light system-bar icons everywhere.
         enableEdgeToEdge(
             statusBarStyle = SystemBarStyle.dark(android.graphics.Color.TRANSPARENT),
-            navigationBarStyle = SystemBarStyle.light(
-                android.graphics.Color.TRANSPARENT,
-                android.graphics.Color.TRANSPARENT,
-            ),
+            navigationBarStyle = SystemBarStyle.dark(android.graphics.Color.TRANSPARENT),
         )
         handleShare(intent)
-        setContent { XooshUi(vm) }
+        setContent { BlazeItUi(vm) }
     }
 
     override fun onNewIntent(intent: Intent) {
@@ -119,9 +135,7 @@ class MainActivity : ComponentActivity() {
             }
 
             Intent.ACTION_SEND_MULTIPLE -> {
-                val uris = IntentCompat.getParcelableArrayListExtra(
-                    intent, Intent.EXTRA_STREAM, Uri::class.java
-                )
+                val uris = IntentCompat.getParcelableArrayListExtra(intent, Intent.EXTRA_STREAM, Uri::class.java)
                 if (!uris.isNullOrEmpty()) vm.acceptSharedFiles(uris)
             }
 
@@ -133,9 +147,20 @@ class MainActivity : ComponentActivity() {
     }
 }
 
+private val TABS = listOf(
+    "Home" to Icons.Rounded.Home,
+    "Phones" to Icons.Rounded.Phone,
+    "Control" to BlazeIcons.Trackpad,
+    "Setup" to Icons.Rounded.Settings,
+)
+private const val TAB_PHONES = 1
+private const val TAB_CONTROL = 2
+
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun XooshUi(vm: MainViewModel) {
+private fun BlazeItUi(vm: MainViewModel) {
     val ctx = LocalContext.current
+    val peers = ctx.container.peers
     val state by vm.state.collectAsStateWithLifecycle()
     val running by BridgeService.running.collectAsStateWithLifecycle()
     val transfers by Transfers.flow.collectAsStateWithLifecycle()
@@ -146,104 +171,121 @@ private fun XooshUi(vm: MainViewModel) {
     val requests by vm.pairRequests.collectAsStateWithLifecycle()
     val devices by vm.devices.collectAsStateWithLifecycle()
     val live by vm.liveDevices.collectAsStateWithLifecycle()
+    val monitor by Monitor.snapshot.collectAsStateWithLifecycle()
+    val nearby by peers.nearby.collectAsStateWithLifecycle()
+    val paired by peers.peers.collectAsStateWithLifecycle()
+    val peerStatus by peers.status.collectAsStateWithLifecycle()
 
     var tab by remember { mutableIntStateOf(0) }
     var showOem by remember { mutableStateOf(false) }
     val oemSteps = remember { OemBatterySetup.steps(ctx) }
+    var sendTarget by remember { mutableStateOf<Peer?>(null) }
+    var showMonitor by remember { mutableStateOf(ctx.container.prefs.showMonitor) }
+    val setMonitor = { on: Boolean -> showMonitor = on; ctx.container.prefs.showMonitor = on }
+    val haze = rememberHazeState()
 
     // A computer asking to connect is waiting on you, so jump to where the answer is.
     LaunchedEffect(requests.size) { if (requests.isNotEmpty()) { tab = 0; showOem = false } }
 
-    val pickFiles = rememberLauncherForActivityResult(
-        ActivityResultContracts.OpenMultipleDocuments()
-    ) { uris -> vm.offerPickedFiles(uris) }
+    val pickFiles = rememberLauncherForActivityResult(ActivityResultContracts.OpenMultipleDocuments()) { uris ->
+        vm.offerPickedFiles(uris)
+    }
+    val pickForPhone = rememberLauncherForActivityResult(ActivityResultContracts.OpenMultipleDocuments()) { uris ->
+        val to = sendTarget
+        if (to != null && uris.isNotEmpty()) {
+            peers.sendFiles(to, uris)
+            Toast.makeText(ctx, "Sending ${uris.size} to ${to.name}", Toast.LENGTH_SHORT).show()
+        }
+    }
+    val pickFolder = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocumentTree()) { uri ->
+        uri?.let(vm::setDestination)
+    }
+    val requestNotifications = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { vm.refresh() }
+    val openSettings = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { vm.refresh() }
+    val requestMusic = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { vm.refresh() }
 
-    val pickFolder = rememberLauncherForActivityResult(
-        ActivityResultContracts.OpenDocumentTree()
-    ) { uri -> uri?.let(vm::setDestination) }
-
-    val requestNotifications = rememberLauncherForActivityResult(
-        ActivityResultContracts.RequestPermission()
-    ) { vm.refresh() }
-
-    val openSettings = rememberLauncherForActivityResult(
-        ActivityResultContracts.StartActivityForResult()
-    ) { vm.refresh() }
-
-    val requestMusic = rememberLauncherForActivityResult(
-        ActivityResultContracts.RequestPermission()
-    ) { vm.refresh() }
+    // Other phones are looked for only while the Phones tab is open.
+    if (tab == TAB_PHONES) {
+        DisposableEffect(Unit) {
+            peers.startDiscovery()
+            onDispose { peers.stopDiscovery() }
+        }
+    }
 
     val bottomInset = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
-    val glass by vm.glass.collectAsStateWithLifecycle()
+    val tabBarSpace = 84.dp + bottomInset
+    val imeUp = WindowInsets.isImeVisible
 
-    // Glass has a dark backdrop, so the navigation bar needs light icons too; classic is
-    // white at the bottom and needs dark ones. The status bar sits on the black masthead
-    // in both, so it stays light.
-    val activity = ctx as? ComponentActivity
-    LaunchedEffect(glass) {
-        activity?.enableEdgeToEdge(
-            statusBarStyle = SystemBarStyle.dark(android.graphics.Color.TRANSPARENT),
-            navigationBarStyle = if (glass) SystemBarStyle.dark(android.graphics.Color.TRANSPARENT)
-            else SystemBarStyle.light(android.graphics.Color.TRANSPARENT, android.graphics.Color.TRANSPARENT),
-        )
-    }
+    CompositionLocalProvider(LocalPalette provides GlassPalette, LocalHaze provides haze) {
+        Box(Modifier.fillMaxSize()) {
+          // Everything the floating glass (tab bar, monitor) blurs as it passes over.
+          Box(Modifier.fillMaxSize().hazeSource(haze)) {
+            Backdrop()
+            Column(Modifier.fillMaxSize()) {
+                Header(if (tab == 0) "BlazeIt" else TABS[tab].first, running, showMonitor) { setMonitor(!showMonitor) }
 
-    CompositionLocalProvider(LocalPalette provides if (glass) GlassPalette else ClassicPalette) {
-    Box(Modifier.fillMaxSize()) {
-    Backdrop()
-    Column(Modifier.fillMaxSize()) {
-        Masthead(running)
-        HazardStripe()
-
-        if (showOem) {
-            OemScreen(oemSteps, bottomInset, onOpen = { intent ->
-                runCatching { openSettings.launch(intent) }.onFailure {
-                    Toast.makeText(ctx, "This device would not open that screen", Toast.LENGTH_SHORT).show()
+                if (showOem) {
+                    OemScreen(oemSteps, tabBarSpace, onOpen = { intent ->
+                        runCatching { openSettings.launch(intent) }.onFailure {
+                            Toast.makeText(ctx, "This phone would not open that screen", Toast.LENGTH_SHORT).show()
+                        }
+                    }, onDone = { showOem = false })
+                    return@Column
                 }
-            }, onDone = { showOem = false })
-            return@Column
-        }
 
-        // The trackpad wants every pixel, so the big status block steps aside for it.
-        if (tab != TAB_CONTROL) {
-            Hero(state, running) {
-                if (running) BridgeService.stop(ctx) else BridgeService.start(ctx)
+                if (tab == TAB_CONTROL) {
+                    ControlPane(
+                        running = running,
+                        onStart = { BridgeService.start(ctx) },
+                        modifier = Modifier.fillMaxSize().padding(bottom = if (imeUp) 0.dp else tabBarSpace - bottomInset),
+                    )
+                    return@Column
+                }
+
+                LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = tabBarSpace + 16.dp)) {
+                    when (tab) {
+                        0 -> homeTab(
+                            state, running, shared, clipStatus, requests, devices, live, vm,
+                            transfers, files, sendStatus,
+                            pickFiles = { pickFiles.launch(arrayOf("*/*")) },
+                        ) {
+                            if (running) BridgeService.stop(ctx) else BridgeService.start(ctx)
+                        }
+                        TAB_PHONES -> phonesTab(
+                            transfers, nearby, paired, peerStatus,
+                            connect = peers::connect,
+                            forget = peers::forget,
+                            sendFilesTo = { sendTarget = it; pickForPhone.launch(arrayOf("*/*")) },
+                            sendTextTo = { p ->
+                                if (shared.isBlank()) {
+                                    Toast.makeText(ctx, "Type something in Clipboard on Home first", Toast.LENGTH_SHORT).show()
+                                } else peers.sendText(p, shared) { ok ->
+                                    Toast.makeText(ctx, if (ok) "Sent to ${p.name}" else "Could not reach ${p.name}", Toast.LENGTH_SHORT).show()
+                                }
+                            },
+                        )
+                        else -> setupTab(
+                            state, vm,
+                            pickFolder = { pickFolder.launch(null) },
+                            requestNotifications = { requestNotifications.launch(android.Manifest.permission.POST_NOTIFICATIONS) },
+                            requestMusic = { requestMusic.launch(musicPermission()) },
+                            openSettings = { openSettings.launch(it) },
+                            showOem = { showOem = true },
+                        )
+                    }
+                }
             }
-        }
+          }
 
-        SegmentedRow(listOf("Home", "Send", "Control", "Setup"), tab) { tab = it }
-
-        if (tab == TAB_CONTROL) {
-            ControlPane(
-                running = running,
-                onStart = { BridgeService.start(ctx) },
-                modifier = Modifier.fillMaxSize(),
-            )
-            return@Column
-        }
-
-        LazyColumn(
-            Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(bottom = bottomInset + 32.dp),
-        ) {
-            when (tab) {
-                0 -> homeTab(state, transfers, shared, clipStatus, requests, devices, live, vm, ctx)
-                1 -> sendTab(files, sendStatus, vm) { pickFiles.launch(arrayOf("*/*")) }
-                else -> setupTab(
-                    state, vm, glass,
-                    pickFolder = { pickFolder.launch(null) },
-                    requestNotifications = {
-                        requestNotifications.launch(android.Manifest.permission.POST_NOTIFICATIONS)
-                    },
-                    requestMusic = { requestMusic.launch(musicPermission()) },
-                    openSettings = { openSettings.launch(it) },
-                    showOem = { showOem = true },
-                )
+            if (!imeUp && !showOem) {
+                GlassTabBar(
+                    TABS, tab,
+                    Modifier.align(Alignment.BottomCenter).padding(bottom = bottomInset + 10.dp),
+                ) { tab = it }
             }
+
+            if (showMonitor) MonitorOverlay(monitor, running) { setMonitor(false) }
         }
-    }
-    }
     }
 }
 
@@ -254,251 +296,245 @@ private fun musicPermission(): String =
 
 // ---------------------------------------------------------------------- chrome
 
+/** Large title, as on iOS, with the monitor switch and a small on/off pill on the right. */
 @Composable
-private fun Masthead(running: Boolean) {
+private fun Header(title: String, running: Boolean, monitorOn: Boolean, toggleMonitor: () -> Unit) {
     Row(
         Modifier
             .fillMaxWidth()
-            .background(Bridge.Bar)
             .windowInsetsPadding(WindowInsets.statusBars)
-            .padding(horizontal = 14.dp, vertical = 12.dp),
+            .padding(start = 20.dp, end = 20.dp, top = 10.dp, bottom = 2.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        val mark = TextStyle(fontSize = 21.sp, fontWeight = FontWeight.Black, letterSpacing = (-0.5).sp)
-        Text("XOO", style = mark, color = Bridge.OnBar)
-        Text("SH", style = mark, color = Bridge.Yellow)
-        Spacer(Modifier.weight(1f))
-        Box(Modifier.size(10.dp).background(if (running) Bridge.Yellow else Bridge.Muted, BlockShape))
+        Text(title, style = LargeTitleStyle, color = Bridge.Text, modifier = Modifier.weight(1f))
+        IconChip(BlazeIcons.Pulse, if (monitorOn) "Hide monitor" else "Show monitor", tint = if (monitorOn) Bridge.Yellow else Bridge.Text, onClick = toggleMonitor)
         Spacer(Modifier.width(8.dp))
-        Text(
-            if (running) "LIVE" else "OFF",
-            style = LabelStyle,
-            color = if (running) Bridge.Yellow else Bridge.Muted,
-        )
+        Row(
+            Modifier.glass(ButtonShape).padding(horizontal = 12.dp, vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Box(Modifier.size(7.dp).clip(CircleShape).background(if (running) Bridge.Good else Bridge.Faint))
+            Spacer(Modifier.width(6.dp))
+            Text(if (running) "On" else "Off", style = LabelStyle, color = Bridge.Text)
+        }
     }
 }
 
 /**
- * The band that answers "what do I do right now", showing exactly one thing at a time in
- * priority order. Showing every state at once is what makes a setup screen read as a form
- * rather than an instruction.
+ * The server, and everything about reaching it, in one card: a real on/off switch, the
+ * address (tap to copy), and the QR code and other addresses folded away until wanted.
  */
 @Composable
-private fun Hero(state: UiState, running: Boolean, onToggle: () -> Unit) {
-    val head = TextStyle(fontSize = 22.sp, fontWeight = FontWeight.Black)
-    Column(Modifier.fillMaxWidth().background(Bridge.HeroBg).padding(horizontal = 14.dp, vertical = 16.dp)) {
-        when {
-            !running -> {
-                Text("XOOSH IS OFF", style = head, color = Bridge.OnYellow)
-                Spacer(Modifier.height(6.dp))
-                Box(
-                    Modifier
-                        .fillMaxWidth()
-                        .background(Bridge.OnYellow, BlockShape)
-                        .clickable(onClick = onToggle)
-                        .padding(vertical = 14.dp),
-                    contentAlignment = Alignment.Center,
-                ) { Text("START", style = LabelStyle, color = Bridge.Yellow) }
-            }
+private fun ServerCard(state: UiState, running: Boolean, onToggle: () -> Unit) {
+    val ctx = LocalContext.current
+    var showQr by remember { mutableStateOf(false) }
+    val url = state.primaryUrl
+    val copy = {
+        if (url != null) {
+            SystemClipboard.write(ctx, url)
+            Toast.makeText(ctx, "Address copied", Toast.LENGTH_SHORT).show()
+        }
+    }
 
-            state.storageMode == Storage.Mode.NO_DESTINATION -> {
-                Text("CHOOSE A FOLDER", style = head, color = Bridge.OnYellow)
-                Spacer(Modifier.height(4.dp))
-                Text("Files from the computer need somewhere to land. Open Setup.", style = BodyStyle, color = Bridge.OnYellowSoft)
-            }
-
-            state.primaryUrl == null -> {
-                Text("NO NETWORK", style = head, color = Bridge.OnYellow)
-                Spacer(Modifier.height(4.dp))
-                Text("Join Wi-Fi, or plug in USB and turn on tethering.", style = BodyStyle, color = Bridge.OnYellowSoft)
-            }
-
-            state.onlyCellular -> {
-                Text("USE THE USB CABLE", style = head, color = Bridge.OnYellow)
-                Spacer(Modifier.height(4.dp))
+    Column(Modifier.fillMaxWidth().padding(top = 12.dp).panel().padding(16.dp)) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Column(Modifier.weight(1f)) {
+                Text(if (running) "BlazeIt is on" else "BlazeIt is off", style = TitleStyle.copy(fontSize = 17.sp), color = Bridge.Text)
                 Text(
-                    "On mobile data your carrier hides this phone behind a shared address, " +
-                        "so nothing can reach it over the network. A cable sidesteps that " +
-                        "entirely. Or turn on this phone's hotspot and join the computer to it -- " +
-                        "on 5 GHz that is the fastest wireless option, and the transfer itself " +
-                        "uses none of your mobile data.",
-                    style = BodyStyle, color = Bridge.OnYellowSoft,
+                    when {
+                        !running -> "Turn on to connect a computer or a phone."
+                        state.storageMode == Storage.Mode.NO_DESTINATION -> "Choose where files go, in Setup."
+                        url == null -> "Join Wi-Fi or turn on the hotspot."
+                        state.onlyCellular -> "Mobile data can't be reached. Use the hotspot or USB."
+                        else -> "Open this on your computer:"
+                    },
+                    style = BodyStyle, color = Bridge.Muted,
                 )
             }
+            Spacer(Modifier.width(12.dp))
+            IosSwitch(running) { onToggle() }
+        }
 
-            else -> {
-                Text("OPEN ON YOUR COMPUTER", style = LabelStyle, color = Bridge.OnYellowSoft)
-                Spacer(Modifier.height(6.dp))
+        if (running && url != null) {
+            Spacer(Modifier.height(12.dp))
+            Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
-                    state.primaryUrl.orEmpty(),
-                    style = TextStyle(fontSize = 21.sp, fontFamily = FontFamily.Monospace, fontWeight = FontWeight.Black),
-                    color = Bridge.OnYellow,
+                    url.removePrefix("http://").removeSuffix("/"),
+                    style = TextStyle(fontSize = 17.sp, fontFamily = FontFamily.Monospace, fontWeight = FontWeight.SemiBold),
+                    color = Bridge.Text,
+                    maxLines = 1, overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f).clickable(onClick = copy),
                 )
-                Spacer(Modifier.height(10.dp))
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(
-                        "A new computer will ask first. You approve it here.",
-                        style = BodyStyle, color = Bridge.OnYellowSoft,
-                        modifier = Modifier.weight(1f),
-                    )
-                    Spacer(Modifier.width(10.dp))
-                    Box(
-                        Modifier
-                            .background(Bridge.OnYellow, BlockShape)
-                            .clickable(onClick = onToggle)
-                            .padding(horizontal = 14.dp, vertical = 9.dp),
-                    ) { Text("STOP", style = LabelStyle, color = Bridge.Yellow) }
-                }
+                Spacer(Modifier.width(8.dp))
+                TextPill(if (showQr) "Hide QR" else "QR") { showQr = !showQr }
+                Spacer(Modifier.width(6.dp))
+                TextPill("Copy", onClick = copy)
             }
-        }
-    }
-}
-
-// ---------------------------------------------------------------------- tab: home
-
-private fun LazyListScope.homeTab(
-    state: UiState,
-    transfers: List<Transfer>,
-    shared: String,
-    clipStatus: String,
-    requests: List<PairRequest>,
-    devices: List<PairedDevice>,
-    live: Map<String, Int>,
-    vm: MainViewModel,
-    ctx: android.content.Context,
-) {
-    // Someone is asking to connect. This goes first and goes yellow: it is the one thing
-    // on screen that is waiting on you.
-    if (requests.isNotEmpty()) {
-        item { SectionBar("Wants to connect") }
-        items(requests, key = { it.id }) { req ->
-            BridgeRow(title = req.name, glyph = "?", meta = req.ip, accent = true) {
-                Spacer(Modifier.height(6.dp))
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text("CODE", style = LabelStyle, color = Bridge.OnYellowSoft)
-                    Spacer(Modifier.width(10.dp))
-                    Text(
-                        req.code,
-                        style = TextStyle(
-                            fontSize = 26.sp, fontFamily = FontFamily.Monospace,
-                            fontWeight = FontWeight.Black, letterSpacing = 5.sp,
-                        ),
-                        color = Bridge.OnYellow,
-                    )
-                }
-                RowNote("Only allow it if the computer shows the same code.", color = Bridge.OnYellow)
-                Spacer(Modifier.height(10.dp))
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Box(
-                        Modifier
-                            .weight(1f)
-                            .background(Bridge.OnYellow, BlockShape)
-                            .clickable { vm.approve(req.id) }
-                            .padding(vertical = 12.dp),
-                        contentAlignment = Alignment.Center,
-                    ) { Text("ALLOW", style = LabelStyle, color = Bridge.Yellow) }
-                    GhostButton("Deny", Modifier.weight(1f), danger = true) { vm.deny(req.id) }
-                }
-            }
-            Spacer(Modifier.height(2.dp))
-        }
-    }
-
-    item {
-        SectionBar("Connected computers") {
-            val n = live.size
-            if (n > 0) Text("$n LIVE", style = LabelStyle, color = Bridge.OnBar)
-        }
-    }
-    if (devices.isEmpty()) {
-        item { Blank("None yet. Open the address above on a computer and it will ask to connect.") }
-    } else {
-        items(devices, key = { it.id }) { d ->
-            val isLive = (live[d.id] ?: 0) > 0
-            BridgeRow(
-                title = d.name,
-                glyph = if (isLive) "●" else "○",
-                meta = if (isLive) "LIVE" else lastSeen(d.lastSeenAt),
-            ) {
-                RowNote(d.lastIp)
-                Spacer(Modifier.height(8.dp))
-                GhostButton("Remove", danger = true) { vm.removeDevice(d.id) }
-            }
-            Spacer(Modifier.height(2.dp))
-        }
-    }
-
-    item { SectionBar("Shared text") }
-    item { ClipboardPanel(shared, clipStatus, vm) }
-
-    item { SectionBar("Connection") }
-    item {
-        Column(Modifier.panel().padding(14.dp)) {
             state.fasterLink?.let { usb ->
-                BridgeRow("USB is plugged in - use it", glyph = "!", accent = true) {
-                    RowNote(usb.url(state.port), color = Bridge.OnYellow)
-                }
-                Spacer(Modifier.height(10.dp))
+                Spacer(Modifier.height(6.dp))
+                Text("USB is plugged in and faster: " + usb.url(state.port), style = BodyStyle, color = Bridge.Yellow)
             }
-
-            val url = state.primaryUrl
-            if (url != null) {
+            if (showQr) {
                 val qr = remember(url) { QrCode.render(url, 520) }
                 if (qr != null) {
+                    Spacer(Modifier.height(14.dp))
                     Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
                         Image(
                             bitmap = qr,
-                            contentDescription = "Pairing QR code",
-                            modifier = Modifier.size(180.dp).background(androidx.compose.ui.graphics.Color.White).padding(6.dp),
+                            contentDescription = "QR code for the address",
+                            modifier = Modifier.size(180.dp).clip(RoundedCornerShape(16.dp)).background(Color.White).padding(8.dp),
                         )
                     }
-                    Spacer(Modifier.height(10.dp))
                 }
-                GhostButton("Copy address") {
-                    SystemClipboard.write(ctx, url)
-                    Toast.makeText(ctx, "Address copied", Toast.LENGTH_SHORT).show()
-                }
-            }
-
-            if (state.addresses.size > 1) {
-                Spacer(Modifier.height(14.dp))
-                Text("OTHER ADDRESSES", style = LabelStyle, color = Bridge.Muted)
                 state.addresses.drop(1).forEach { a ->
-                    Spacer(Modifier.height(6.dp))
-                    Text(
-                        a.kind.label + "   " + a.url(state.port),
-                        style = TextStyle(fontSize = 12.sp, fontFamily = FontFamily.Monospace),
-                        color = Bridge.Muted,
-                    )
-                    // An address that cannot work is worse than no address, because it
-                    // looks exactly as legitimate as one that can.
+                    Spacer(Modifier.height(10.dp))
+                    Text(a.kind.label + "  " + a.url(state.port), style = MonoStyle.copy(fontSize = 13.sp), color = Bridge.Text)
                     Text(
                         when (a.reach) {
                             Reach.LAN_ONLY -> "same Wi-Fi or cable only"
                             Reach.CARRIER_NAT -> "unreachable - carrier NAT"
                             Reach.PUBLIC -> "public address"
                         },
-                        style = BodyStyle,
-                        color = if (a.reach == Reach.CARRIER_NAT) Bridge.Danger else Bridge.Muted,
+                        style = BodyStyle.copy(fontSize = 12.sp), color = Bridge.Muted,
                     )
+                }
+            }
+        }
+    }
+}
+
+/** A small, quiet text button. */
+@Composable
+private fun TextPill(label: String, onClick: () -> Unit) {
+    Text(
+        label,
+        style = LabelStyle,
+        color = Bridge.Text,
+        modifier = Modifier
+            .glass(ButtonShape)
+            .clickable(onClick = onClick)
+            .padding(horizontal = 12.dp, vertical = 7.dp),
+    )
+}
+
+// ---------------------------------------------------------------------- tab: home
+
+private fun LazyListScope.homeTab(
+    state: UiState,
+    running: Boolean,
+    shared: String,
+    clipStatus: String,
+    requests: List<PairRequest>,
+    devices: List<PairedDevice>,
+    live: Map<String, Int>,
+    vm: MainViewModel,
+    transfers: List<Transfer>,
+    files: List<FileEntry>,
+    sendStatus: String,
+    pickFiles: () -> Unit,
+    onToggle: () -> Unit,
+) {
+    item { ServerCard(state, running, onToggle) }
+
+    // Someone is asking to connect. This goes in the accent colour: it is the one thing on
+    // screen that is waiting on you.
+    if (requests.isNotEmpty()) {
+        item { SectionBar("Wants to connect") }
+        items(requests, key = { it.id }) { req ->
+            BridgeRow(title = req.name, glyph = "?", meta = req.ip, accent = true) {
+                Spacer(Modifier.height(8.dp))
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text("Code", style = LabelStyle, color = Bridge.OnYellowSoft)
+                    Spacer(Modifier.width(10.dp))
+                    Text(
+                        req.code,
+                        style = TextStyle(fontSize = 28.sp, fontFamily = FontFamily.Monospace, fontWeight = FontWeight.Bold, letterSpacing = 5.sp),
+                        color = Bridge.OnYellow,
+                    )
+                }
+                RowNote("Only allow it if the other screen shows the same code.", color = Bridge.OnYellowSoft)
+                Spacer(Modifier.height(12.dp))
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Box(
+                        Modifier.weight(1f).clip(ButtonShape).background(Bridge.OnYellow).clickable { vm.approve(req.id) }.padding(vertical = 12.dp),
+                        contentAlignment = Alignment.Center,
+                    ) { Text("Allow", style = TitleStyle.copy(fontSize = 15.sp), color = Bridge.Yellow) }
+                    Box(
+                        Modifier.weight(1f).clip(ButtonShape).background(Color(0x26000000)).clickable { vm.deny(req.id) }.padding(vertical = 12.dp),
+                        contentAlignment = Alignment.Center,
+                    ) { Text("Deny", style = TitleStyle.copy(fontSize = 15.sp), color = Bridge.OnYellow) }
+                }
+            }
+        }
+    }
+
+    item { SectionBar("Clipboard") }
+    item { ClipboardPanel(shared, clipStatus, vm) }
+
+    transfersSection(transfers)
+
+    item { SectionBar("Files") }
+    item {
+        Column(Modifier.fillMaxWidth().panel().padding(14.dp)) {
+            BridgeButton("Send files to the computer", Modifier.fillMaxWidth(), onClick = pickFiles)
+            Spacer(Modifier.height(8.dp))
+            Text(
+                sendStatus.ifEmpty { "Or share into BlazeIt from any app. Files from the computer land here too." },
+                style = BodyStyle, color = if (sendStatus.isEmpty()) Bridge.Muted else Bridge.Good,
+                modifier = Modifier.padding(horizontal = 4.dp),
+            )
+        }
+    }
+    if (files.isNotEmpty()) {
+        item { Spacer(Modifier.height(10.dp)) }
+        item {
+            GroupCard {
+                files.forEachIndexed { i, f ->
+                    SettingRow(
+                        f.name,
+                        formatBytes(f.size) + " · " + (if (f.origin == "PHONE") "sent from this phone" else "received") +
+                            (if (!f.owned) " · original" else ""),
+                        first = i == 0,
+                    ) {
+                        IconChip(Icons.Rounded.Close, "Delete ${f.name}", tint = Bridge.Danger) { vm.removeFile(f.id) }
+                    }
                 }
             }
         }
     }
 
     item {
-        SectionBar("Transfers") {
-            if (transfers.isNotEmpty()) {
-                Text("CLEAR", style = LabelStyle, color = Bridge.OnBar,
-                    modifier = Modifier.clickable { Transfers.clearFinished() })
+        SectionBar("Connected") {
+            if (live.isNotEmpty()) Text("${live.size} live", style = LabelStyle, color = Bridge.Good)
+        }
+    }
+    if (devices.isEmpty()) {
+        item { Blank("Nothing yet. Open the address above on a computer, or connect a phone from Phones.") }
+    } else {
+        item {
+            GroupCard {
+                devices.forEachIndexed { i, d ->
+                    val isLive = (live[d.id] ?: 0) > 0
+                    SettingRow(d.name, (if (isLive) "Live · " else lastSeen(d.lastSeenAt) + " · ") + d.lastIp, first = i == 0) {
+                        Box(Modifier.size(8.dp).clip(CircleShape).background(if (isLive) Bridge.Good else Bridge.Faint))
+                        Spacer(Modifier.width(12.dp))
+                        IconChip(Icons.Rounded.Close, "Remove ${d.name}", tint = Bridge.Muted) { vm.removeDevice(d.id) }
+                    }
+                }
             }
         }
     }
-    if (transfers.isEmpty()) {
-        item { Blank("Nothing moving right now.") }
-    } else {
-        items(transfers, key = { it.id }) { TransferRow(it) }
+}
+
+/** Anything moving right now, either way, with progress. */
+private fun LazyListScope.transfersSection(transfers: List<Transfer>) {
+    if (transfers.isEmpty()) return
+    item {
+        SectionBar("Moving") {
+            Text("Clear", style = LabelStyle, color = Bridge.Yellow, modifier = Modifier.clickable { Transfers.clearFinished() })
+        }
     }
+    items(transfers, key = { "t-" + it.id }) { TransferRow(it) }
 }
 
 @Composable
@@ -506,26 +542,129 @@ private fun ClipboardPanel(shared: String, status: String, vm: MainViewModel) {
     var draft by remember { mutableStateOf(shared) }
     LaunchedEffect(shared) { if (shared != draft) draft = shared }
 
-    Column(Modifier.panel().padding(14.dp)) {
+    Column(Modifier.fillMaxWidth().panel().padding(14.dp)) {
         BridgeTextField(
             value = draft,
             onValueChange = { draft = it },
-            placeholder = "Type here, or tap PASTE to grab what you last copied.",
-            minHeight = 104.dp,
+            placeholder = "Type here, or tap Paste to grab what you last copied.",
+            minHeight = 96.dp,
         )
         Spacer(Modifier.height(10.dp))
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            BridgeButton("Send to PC", Modifier.weight(1f)) { vm.sendClipboard(draft) }
-            GhostButton("Paste", Modifier.weight(1f)) { vm.pasteFromDevice() }
-        }
+        BridgeButton("Send to computer", Modifier.fillMaxWidth()) { vm.sendClipboard(draft) }
         Spacer(Modifier.height(8.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            GhostButton("Copy to phone", Modifier.weight(1f)) { vm.copyToDevice() }
+            GhostButton("Paste", Modifier.weight(1f)) { vm.pasteFromDevice() }
+            GhostButton("Copy", Modifier.weight(1f)) { vm.copyToDevice() }
             GhostButton("Clear", Modifier.weight(1f), danger = true) { vm.clearClipboard(); draft = "" }
         }
         if (status.isNotEmpty()) {
             Spacer(Modifier.height(8.dp))
             Text(status, style = LabelStyle, color = Bridge.Good)
+        }
+    }
+}
+
+// ---------------------------------------------------------------------- tab: phones
+
+private fun LazyListScope.phonesTab(
+    transfers: List<Transfer>,
+    nearby: List<NearbyPhone>,
+    paired: List<Peer>,
+    peerStatus: Map<String, PeerStatus>,
+    connect: (NearbyPhone) -> Unit,
+    forget: (Peer) -> Unit,
+    sendFilesTo: (Peer) -> Unit,
+    sendTextTo: (Peer) -> Unit,
+) {
+    item { Spacer(Modifier.height(4.dp)) }
+    item { SectionBar("Phones with BlazeIt") }
+    val pairedNames = paired.map { it.name }.toSet()
+    val unpaired = nearby.filter { it.name !in pairedNames }
+    if (paired.isEmpty() && unpaired.isEmpty()) {
+        item { Blank("Looking for phones running BlazeIt on this network. Both need BlazeIt on, on the same Wi-Fi or one phone's hotspot.") }
+    } else {
+        item {
+            GroupCard {
+                var first = true
+                paired.forEach { p ->
+                    val here = nearby.any { it.name == p.name }
+                    SettingRow(p.name, if (here) "Connected · nearby" else "Connected · not seen right now", first = first) {
+                        IconChip(Icons.Rounded.Share, "Send text to ${p.name}") { sendTextTo(p) }
+                        Spacer(Modifier.width(8.dp))
+                        TextPill("Send files") { sendFilesTo(p) }
+                        Spacer(Modifier.width(8.dp))
+                        IconChip(Icons.Rounded.Close, "Forget ${p.name}", tint = Bridge.Muted) { forget(p) }
+                    }
+                    first = false
+                }
+                unpaired.forEach { n ->
+                    val s = peerStatus[n.host]
+                    SettingRow(
+                        n.name,
+                        when (s) {
+                            is PeerStatus.Waiting -> "Allow it on ${n.name}. Code ${s.code}"
+                            is PeerStatus.Failed -> s.message
+                            null -> n.host
+                        },
+                        first = first,
+                    ) {
+                        if (s !is PeerStatus.Waiting) TextPill("Connect") { connect(n) }
+                    }
+                    first = false
+                }
+            }
+        }
+    }
+
+    // Attempts made by address are not in the discovered list, so their progress shows here.
+    val listed = unpaired.map { it.host }.toSet()
+    peerStatus.filterKeys { it !in listed }.forEach { (host, st) ->
+        item {
+            Text(
+                when (st) {
+                    is PeerStatus.Waiting -> "$host: allow it on the other phone. Code ${st.code}"
+                    is PeerStatus.Failed -> "$host: ${st.message}"
+                },
+                style = BodyStyle,
+                color = if (st is PeerStatus.Failed) Bridge.Danger else Bridge.Yellow,
+                modifier = Modifier.padding(horizontal = 32.dp, vertical = 4.dp),
+            )
+        }
+    }
+    item { ConnectByAddress(connect) }
+
+    transfersSection(transfers)
+
+}
+
+/**
+ * For networks where phones cannot see each other (some routers block discovery): type the
+ * address the other phone shows on its Home screen.
+ */
+@Composable
+private fun ConnectByAddress(connect: (NearbyPhone) -> Unit) {
+    var open by remember { mutableStateOf(false) }
+    var text by remember { mutableStateOf("") }
+    Column(Modifier.fillMaxWidth().padding(top = 8.dp).padding(horizontal = 16.dp)) {
+        if (!open) {
+            Text(
+                "Not listed? Connect by address",
+                style = LabelStyle, color = Bridge.Yellow,
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp).clickable { open = true },
+            )
+            return@Column
+        }
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            BridgeTextField(text, { text = it }, Modifier.weight(1f), placeholder = "192.168.1.20", minHeight = 44.dp, mono = true)
+            Spacer(Modifier.width(8.dp))
+            TextPill("Connect") {
+                val m = Regex("""(\d{1,3}(?:\.\d{1,3}){3}|localhost)(?::(\d+))?""").find(text.trim())
+                if (m != null) {
+                    val host = m.groupValues[1]
+                    connect(NearbyPhone(host, host, m.groupValues[2].toIntOrNull() ?: 8787))
+                    open = false; text = ""
+                }
+            }
         }
     }
 }
@@ -537,78 +676,23 @@ private fun TransferRow(t: Transfer) {
         glyph = if (t.direction == Direction.INBOUND) "↓" else "↑",
         meta = when (t.state) {
             TransferState.ACTIVE -> formatRate(t.bytesPerSec)
-            TransferState.STALLED -> "PAUSED"
-            TransferState.DONE -> "DONE"
-            TransferState.FAILED -> "FAILED"
+            TransferState.STALLED -> "Paused"
+            TransferState.DONE -> "Done"
+            TransferState.FAILED -> "Failed"
         },
     ) {
-        Spacer(Modifier.height(8.dp))
+        Spacer(Modifier.height(10.dp))
         BlockProgress(t.fraction)
         Spacer(Modifier.height(6.dp))
         Text(
             formatBytes(t.transferred) + " of " + formatBytes(t.total),
-            style = BodyStyle,
+            style = BodyStyle.copy(fontSize = 12.sp),
             color = when (t.state) {
                 TransferState.FAILED -> Bridge.Danger
                 TransferState.DONE -> Bridge.Good
                 else -> Bridge.Muted
             },
         )
-    }
-    Spacer(Modifier.height(2.dp))
-}
-
-// ---------------------------------------------------------------------- tab: send
-
-private fun LazyListScope.sendTab(
-    files: List<FileEntry>,
-    status: String,
-    vm: MainViewModel,
-    pickFiles: () -> Unit,
-) {
-    item { SectionBar("Send to the computer") }
-    item {
-        Column(Modifier.panel().padding(14.dp)) {
-            BridgeButton("Choose files", Modifier.fillMaxWidth(), onClick = pickFiles)
-            Spacer(Modifier.height(8.dp))
-            Text(
-                "Or share into Xoosh from any app - Gallery, Files, a browser. " +
-                    "Chosen files are offered where they already are; shared files are " +
-                    "copied first, because a share only grants access for a moment.",
-                style = BodyStyle, color = Bridge.Muted,
-            )
-            if (status.isNotEmpty()) {
-                Spacer(Modifier.height(8.dp))
-                Text(status, style = LabelStyle, color = Bridge.Good)
-            }
-        }
-    }
-
-    item { SectionBar("Available on the computer") }
-    if (files.isEmpty()) {
-        item { Blank("Nothing offered yet.") }
-    } else {
-        items(files, key = { it.id }) { f ->
-            BridgeRow(
-                title = f.name,
-                glyph = when {
-                    f.mime.startsWith("image/") -> "▣"
-                    f.mime.startsWith("video/") -> "▶"
-                    else -> "▬"
-                },
-                meta = formatBytes(f.size),
-            ) {
-                RowNote(
-                    (if (f.origin == "PHONE") "from this phone" else "from the computer") +
-                        (if (!f.owned) "  -  original file, not a copy" else "")
-                )
-                Spacer(Modifier.height(8.dp))
-                GhostButton(if (f.owned) "Delete" else "Remove from list", danger = true) {
-                    vm.removeFile(f.id)
-                }
-            }
-            Spacer(Modifier.height(2.dp))
-        }
     }
 }
 
@@ -617,228 +701,106 @@ private fun LazyListScope.sendTab(
 private fun LazyListScope.setupTab(
     state: UiState,
     vm: MainViewModel,
-    glass: Boolean,
     pickFolder: () -> Unit,
     requestNotifications: () -> Unit,
     requestMusic: () -> Unit,
     openSettings: (Intent) -> Unit,
     showOem: () -> Unit,
 ) {
-    item { SectionBar("Appearance") }
+    item { SectionBar("Receiving") }
     item {
-        Column(Modifier.panel().padding(14.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Column(Modifier.weight(1f)) {
-                    Text("Glass", style = TitleStyle, color = Bridge.Text)
-                    Text(
-                        "Frosted, see-through panels on a dark glow. Also changes the page " +
-                            "on every connected computer.",
-                        style = BodyStyle, color = Bridge.Muted,
-                    )
-                }
-                Spacer(Modifier.width(10.dp))
-                Toggle(glass) { vm.setGlass(it) }
-            }
-        }
-    }
-
-    item { SectionBar("Music") }
-    item {
-        Column(Modifier.panel().padding(14.dp)) {
-            if (state.musicGranted) {
-                Text(
-                    if (state.musicTracks > 0) "${state.musicTracks} tracks ready to stream"
-                    else "No music found on this phone",
-                    style = TitleStyle, color = Bridge.Text,
-                )
-                Spacer(Modifier.height(4.dp))
-                Text(
-                    "Open the Music tab on your computer. Songs play straight from the phone -- " +
-                        "nothing is copied, and the next tracks are loaded ahead so skipping is instant.",
-                    style = BodyStyle, color = Bridge.Muted,
-                )
-            } else {
-                Text("Let the computer play your music", style = TitleStyle, color = Bridge.Text)
-                Spacer(Modifier.height(4.dp))
-                Text(
-                    "Xoosh needs permission to read your music library. It only reads audio -- " +
-                        "not photos, not documents, not the rest of your storage.",
-                    style = BodyStyle, color = Bridge.Muted,
-                )
-                Spacer(Modifier.height(10.dp))
-                BridgeButton("Allow music access", Modifier.fillMaxWidth(), onClick = requestMusic)
-            }
-        }
-    }
-
-    item { SectionBar("Checklist") }
-    item {
-        Column(Modifier.panel()) {
-            CheckRow(state.storageMode != Storage.Mode.NO_DESTINATION, "Destination folder chosen")
-            CheckRow(state.notificationsGranted, "Notifications allowed")
-            CheckRow(state.batteryExempt, "Battery optimisation off")
-        }
-    }
-
-    item { SectionBar("Destination folder") }
-    item {
-        Column(Modifier.panel().padding(14.dp)) {
-            Text(
-                state.destination ?: "Not chosen yet",
-                style = TitleStyle,
-                color = if (state.destination == null) Bridge.Danger else Bridge.Text,
-            )
-            Text(
-                when (state.storageMode) {
-                    Storage.Mode.DIRECT_SEEK -> "Fast path" +
-                        (if (state.freeSpace > 0) "  -  " + formatBytes(state.freeSpace) + " free" else "")
-                    Storage.Mode.STAGED_COPY -> "Slow path - this folder needs a copy at the end. " +
-                        "A folder on internal storage usually avoids it."
-                    Storage.Mode.NO_DESTINATION -> "Pick a folder to receive files."
+        GroupCard {
+            SettingRow(
+                "Save files to",
+                (state.destination ?: "Not chosen yet") + when (state.storageMode) {
+                    Storage.Mode.DIRECT_SEEK -> if (state.freeSpace > 0) " · " + formatBytes(state.freeSpace) + " free" else ""
+                    Storage.Mode.STAGED_COPY -> " · slow path, copies at the end"
+                    Storage.Mode.NO_DESTINATION -> ""
                 },
-                style = BodyStyle,
-                color = if (state.storageMode == Storage.Mode.STAGED_COPY) Bridge.Danger else Bridge.Muted,
-            )
-            Spacer(Modifier.height(10.dp))
-            BridgeButton(if (state.destination == null) "Choose folder" else "Change folder", onClick = pickFolder)
-        }
-    }
-
-    item { SectionBar("Work offline") }
-    item {
-        Column(Modifier.panel().padding(14.dp)) {
-            if (state.hotspotActive) {
-                Text("Hotspot is on", style = TitleStyle, color = Bridge.Good)
-                Spacer(Modifier.height(4.dp))
-                Text(
-                    "Join the computer to this phone's hotspot, then open the Hotspot " +
-                        "address shown on the Home tab.",
-                    style = BodyStyle, color = Bridge.Muted,
-                )
-            } else {
-                Text("Turn the phone into the network", style = TitleStyle, color = Bridge.Text)
-                Spacer(Modifier.height(4.dp))
-                Text(
-                    "The hotspot is a real Wi-Fi access point. It needs no SIM, no Wi-Fi and " +
-                        "no internet -- switch it on, join the computer to it, and transfers " +
-                        "run entirely offline. Choose the 5 GHz band for several times the " +
-                        "speed of 2.4 GHz.",
-                    style = BodyStyle, color = Bridge.Muted,
-                )
-            }
-            Spacer(Modifier.height(10.dp))
-            BridgeButton("Open hotspot settings", Modifier.fillMaxWidth()) {
-                val intent = vm.tetherSettingsIntent()
-                if (intent != null) openSettings(intent)
-            }
-        }
-    }
-
-    item { SectionBar("Staying alive") }
-    item {
-        Column(Modifier.panel().padding(14.dp)) {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU && !state.notificationsGranted) {
-                BridgeButton("Allow notifications", Modifier.fillMaxWidth(), onClick = requestNotifications)
-                Spacer(Modifier.height(10.dp))
-            }
-            if (!state.batteryExempt) {
-                BridgeButton("Turn off battery optimisation", Modifier.fillMaxWidth()) {
-                    val intent = vm.batteryOptimizationIntent()
-                    if (intent != null) openSettings(intent) else showOem()
+                first = true,
+                onClick = pickFolder,
+            ) { Text("Change", style = LabelStyle, color = Bridge.Yellow) }
+            SettingRow("Largest file accepted") {}
+            Box(Modifier.padding(start = 16.dp, end = 16.dp, bottom = 12.dp)) {
+                SegmentedRow(listOf("4 GB", "12 GB", "32 GB", "64 GB"), listOf(4L, 12L, 32L, 64L).indexOf(state.maxUploadSize / (1024L * 1024 * 1024))) {
+                    vm.setMaxUploadSize(listOf(4L, 12L, 32L, 64L)[it] * 1024 * 1024 * 1024)
                 }
-                Spacer(Modifier.height(10.dp))
             }
-            GhostButton("Manufacturer settings", Modifier.fillMaxWidth(), onClick = showOem)
-            Spacer(Modifier.height(8.dp))
-            Text(
-                "Many phones run a second process killer above Android's own. A long " +
-                    "transfer is exactly what it ends.",
-                style = BodyStyle, color = Bridge.Muted,
-            )
+            SettingRow("Always stage in app storage", "Slower but always safe. Only if files arrive damaged.") {
+                IosSwitch(state.forceStagedCopy) { vm.setForceStagedCopy(it) }
+            }
         }
     }
 
     item { SectionBar("Speed") }
     item {
-        Column(Modifier.panel().padding(14.dp)) {
-            Text("Parallel connections", style = TitleStyle, color = Bridge.Text)
-            Spacer(Modifier.height(8.dp))
-            Chooser(listOf(1, 2, 4, 8), state.uploadStreams, { "$it" }) { vm.setUploadStreams(it) }
-
-            Spacer(Modifier.height(16.dp))
-            Text("Largest upload accepted", style = TitleStyle, color = Bridge.Text)
-            Spacer(Modifier.height(8.dp))
-            Chooser(
-                listOf(4L, 12L, 32L, 64L),
-                state.maxUploadSize / (1024L * 1024 * 1024),
-                { it.toString() + " GB" },
-            ) { vm.setMaxUploadSize(it * 1024 * 1024 * 1024) }
-
-            Spacer(Modifier.height(16.dp))
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Column(Modifier.weight(1f)) {
-                    Text("Always stage in app storage", style = TitleStyle, color = Bridge.Text)
-                    Text("Slower but always safe. Only if files arrive corrupted.", style = BodyStyle, color = Bridge.Muted)
+        GroupCard {
+            SettingRow("Connections per file", "More connections keep Wi-Fi busy; 4 suits most links.", first = true) {}
+            Box(Modifier.padding(start = 16.dp, end = 16.dp, bottom = 12.dp)) {
+                SegmentedRow(listOf("1", "2", "4", "8"), listOf(1, 2, 4, 8).indexOf(state.uploadStreams)) {
+                    vm.setUploadStreams(listOf(1, 2, 4, 8)[it])
                 }
-                Spacer(Modifier.width(10.dp))
-                Toggle(state.forceStagedCopy) { vm.setForceStagedCopy(it) }
+            }
+            SettingRow(
+                if (state.hotspotActive) "Hotspot is on" else "Work offline with the hotspot",
+                if (state.hotspotActive) "Join the computer to it for the fastest link."
+                else "A direct link, no internet needed, and faster than going through a router.",
+                onClick = { vm.tetherSettingsIntent()?.let(openSettings) },
+            ) { Text("Open", style = LabelStyle, color = Bridge.Yellow) }
+        }
+    }
+
+    item { SectionBar("Music") }
+    item {
+        GroupCard {
+            if (state.musicGranted) {
+                SettingRow(
+                    if (state.musicTracks > 0) "${state.musicTracks} songs ready to stream" else "No music found",
+                    "Play them in the Music tab on your computer.",
+                    first = true,
+                ) {}
+            } else {
+                SettingRow("Allow music access", "Audio only - not photos or other files.", first = true, onClick = requestMusic) {
+                    Text("Allow", style = LabelStyle, color = Bridge.Yellow)
+                }
+            }
+        }
+    }
+
+    item { SectionBar("Keep running") }
+    item {
+        GroupCard {
+            SettingRow(
+                "Notifications", if (state.notificationsGranted) "Allowed" else "Needed to stay running",
+                first = true,
+                onClick = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU && !state.notificationsGranted) requestNotifications else null,
+            ) { Check(state.notificationsGranted) }
+            SettingRow(
+                "Battery optimisation", if (state.batteryExempt) "Off - good" else "Tap to turn off",
+                onClick = if (!state.batteryExempt) ({ vm.batteryOptimizationIntent()?.let(openSettings) ?: showOem() }) else null,
+            ) { Check(state.batteryExempt) }
+            SettingRow("Manufacturer settings", "Some phones stop apps on their own. Fix it here.", onClick = showOem) {
+                Text("Open", style = LabelStyle, color = Bridge.Yellow)
             }
         }
     }
 
     item { SectionBar("Pairing") }
     item {
-        Column(Modifier.panel().padding(14.dp)) {
-            GhostButton("Unpair all browsers", danger = true) { vm.unpairAll() }
-            Spacer(Modifier.height(8.dp))
-            Text("Every computer will have to ask again, and you will have to allow it again.", style = BodyStyle, color = Bridge.Muted)
+        GroupCard {
+            SettingRow("Unpair everything", "Every computer and phone will have to ask again.", first = true, titleColor = Bridge.Danger, onClick = { vm.unpairAll() }) {}
         }
     }
 }
 
 @Composable
-private fun <T> Chooser(options: List<T>, selected: T, label: (T) -> String, onPick: (T) -> Unit) {
-    Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-        options.forEach { opt ->
-            Box(
-                Modifier
-                    .weight(1f)
-                    .background(if (opt == selected) Bridge.Yellow else Bridge.RowBg, BlockShape)
-                    .clickable { onPick(opt) }
-                    .padding(vertical = 11.dp),
-                contentAlignment = Alignment.Center,
-            ) { Text(label(opt), style = LabelStyle, color = if (opt == selected) Bridge.OnYellow else Bridge.Text) }
-        }
-    }
-}
-
-@Composable
-private fun CheckRow(ok: Boolean, title: String) {
-    BridgeRow(title = title, glyph = if (ok) "✓" else "!", accent = !ok)
-    Spacer(Modifier.height(2.dp))
-}
-
-@Composable
-private fun Toggle(on: Boolean, onChange: (Boolean) -> Unit) {
-    Box(
-        Modifier
-            .width(56.dp)
-            .height(30.dp)
-            .background(if (on) Bridge.Yellow else Bridge.Chip, BlockShape)
-            .clickable { onChange(!on) }
-            .padding(3.dp),
-        contentAlignment = if (on) Alignment.CenterEnd else Alignment.CenterStart,
-    ) { Box(Modifier.size(24.dp).background(if (on) Bridge.OnYellow else Bridge.Text, BlockShape)) }
+private fun Check(ok: Boolean) {
+    Text(if (ok) "✓" else "!", style = TitleStyle, color = if (ok) Bridge.Good else Bridge.Yellow)
 }
 
 @Composable
 private fun Blank(text: String) {
-    Text(
-        text,
-        style = BodyStyle,
-        color = Bridge.Muted,
-        modifier = Modifier.fillMaxWidth().panel().padding(14.dp),
-    )
+    Text(text, style = BodyStyle, color = Bridge.Muted, modifier = Modifier.fillMaxWidth().panel().padding(16.dp))
 }
 
 // ---------------------------------------------------------------------- oem screen
@@ -846,31 +808,28 @@ private fun Blank(text: String) {
 @Composable
 private fun OemScreen(
     steps: List<OemBatterySetup.Step>,
-    bottomInset: Dp,
+    bottomSpace: Dp,
     onOpen: (Intent) -> Unit,
     onDone: () -> Unit,
 ) {
-    LazyColumn(
-        Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(bottom = bottomInset + 32.dp),
-    ) {
-        item { SectionBar("Keep Xoosh alive") }
+    LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = bottomSpace)) {
+        item { SectionBar("Keep BlazeIt running") }
         item {
             Blank(
                 "Only the screens this phone actually has are listed. Each one belongs to " +
-                    "the manufacturer rather than to Android, so the wording differs by device."
+                    "the manufacturer rather than to Android, so the wording differs by phone."
             )
         }
+        item { Spacer(Modifier.height(8.dp)) }
         items(steps) { step ->
             BridgeRow(step.title, glyph = "›") {
                 RowNote(step.detail)
                 Spacer(Modifier.height(10.dp))
                 BridgeButton("Open") { onOpen(step.intent) }
             }
-            Spacer(Modifier.height(2.dp))
         }
         item {
-            Box(Modifier.fillMaxWidth().padding(14.dp)) {
+            Box(Modifier.fillMaxWidth().padding(16.dp)) {
                 BridgeButton("Done", Modifier.fillMaxWidth(), onClick = onDone)
             }
         }
@@ -887,6 +846,3 @@ private fun lastSeen(at: Long): String {
         else -> "${s / 86_400} d ago"
     }
 }
-
-/** Index of the trackpad tab in the main tab row. */
-private const val TAB_CONTROL = 2

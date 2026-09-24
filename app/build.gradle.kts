@@ -88,6 +88,8 @@ dependencies {
     implementation(libs.compose.ui.graphics)
     implementation(libs.compose.ui.tooling.preview)
     implementation(libs.compose.material3)
+    // Real backdrop blur behind floating glass (tab bar, monitor overlay), as on iOS.
+    implementation("dev.chrisbanes.haze:haze:1.6.10")
     debugImplementation(libs.compose.ui.tooling)
 
     implementation(libs.kotlinx.coroutines.android)

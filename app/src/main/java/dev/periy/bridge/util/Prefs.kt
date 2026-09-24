@@ -51,6 +51,11 @@ class Prefs(ctx: Context) {
         get() = sp.getBoolean(K_GLASS, false)
         set(v) = sp.edit { putBoolean(K_GLASS, v) }
 
+    /** Whether the live monitor floats over the app's screens. */
+    var showMonitor: Boolean
+        get() = sp.getBoolean(K_MONITOR, false)
+        set(v) = sp.edit { putBoolean(K_MONITOR, v) }
+
     var uploadStreams: Int
         get() = sp.getInt(K_STREAMS, 4).coerceIn(1, 8)
         set(v) = sp.edit { putInt(K_STREAMS, v.coerceIn(1, 8)) }
@@ -79,5 +84,6 @@ class Prefs(ctx: Context) {
         const val K_FORCE_STAGE = "force_staged_copy"
         const val K_STREAMS = "upload_streams"
         const val K_GLASS = "glass"
+        const val K_MONITOR = "show_monitor"
     }
 }
