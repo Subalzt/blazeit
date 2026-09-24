@@ -11,11 +11,17 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicLong
+
+/** What bytes are for, so the monitor can show who is using the channel. */
+enum class Lane { FILES, MUSIC, TEST }
 
 /** One second of traffic. */
 @Serializable
@@ -66,6 +72,14 @@ data class MonitorSnapshot(
     val laptop: LaptopLink? = null,
     /** Round trip to a computer, from whichever measured it last (helper or browser); -1 if none lately. */
     val rttMs: Int = -1,
+    /** Both directions together, per use. */
+    val filesBps: Long = 0,
+    val musicBps: Long = 0,
+    val testBps: Long = 0,
+    /** What the link can carry, in bytes per second; 0 when nothing is known yet. */
+    val capacityBps: Long = 0,
+    /** "link" when estimated from the Wi-Fi link rate, "measured" when a real peak beat that. */
+    val capacityFrom: String = "",
 )
 
 /**
@@ -80,6 +94,7 @@ object Monitor {
     private val bytesIn = AtomicLong()
     private val bytesOut = AtomicLong()
     private val inflight = AtomicInteger()
+    private val lanes = Array(Lane.entries.size) { AtomicLong() }
 
     private val _snapshot = MutableStateFlow(MonitorSnapshot())
     val snapshot: StateFlow<MonitorSnapshot> = _snapshot.asStateFlow()
@@ -88,8 +103,30 @@ object Monitor {
     private var job: Job? = null
     private var startedAt = 0L
 
-    fun addIn(n: Int) { if (n > 0) bytesIn.addAndGet(n.toLong()) }
-    fun addOut(n: Int) { if (n > 0) bytesOut.addAndGet(n.toLong()) }
+    fun addIn(n: Int, lane: Lane = Lane.FILES) {
+        if (n > 0) { bytesIn.addAndGet(n.toLong()); lanes[lane.ordinal].addAndGet(n.toLong()) }
+    }
+    fun addOut(n: Int, lane: Lane = Lane.FILES) {
+        if (n > 0) { bytesOut.addAndGet(n.toLong()); lanes[lane.ordinal].addAndGet(n.toLong()) }
+    }
+
+    // ---- who is watching
+    //
+    // Sampling wakes the CPU every second and asks the Wi-Fi service for the link, so it
+    // only runs while someone looks: the phone's monitor on screen, or a page (or the
+    // helper) that asked within the last few seconds. The byte counts above are plain
+    // atomic adds and cost nothing when nobody reads them.
+    private val uiWatchers = MutableStateFlow(0)
+    private val webSeenAt = MutableStateFlow(0L)
+
+    /** The phone's monitor appeared (true) or went away (false). */
+    fun watchUi(on: Boolean) { uiWatchers.update { (it + if (on) 1 else -1).coerceAtLeast(0) } }
+
+    /** A page or the helper asked for the monitor just now. */
+    fun touchWeb() { webSeenAt.value = System.currentTimeMillis() }
+
+    fun watched(now: Long = System.currentTimeMillis()): Boolean =
+        uiWatchers.value > 0 || now - webSeenAt.value < WATCH_GRACE_MS
     fun requestStarted() { inflight.incrementAndGet() }
     fun requestEnded() { inflight.decrementAndGet() }
 
@@ -117,7 +154,18 @@ object Monitor {
             var lastGapAt = 0L
             var peakIn = 0L
             var peakOut = 0L
+            var peakTotal = 0L
+            val lastLane = LongArray(Lane.entries.size) { lanes[it].get() }
             while (isActive) {
+                if (!watched()) {
+                    // Nobody is looking: sleep until someone is, then start the counts afresh
+                    // so the first second back does not show everything since as one burst.
+                    combine(uiWatchers, webSeenAt) { u, w -> u > 0 || System.currentTimeMillis() - w < WATCH_GRACE_MS }
+                        .first { it }
+                    lastIn = bytesIn.get(); lastOut = bytesOut.get(); lastAt = System.currentTimeMillis()
+                    for (k in lastLane.indices) lastLane[k] = lanes[k].get()
+                    samples.clear()
+                }
                 delay(1000)
                 val now = System.currentTimeMillis()
                 val i = bytesIn.get(); val o = bytesOut.get()
@@ -126,6 +174,10 @@ object Monitor {
                 val dt = (now - lastAt).coerceAtLeast(1)
                 val din = (i - lastIn) * 1000 / dt; val dout = (o - lastOut) * 1000 / dt
                 lastIn = i; lastOut = o; lastAt = now
+                val laneBps = LongArray(lastLane.size) { k ->
+                    val v = lanes[k].get(); val d = (v - lastLane[k]) * 1000 / dt; lastLane[k] = v; d
+                }
+                peakTotal = maxOf(peakTotal, din + dout)
                 samples.addLast(MonitorSample(now, din, dout))
                 while (samples.size > WINDOW) samples.removeFirst()
                 peakIn = maxOf(peakIn, din); peakOut = maxOf(peakOut, dout)
@@ -135,6 +187,9 @@ object Monitor {
 
                 // A laptop report older than ten seconds means the helper has gone quiet.
                 val lap = laptop?.takeIf { now - it.at < 10_000 }
+                val phone = phoneLink(app)
+                val fromLink = linkCapacity(phone, lap)
+                val capacity = maxOf(fromLink, peakTotal)
                 _snapshot.value = MonitorSnapshot(
                     samples = samples.toList(),
                     inBps = din, outBps = dout,
@@ -144,9 +199,14 @@ object Monitor {
                     requests = inflight.get().coerceAtLeast(0),
                     activeTransfers = active,
                     uptimeSec = (now - startedAt) / 1000,
-                    phone = phoneLink(app),
+                    phone = phone,
                     laptop = lap,
                     rttMs = if (now - rttAt < 10_000) rtt else -1,
+                    filesBps = laneBps[Lane.FILES.ordinal],
+                    musicBps = laneBps[Lane.MUSIC.ordinal],
+                    testBps = laneBps[Lane.TEST.ordinal],
+                    capacityBps = capacity,
+                    capacityFrom = if (capacity == 0L) "" else if (peakTotal > fromLink) "measured" else "link",
                 )
             }
         }
@@ -175,5 +235,19 @@ object Monitor {
         )
     }.getOrNull()
 
+    /**
+     * What the link can move, from the slowest Wi-Fi hop. Real TCP over Wi-Fi 6 carries about
+     * half the link rate (measured: 72 MB/s over a 1201 Mbps link), so that is the estimate.
+     */
+    private fun linkCapacity(phone: PhoneLink?, laptop: LaptopLink?): Long {
+        val rates = listOfNotNull(
+            phone?.let { minOf(it.rxMbps, it.txMbps).takeIf { r -> r > 0 } ?: it.linkMbps },
+            laptop?.let { minOf(it.rxMbps, it.txMbps) }?.takeIf { it > 0 },
+        )
+        val mbps = rates.minOrNull() ?: return 0
+        return mbps * 1_000_000L / 8 / 2
+    }
+
     private const val WINDOW = 60
+    private const val WATCH_GRACE_MS = 5_000L
 }

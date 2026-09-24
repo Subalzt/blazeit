@@ -261,6 +261,7 @@ class BridgeServer(
 
     private fun io.ktor.server.routing.Route.monitorRoutes() {
         get("/api/monitor") {
+            Monitor.touchWeb()
             call.response.header(HttpHeaders.CacheControl, "no-store")
             call.respond(Monitor.snapshot.value)
         }
@@ -269,9 +270,11 @@ class BridgeServer(
             runCatching { call.receive<RttReport>() }.getOrNull()?.takeIf { it.ms >= 0 }?.let { Monitor.reportRtt(it.ms) }
             call.respond(ApiResult(true))
         }
+        // The answer tells the helper whether anyone is watching, so it can report every
+        // couple of seconds while the monitor is open and rarely otherwise.
         post("/api/monitor/link") {
             runCatching { call.receive<LaptopLink>() }.getOrNull()?.let(Monitor::reportLaptop)
-            call.respond(ApiResult(true))
+            call.respond(ApiResult(true, if (Monitor.watched()) "watch" else "idle"))
         }
     }
 
@@ -283,6 +286,9 @@ class BridgeServer(
         // slow moment costs one late batch rather than a growing delay.
         get("/api/control/stream") {
             val name = call.device()?.name ?: "Laptop"
+            // Helpers from this version on accept a slow keep-alive while the Control tab is
+            // closed; older ones time out after ten seconds of silence, so they keep the fast one.
+            val slowOk = call.request.headers["Bridge-Heartbeat"] == "slow"
             call.response.header(HttpHeaders.CacheControl, "no-store")
             call.respondBytesWriter(ContentType.Text.Plain) {
                 val ch = Control.attach(name)
@@ -290,7 +296,8 @@ class BridgeServer(
                     writeStringUtf8("p\n")
                     flush()
                     while (true) {
-                        val first = withTimeoutOrNull(HEARTBEAT_CONTROL_MS) { ch.receive() } ?: "p"
+                        val wait = if (Control.inUse || !slowOk) HEARTBEAT_CONTROL_MS else HEARTBEAT_IDLE_MS
+                        val first = withTimeoutOrNull(wait) { ch.receive() } ?: "p"
                         writeStringUtf8(first)
                         writeStringUtf8("\n")
                         while (true) {
@@ -315,7 +322,7 @@ class BridgeServer(
         // One shared setting: flipping it here changes the phone and every open page.
         post("/api/theme") {
             val body = runCatching { call.receive<ThemeRequest>() }.getOrDefault(ThemeRequest())
-            config.setGlass(body.glass)
+            config.setOled(body.oled)
             call.respond(ApiResult(true))
         }
     }
@@ -408,7 +415,7 @@ class BridgeServer(
                     maxUploadSize = tus.maxUploadSize,
                     deviceName = config.deviceName,
                     uploadStreams = config.uploadStreams(),
-                    glass = config.glass(),
+                    oled = config.oled(),
                 )
             )
         }
@@ -475,7 +482,7 @@ class BridgeServer(
             // Immediate snapshot so a reconnecting tab is correct before anything changes.
             send(data = json.encodeToString(index.entries), event = "files")
             send(data = clipboard.text, event = "clipboard")
-            send(data = if (config.glass()) "glass" else "classic", event = "theme")
+            send(data = if (config.oled()) "oled" else "aurora", event = "theme")
 
             val pump = CoroutineScope(coroutineContext).launch {
                 EventBus.events.collect { send(data = it.data, event = it.name) }
@@ -672,7 +679,7 @@ class BridgeServer(
                 val n = channel.readAvailable(buf, 0, buf.size)
                 if (n < 0) break
                 total += n
-                Monitor.addIn(n)
+                Monitor.addIn(n, Lane.TEST)
             }
             call.respond(ApiResult(true, "$total"))
         }
@@ -694,7 +701,7 @@ class BridgeServer(
                     while (sent < length) {
                         val n = minOf(buf.size.toLong(), length - sent).toInt()
                         channel.writeFully(buf, 0, n)
-                        Monitor.addOut(n)
+                        Monitor.addOut(n, Lane.TEST)
                         sent += n
                     }
                 } catch (_: Throwable) {
@@ -837,6 +844,7 @@ class BridgeServer(
         const val HEARTBEAT_MS = 15_000L
         /** Short, so a dead laptop connection is noticed within seconds. */
         const val HEARTBEAT_CONTROL_MS = 3_000L
+        const val HEARTBEAT_IDLE_MS = 25_000L
 
         /** Leave this much slack so finishing an upload cannot itself fill the disk. */
         const val SPACE_HEADROOM = 256L * 1024 * 1024

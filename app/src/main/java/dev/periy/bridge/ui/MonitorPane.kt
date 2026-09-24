@@ -6,6 +6,9 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
 import androidx.compose.foundation.Canvas
+import dev.periy.bridge.server.Monitor
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectDragGestures
@@ -73,6 +76,11 @@ import kotlin.math.roundToInt
 @Composable
 fun MonitorOverlay(m: MonitorSnapshot, running: Boolean, onClose: () -> Unit) {
     var expanded by remember { mutableStateOf(false) }
+    // The sampler only runs while someone is looking; this is the phone looking.
+    DisposableEffect(Unit) {
+        Monitor.watchUi(true)
+        onDispose { Monitor.watchUi(false) }
+    }
     var dx by remember { mutableFloatStateOf(0f) }
     var dy by remember { mutableFloatStateOf(0f) }
     val density = LocalDensity.current
@@ -171,6 +179,7 @@ private fun Sheet(m: MonitorSnapshot, running: Boolean, onHide: () -> Unit, onCl
             Text("Last minute", style = LabelStyle, color = Bridge.Faint)
         }
 
+        ChannelUse(m)
         Stat("Peak", "↓ " + mbps(m.peakInBps) + "   ↑ " + mbps(m.peakOutBps), first = true)
         Stat("Moved", "↓ " + formatBytes(m.totalIn) + "   ↑ " + formatBytes(m.totalOut))
         Stat(
@@ -184,6 +193,59 @@ private fun Sheet(m: MonitorSnapshot, running: Boolean, onHide: () -> Unit, onCl
         LaptopLinkRows(m.laptop)
     }
 }
+
+/**
+ * How full the channel is, and with what: files, music and speed tests share one Wi-Fi
+ * channel, so music playing while a download runs takes its share from the download.
+ */
+@Composable
+private fun ChannelUse(m: MonitorSnapshot) {
+    val used = m.filesBps + m.musicBps + m.testBps
+    val cap = m.capacityBps
+    val pct = if (cap > 0) (used * 100 / cap).coerceIn(0, 100) else -1
+    Column(Modifier.padding(horizontal = 20.dp, vertical = 8.dp)) {
+        Row(verticalAlignment = Alignment.Bottom) {
+            Text("Channel", style = LabelStyle, color = Bridge.Muted, modifier = Modifier.weight(1f))
+            Text(
+                if (pct < 0) "–" else "$pct% of ~${mbps(cap)}",
+                style = LabelStyle.copy(fontFeatureSettings = "tnum"), color = Bridge.Text,
+            )
+        }
+        Spacer(Modifier.height(8.dp))
+        val parts = listOf(m.filesBps to Bridge.Yellow, m.musicBps to LaneMusic, m.testBps to Bridge.Blue)
+        Row(Modifier.fillMaxWidth().height(10.dp).clip(ButtonShape).background(Color(0x33000000))) {
+            if (cap > 0) {
+                var left = 1f
+                parts.forEach { (bps, color) ->
+                    val f = (bps.toFloat() / cap).coerceIn(0f, left)
+                    if (f > 0.002f) { Box(Modifier.weight(f).fillMaxHeight().background(color)); left -= f }
+                }
+                if (left > 0.002f) Spacer(Modifier.weight(left))
+            }
+        }
+        Spacer(Modifier.height(8.dp))
+        Row(horizontalArrangement = Arrangement.spacedBy(14.dp), verticalAlignment = Alignment.CenterVertically) {
+            Legend("Files", Bridge.Yellow, m.filesBps)
+            Legend("Music", LaneMusic, m.musicBps)
+            if (m.testBps > 0) Legend("Test", Bridge.Blue, m.testBps)
+        }
+        Text(
+            if (m.capacityFrom == "measured") "Capacity from the fastest second seen so far."
+            else "Capacity estimated from the Wi-Fi link rate.",
+            style = BodyStyle.copy(fontSize = 12.sp), color = Bridge.Faint, modifier = Modifier.padding(top = 4.dp),
+        )
+    }
+}
+
+@Composable
+private fun Legend(label: String, color: Color, bps: Long) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Dot(color)
+        Text("  $label ${mbps(bps)}", style = LabelStyle.copy(fontSize = 12.sp, fontFeatureSettings = "tnum"), color = Bridge.Muted)
+    }
+}
+
+private val LaneMusic = Color(0xFFBF5AF2)
 
 @Composable
 private fun Rate(label: String, bps: Long, color: Color, modifier: Modifier) {
