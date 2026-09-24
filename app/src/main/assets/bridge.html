@@ -485,97 +485,6 @@
   #login .pad { background: transparent; box-shadow: none; -webkit-backdrop-filter: none; backdrop-filter: none; padding-top: 14px; }
   #login .pad::before { display: none; }
 
-  /* ================================================================ side panels as instruments
-     The sidebar and the docked monitor are read like a cockpit panel: a dark slab over a
-     faint grid, hairline frame, monospace labels in small caps, thin glowing markers
-     instead of glossy lenses, and meters built from lit cells. */
-  :root { --hud-line: rgba(255,255,255,.08); --hud-label: rgba(235,240,255,.46); }
-  .side, body.mon-dock .mon-sheet {
-    border-radius: 16px;
-    background:
-      linear-gradient(rgba(255,255,255,.022) 1px, transparent 1px) 0 0 / 22px 22px,
-      linear-gradient(90deg, rgba(255,255,255,.022) 1px, transparent 1px) 0 0 / 22px 22px,
-      linear-gradient(180deg, rgba(12,14,24,.74), rgba(6,8,14,.8));
-    box-shadow: 0 0 0 1px var(--hud-line), 0 24px 60px rgba(0,0,0,.45);
-    -webkit-backdrop-filter: blur(28px) saturate(140%); backdrop-filter: blur(28px) saturate(140%);
-  }
-  body.oled .side, body.oled.mon-dock .mon-sheet {
-    background:
-      linear-gradient(rgba(255,255,255,.03) 1px, transparent 1px) 0 0 / 22px 22px,
-      linear-gradient(90deg, rgba(255,255,255,.03) 1px, transparent 1px) 0 0 / 22px 22px,
-      #050507;
-  }
-  /* the frame: a hairline, with a short accent stroke that marks the top edge */
-  .side::before, body.mon-dock .mon-sheet::before {
-    padding: 0; -webkit-mask: none; mask: none; inset: 0;
-    background:
-      linear-gradient(90deg, var(--accent), rgba(255,214,10,0)) 18px 0 / 64px 1px no-repeat;
-    opacity: .9;
-  }
-  .side .logo { padding-bottom: 26px; }
-  .side .logo .wordmark { letter-spacing: .02em; }
-
-  /* labels over the groups */
-  .tabs::before, .side-foot::before {
-    content: "NAVIGATE"; display: block; padding: 0 12px 8px;
-    font: 600 10.5px/1 var(--mono); letter-spacing: .16em; color: var(--hud-label);
-  }
-  .side-foot::before { content: "LINK"; padding-bottom: 4px; }
-
-  /* nav: a lit marker, not a lens */
-  .tabs button, .side-item { border-radius: 8px; padding: 9px 12px; font-size: 14px; color: rgba(255,255,255,.66); }
-  .tabs button:hover, .side-item:hover { background: rgba(255,255,255,.04); color: #fff; }
-  .tabs button.on {
-    color: #fff; background: linear-gradient(90deg, rgba(255,214,10,.16), rgba(255,214,10,0) 80%);
-    box-shadow: inset 2px 0 0 var(--accent), -6px 0 14px -6px rgba(255,214,10,.7);
-  }
-  .tabs button.on::before { display: none; }
-  .tabs svg, .side-item svg { stroke-width: 1.5; }
-
-  /* the monitor switch: an indicator, square-shouldered */
-  .switch { width: 34px; height: 16px; border-radius: 4px; background: transparent; box-shadow: inset 0 0 0 1px rgba(255,255,255,.25); }
-  .switch::after { left: 3px; top: 3px; width: 10px; height: 10px; border-radius: 2px; background: rgba(255,255,255,.45); box-shadow: none; }
-  .mon-toggle.on .switch { background: rgba(255,214,10,.1); box-shadow: inset 0 0 0 1px rgba(255,214,10,.7); }
-  .mon-toggle.on .switch::after { left: 21px; background: var(--accent); box-shadow: 0 0 8px rgba(255,214,10,.9); }
-
-  /* phone status: a readout */
-  .status { border-radius: 8px; background: rgba(255,255,255,.03); box-shadow: inset 0 0 0 1px var(--hud-line); }
-  .status::before { display: none; }
-  .status .dev { font-family: var(--mono); font-size: 12px; letter-spacing: .02em; }
-  .status .lbl { font-family: var(--mono); font-size: 10.5px; letter-spacing: .14em; text-transform: uppercase; }
-  .dot.on { animation: pulse 2.4s ease-in-out infinite; }
-  @keyframes pulse { 50% { box-shadow: 0 0 2px rgba(48,209,88,.4); opacity: .75; } }
-
-  /* monitor readouts */
-  body.mon-dock .mon-head > b { font: 600 11.5px/1 var(--mono); letter-spacing: .2em; text-transform: uppercase; color: #fff; }
-  .mon-live { font-family: var(--mono); font-size: 10px; letter-spacing: .14em; text-transform: uppercase; border-radius: 3px; background: transparent; box-shadow: inset 0 0 0 1px rgba(48,209,88,.45); }
-  .mon-head .x { border-radius: 6px; background: transparent; box-shadow: inset 0 0 0 1px var(--hud-line); }
-  .mon-sub, .mon-rates .k { font: 600 10.5px/1.2 var(--mono); letter-spacing: .16em; text-transform: uppercase; color: var(--hud-label); }
-  .mon-rates .k { gap: 7px; }
-  .mon-rates b { font-weight: 300; letter-spacing: -.02em; }
-  .mon-grid > div { border-bottom: 1px dashed rgba(255,255,255,.07); }
-  .mon-grid span { font-size: 12.5px; }
-  .mon-grid b { font-family: var(--mono); font-size: 12.5px; font-weight: 500; }
-  .ch-head b { font-weight: 300; font-size: 30px; }
-  .ch-head span { font-family: var(--mono); font-size: 11px; letter-spacing: .04em; }
-  .ch-bar { display: grid; grid-template-columns: repeat(32, minmax(0, 1fr)); gap: 3px; height: 14px; background: none; border-radius: 0; box-shadow: none; overflow: visible; }
-  .ch-bar i { width: auto !important; border-radius: 1.5px; background: rgba(255,255,255,.07); }
-  .ch-bar i.files { background: var(--accent); box-shadow: 0 0 6px rgba(255,214,10,.55); }
-  .ch-bar i.music { background: var(--music); box-shadow: 0 0 6px rgba(191,90,242,.6); }
-  .ch-bar i.test { background: var(--blue); box-shadow: 0 0 6px rgba(10,132,255,.6); }
-  .ch-legend { font-family: var(--mono); font-size: 11.5px; }
-  .ch-hint { margin: 10px 0 0; font-size: 12.5px; color: var(--accent); }
-
-  /* the USB card */
-  .usb-head { display: flex; align-items: center; gap: 14px; }
-  .usb-head svg { width: 38px; height: 38px; flex: 0 0 38px; padding: 8px; border-radius: 12px; fill: none; stroke: var(--accent); stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; background: rgba(255,214,10,.1); box-shadow: inset 0 0 0 1px rgba(255,214,10,.3); }
-  .usb-head b { display: block; font-size: 15px; }
-  .usb-head span { color: var(--sub); font-size: 13px; }
-  .steps { margin: 14px 0 0; padding-left: 20px; color: var(--txt); font-size: 13.5px; }
-  .steps li { margin: 6px 0; }
-  .steps li::marker { color: var(--accent); font-weight: 700; }
-  @media (max-width: 900px) { .tabs::before, .side-foot::before { display: none; } .side { background: rgba(8,10,18,.85); } }
-
   /* ================================================================ straight, edge-docked panels
      The sidebar and the docked monitor run the full height of the window, flush to its
      edges, square-cornered, divided from the page by a single hairline. The player floats
@@ -652,6 +561,130 @@
   .clip-card { display: flex; flex-direction: column; }
   .clip-field { flex: 1 1 auto; display: flex; flex-direction: column; }
   .clip-field textarea { flex: 1 1 auto; }
+
+  /* ================================================================ iOS, like the phone
+     The sidebar is an iPadOS sidebar: a material that lets the aurora through, rows with
+     the icon tinted in the accent, the current row under a rounded glass highlight, a real
+     iOS switch, and the phone's status as a small card. The monitor panel uses the same
+     type and bars as the phone's monitor. No monospace, no grid. */
+  :root { --hud-line: rgba(255,255,255,.08); --hud-label: rgba(235,235,245,.6); }
+
+  .side, body.mon-dock .mon-sheet {
+    background: linear-gradient(180deg, rgba(36,36,46,.52), rgba(18,18,26,.6));
+    -webkit-backdrop-filter: blur(40px) saturate(190%); backdrop-filter: blur(40px) saturate(190%);
+  }
+  body.oled .side, body.oled.mon-dock .mon-sheet { background: rgba(18,18,20,.92); }
+  .side::before, body.mon-dock .mon-sheet::before { display: none; }
+  .side { padding: 22px 12px 14px; }
+
+  .side-top { padding: 0 2px 20px 8px; }
+  .side-top .logo { font-size: 20px; font-weight: 700; letter-spacing: -.3px; }
+  .side-collapse { width: 32px; height: 32px; border-radius: 50%; box-shadow: none; color: var(--accent); }
+  .side-collapse:hover { background: rgba(255,255,255,.08); box-shadow: none; color: var(--accent); }
+  .side-collapse svg { stroke-width: 1.7; }
+
+  .tabs { gap: 3px; }
+  .tabs::before { content: none; }
+  .side-foot::before { content: "Connection"; font: 600 13px/1 -apple-system, "Segoe UI Variable Text", "Segoe UI", sans-serif;
+    letter-spacing: 0; color: var(--hud-label); padding: 0 12px 4px; }
+  .tabs button, .side-item { border-radius: 11px; padding: 9px 12px; font-size: 15px; font-weight: 500; color: rgba(255,255,255,.9); gap: 12px; }
+  .tabs svg, .side-item svg { width: 20px; height: 20px; flex-basis: 20px; stroke: var(--accent); stroke-width: 1.8; }
+  .tabs button:hover, .side-item:hover { background: rgba(255,255,255,.07); color: #fff; }
+  .tabs button.on {
+    position: relative; color: #fff; font-weight: 600;
+    background: linear-gradient(180deg, rgba(255,255,255,.24), rgba(255,255,255,.10));
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.4), 0 6px 16px rgba(0,0,0,.22);
+  }
+  .tabs button.on::before {
+    display: block; content: ""; position: absolute; inset: 0; border-radius: inherit; padding: 1px; pointer-events: none;
+    background: var(--rim); -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor; mask-composite: exclude;
+  }
+
+  /* the iOS switch, as on the phone */
+  .switch { width: 42px; height: 26px; border-radius: 13px; background: rgba(120,120,128,.32); box-shadow: none; }
+  .switch::after { left: 2px; top: 2px; width: 22px; height: 22px; border-radius: 50%; background: #fff; box-shadow: 0 2px 5px rgba(0,0,0,.35); }
+  .mon-toggle.on .switch { background: var(--good); box-shadow: none; }
+  .mon-toggle.on .switch::after { left: 18px; background: #fff; box-shadow: 0 2px 5px rgba(0,0,0,.35); }
+
+  /* the phone, as a small glass card */
+  .status { border-radius: 14px; padding: 11px 12px; background: linear-gradient(180deg, rgba(255,255,255,.12), rgba(255,255,255,.05)); box-shadow: inset 0 1px 0 rgba(255,255,255,.2); }
+  .status .dev { font-family: inherit; font-size: 13.5px; font-weight: 600; letter-spacing: 0; }
+  .status .lbl { font-family: inherit; font-size: 12px; letter-spacing: 0; text-transform: none; }
+  .dot.on { animation: none; }
+
+  body.side-collapsed .tabs::before, body.side-collapsed .side-foot::before { display: none; }
+  body.side-collapsed .tabs button, body.side-collapsed .side-item { padding: 11px 0; }
+  body.side-collapsed .mon-toggle.on svg { filter: none; }
+  body.side-collapsed .mon-toggle.on { background: rgba(48,209,88,.16); }
+
+  /* the monitor panel reads like the phone's monitor */
+  body.mon-dock .mon-head > b { font-family: inherit; font-size: 20px; font-weight: 700; letter-spacing: -.3px; text-transform: none; }
+  .mon-head > b { font-size: 20px; }
+  .mon-live { font-family: inherit; font-size: 12px; letter-spacing: 0; text-transform: none; border-radius: 99px; padding: 3px 10px;
+    background: rgba(48,209,88,.16); box-shadow: none; }
+  .mon-head .x { border-radius: 50%; background: rgba(255,255,255,.1); box-shadow: none; }
+  .mon-sub { font-family: inherit; font-size: 15px; font-weight: 600; line-height: 1.2; letter-spacing: 0; text-transform: none; color: rgba(255,255,255,.86); margin: 22px 0 10px; }
+  .mon-rates .k { font-family: inherit; font-size: 13px; font-weight: 500; line-height: 1.2; letter-spacing: 0; text-transform: none; color: var(--sub); }
+  .mon-rates b { font-weight: 600; letter-spacing: -.5px; }
+  .mon-grid > div { border-bottom: .5px solid rgba(255,255,255,.1); }
+  .mon-grid span { font-size: 14px; }
+  .mon-grid b { font-family: inherit; font-size: 14px; font-weight: 600; }
+  .ch-head b { font-weight: 600; font-size: 28px; }
+  .ch-head span { font-family: inherit; font-size: 13px; letter-spacing: 0; }
+  /* one continuous capsule, filled left to right by use */
+  .ch-bar { display: grid; grid-template-columns: repeat(32, minmax(0, 1fr)); gap: 0; height: 10px; border-radius: 5px; overflow: hidden;
+    background: rgba(0,0,0,.3); box-shadow: inset 0 1px 2px rgba(0,0,0,.4); }
+  .ch-bar i { border-radius: 0; background: transparent; box-shadow: none !important; }
+  .ch-bar i.files { background: var(--accent); }
+  .ch-bar i.music { background: var(--music); }
+  .ch-bar i.test { background: var(--blue); }
+  .ch-legend { font-family: inherit; font-size: 13px; }
+  .ch-hint { margin: 10px 0 0; font-size: 13px; color: var(--accent); }
+
+  /* clipboard: Send to phone as a real button in the corner */
+  .clip-field textarea { padding: 0 0 58px 0; }
+  .clip-status { bottom: 26px; }
+  .send-pill {
+    position: absolute; right: 16px; bottom: 16px; height: 40px; display: inline-flex; align-items: center; gap: 8px; padding: 0 18px 0 14px;
+    border: 0; border-radius: 999px; cursor: pointer; color: #111; font: inherit; font-size: 14px; font-weight: 600;
+    background: linear-gradient(180deg, #FFE45C, #FFC400);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.7), 0 8px 20px rgba(255,196,0,.28);
+    transition: transform .1s, filter .12s;
+  }
+  .send-pill:hover { filter: brightness(1.06); }
+  .send-pill:active { transform: scale(.97); }
+  .send-pill svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+
+  /* the drop card: a big tinted icon, a title, a line, and the choosers inside */
+  .drop {
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; min-height: 250px; padding: 30px 20px;
+    border: 1.5px dashed rgba(255,255,255,.22); border-radius: 20px;
+    background: radial-gradient(120% 90% at 50% 0%, rgba(255,214,10,.10), rgba(0,0,0,.12) 60%);
+    transition: border-color .15s, background .15s, transform .15s;
+  }
+  .drop:hover { border-color: rgba(255,214,10,.55); }
+  .drop.over { border-color: var(--accent); background: radial-gradient(120% 90% at 50% 0%, rgba(255,214,10,.22), rgba(255,214,10,.05) 70%); transform: scale(1.01); }
+  .drop-icon { width: 64px; height: 64px; display: grid; place-items: center; margin-bottom: 8px; border-radius: 50%;
+    background: linear-gradient(180deg, rgba(255,214,10,.28), rgba(255,214,10,.10));
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.35), 0 10px 30px rgba(255,196,0,.18); }
+  .drop-icon svg { width: 30px; height: 30px; fill: none; stroke: var(--accent); stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+  .drop.over .drop-icon svg { animation: nudge .7s ease-in-out infinite alternate; }
+  @keyframes nudge { to { transform: translateY(-3px); } }
+  .drop .big { font-size: 18px; font-weight: 700; letter-spacing: -.2px; }
+  .drop .meta { font-size: 13px; }
+  .drop-actions { display: flex; gap: 10px; margin-top: 14px; }
+
+  /* the USB card in Settings */
+  .usb-head { display: flex; align-items: center; gap: 14px; }
+  .usb-head svg { width: 42px; height: 42px; flex: 0 0 42px; padding: 9px; border-radius: 50%; fill: none; stroke: var(--accent); stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; background: linear-gradient(180deg, rgba(255,214,10,.28), rgba(255,214,10,.10)); box-shadow: inset 0 1px 0 rgba(255,255,255,.3); }
+  .usb-head b { display: block; font-size: 15px; }
+  .usb-head span { color: var(--sub); font-size: 13px; }
+  .steps { margin: 14px 0 0; padding-left: 20px; color: var(--txt); font-size: 13.5px; }
+  .steps li { margin: 6px 0; }
+  .steps li::marker { color: var(--accent); font-weight: 700; }
+
+  @media (max-width: 900px) { .tabs::before, .side-foot::before { display: none; } }
 </style>
 </head>
 <body>
@@ -710,7 +743,7 @@
       <div class="clip-field">
         <textarea id="clip" placeholder="Type or paste text here, then send it to the phone."></textarea>
         <span class="meta clip-status" id="clip-status"></span>
-        <button id="clip-send" class="send-round" title="Send to the phone (Ctrl+Enter)"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 19V5.5"/><path d="M6.5 11 12 5.5 17.5 11"/></svg></button>
+        <button id="clip-send" class="send-pill" title="Send to the phone (Ctrl+Enter)"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 19V5.5"/><path d="M6.5 11 12 5.5 17.5 11"/></svg><span>Send to phone</span></button>
       </div>
       <div class="clip-tools">
         <button class="tool" id="clip-paste" title="Paste what this computer last copied"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5.5H7.5A1.5 1.5 0 0 0 6 7v12a1.5 1.5 0 0 0 1.5 1.5h9A1.5 1.5 0 0 0 18 19V7a1.5 1.5 0 0 0-1.5-1.5H15"/><path d="M10 3.5h4a1 1 0 0 1 1 1v1.5a1 1 0 0 1-1 1h-4a1 1 0 0 1-1-1V4.5a1 1 0 0 1 1-1Z"/></svg><span>Paste</span></button>
@@ -726,17 +759,17 @@
     <div class="bar">Send to the phone</div>
     <div class="pad">
       <div id="drop" class="drop">
+        <div class="drop-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15V4"/><path d="M7.5 8.5 12 4l4.5 4.5"/><path d="M4 14v4a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-4"/></svg></div>
         <div class="big">Drop files or folders here</div>
-        <div class="meta" style="margin-top:6px">or click to choose files</div>
-      </div>
-      <div class="actions" style="margin-top:10px">
-        <button class="btn sm ghost" id="pick-files">Choose files</button>
-        <button class="btn sm ghost" id="pick-folder">Choose a folder</button>
+        <div class="meta">They land in the phone's folder, subfolders and all.</div>
+        <div class="drop-actions">
+          <button class="btn sm" id="pick-files">Choose files</button>
+          <button class="btn sm ghost" id="pick-folder">Choose a folder</button>
+        </div>
       </div>
       <input id="file-input" type="file" multiple hidden>
       <input id="folder-input" type="file" webkitdirectory multiple hidden>
-      <p class="note">A folder arrives on the phone as the same folder, subfolders included.</p>
-      <p class="note">Moving something big? A USB-C cable is the fastest link: <a href="#" id="usb-link">how to set it up</a>.</p>
+            <p class="note">Moving something big? A USB-C cable is the fastest link: <a href="#" id="usb-link">how to set it up</a>.</p>
       <p class="note" id="limit"></p>
     </div>
     </div>
@@ -2959,8 +2992,8 @@ async function pair() {
 function setupDrop() {
   var drop = $("drop"), input = $("file-input"), folderInput = $("folder-input");
   drop.addEventListener("click", function () { input.click(); });
-  $("pick-files").addEventListener("click", function () { input.click(); });
-  $("pick-folder").addEventListener("click", function () { folderInput.click(); });
+  $("pick-files").addEventListener("click", function (e) { e.stopPropagation(); input.click(); });
+  $("pick-folder").addEventListener("click", function (e) { e.stopPropagation(); folderInput.click(); });
   input.addEventListener("change", function () {
     if (input.files && input.files.length) addFiles(input.files);
     input.value = "";
