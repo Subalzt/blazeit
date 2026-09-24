@@ -223,6 +223,8 @@ private fun BlazeItUi(vm: MainViewModel) {
             Backdrop()
             Column(Modifier.fillMaxSize()) {
                 Header(if (tab == 0) "BlazeIt" else TABS[tab].first, running, showMonitor) { setMonitor(!showMonitor) }
+                // Room for the monitor capsule, so by default it covers nothing.
+                if (showMonitor) Spacer(Modifier.height(46.dp))
 
                 if (showOem) {
                     OemScreen(oemSteps, tabBarSpace, onOpen = { intent ->
@@ -252,7 +254,7 @@ private fun BlazeItUi(vm: MainViewModel) {
                             if (running) BridgeService.stop(ctx) else BridgeService.start(ctx)
                         }
                         TAB_PHONES -> phonesTab(
-                            transfers, nearby, paired, peerStatus,
+                            running, transfers, nearby, paired, peerStatus,
                             connect = peers::connect,
                             forget = peers::forget,
                             sendFilesTo = { sendTarget = it; pickForPhone.launch(arrayOf("*/*")) },
@@ -567,6 +569,7 @@ private fun ClipboardPanel(shared: String, status: String, vm: MainViewModel) {
 // ---------------------------------------------------------------------- tab: phones
 
 private fun LazyListScope.phonesTab(
+    running: Boolean,
     transfers: List<Transfer>,
     nearby: List<NearbyPhone>,
     paired: List<Peer>,
@@ -581,7 +584,12 @@ private fun LazyListScope.phonesTab(
     val pairedNames = paired.map { it.name }.toSet()
     val unpaired = nearby.filter { it.name !in pairedNames }
     if (paired.isEmpty() && unpaired.isEmpty()) {
-        item { Blank("Looking for phones running BlazeIt on this network. Both need BlazeIt on, on the same Wi-Fi or one phone's hotspot.") }
+        item {
+            Blank(
+                if (!running) "Turn BlazeIt on (switch on Home) so other phones can find this one, and it can find them."
+                else "Looking for phones running BlazeIt on this network. Both need BlazeIt on, on the same Wi-Fi or one phone's hotspot."
+            )
+        }
     } else {
         item {
             GroupCard {

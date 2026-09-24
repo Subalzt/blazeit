@@ -455,7 +455,7 @@ private suspend fun momentum(pad: PadState, startX: Float, startY: Float) {
 
 @Composable
 private fun MouseButtons(pad: PadState) {
-    Row(Modifier.fillMaxWidth().height(56.dp)) {
+    Row(Modifier.fillMaxWidth().height(58.dp).padding(horizontal = 12.dp)) {
         HoldButton("Left", Modifier.weight(1f).fillMaxSize(), pad, "l")
         HoldButton("Right", Modifier.weight(1f).fillMaxSize(), pad, "r")
     }
@@ -469,9 +469,10 @@ private fun KeyRow(pad: PadState, imeUp: Boolean) {
     Row(
         Modifier
             .fillMaxWidth()
-            .background(Bridge.Bar)
-            .padding(horizontal = 6.dp, vertical = 6.dp),
-        horizontalArrangement = Arrangement.spacedBy(4.dp),
+            // Over the phone keyboard the row needs its own ground; otherwise it floats like the rest.
+            .then(if (imeUp) Modifier.background(Bridge.Bar) else Modifier)
+            .padding(horizontal = 16.dp, vertical = 6.dp),
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         // The phone's own keyboard, typing straight into the laptop.
@@ -505,9 +506,8 @@ private fun KeyChip(label: String, modifier: Modifier = Modifier, on: Boolean = 
     Box(
         modifier
             .widthIn(min = 44.dp)
-            .height(38.dp)
-            .clip(BlockShape)
-            .background(if (on) Bridge.Yellow else Bridge.Chip)
+            .height(40.dp)
+            .then(if (on) Modifier.clip(ButtonShape).background(Bridge.Yellow) else Modifier.glass(ButtonShape))
             .clickable {
                 view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
                 onClick()
@@ -527,9 +527,7 @@ private fun HoldButton(label: String, modifier: Modifier, pad: PadState, button:
     Box(
         modifier
             .padding(horizontal = 4.dp, vertical = 3.dp)
-            .clip(BlockShape)
-            .background(if (down) Bridge.Yellow else Bridge.Paper)
-            .border(BorderStroke(0.5.dp, Bridge.Outline), BlockShape)
+            .then(if (down) Modifier.clip(ButtonShape).background(Bridge.Yellow) else Modifier.glass(ButtonShape))
             .pointerInput(button) {
                 awaitEachGesture {
                     awaitFirstDown()

@@ -81,12 +81,12 @@ fun MonitorOverlay(m: MonitorSnapshot, running: Boolean, onClose: () -> Unit) {
         val maxX = with(density) { (maxWidth / 2 - 90.dp).toPx() }
         val maxY = with(density) { (maxHeight - 150.dp).toPx() }
 
-        // The capsule, parked under the title until moved.
+        // The capsule, parked in its own lane under the title (the screens make room) until moved.
         Box(
             Modifier
                 .align(Alignment.TopCenter)
                 .offset { IntOffset(dx.roundToInt(), dy.roundToInt()) }
-                .padding(top = 64.dp)
+                .padding(top = 58.dp)
                 .pointerInput(Unit) {
                     detectDragGestures { change, drag ->
                         change.consume()
@@ -298,11 +298,8 @@ private fun quality(level: Int) = when (level) {
 
 private fun mbps(bps: Long): String = if (bps < 1_048_576) "%.0f KB/s".format(bps / 1024.0) else "%.1f MB/s".format(bps / 1_048_576.0)
 
-/** Compact rate for the capsule, fixed width so it does not jitter. */
-private fun short(bps: Long): String = when {
-    bps < 1_048_576 -> "%3.0fK".format(bps / 1024.0)
-    else -> "%4.1fM".format(bps / 1_048_576.0)
-}
+/** Rate for the capsule: always MB/s, so the numbers keep their place. */
+private fun short(bps: Long): String = "%.1f MB/s".format(bps / 1_048_576.0)
 
 private fun ago(at: Long): String {
     val s = (System.currentTimeMillis() - at) / 1000
