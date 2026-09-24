@@ -28,7 +28,7 @@ blocks without ever being held in memory. A 4 GB video crosses in about a minute
 **up to 64 GB** are accepted (Setup → *Largest file accepted*).
 
 <p align="center">
-  <img src="docs/images/web-home.png" width="760" alt="Home: clipboard, files and the floating monitor">
+  <img src="docs/images/web-home.png" width="760" alt="Home: clipboard, files and the monitor">
 </p>
 
 ---
@@ -61,6 +61,14 @@ the way it does through a thick drop of glass, with a faint colour fringe where 
 is strongest. A specular rim and a sheen along the top sit on the surface. Older phones
 get a blurred glass instead.
 
+On a laptop the page uses the whole screen: a floating glass sidebar on the left, the
+page across the middle, the monitor docked as a panel on the right while it is on, and
+the player floating along the bottom.
+
+**Aurora or OLED black.** The backdrop is either the colourful aurora or true black, with
+the same glass on top. Switch it in *Setup → Appearance* on the phone or *Settings* on the
+page; the phone and every open page follow.
+
 | Home | Monitor | Phones | Control |
 | --- | --- | --- | --- |
 | <img src="docs/images/phone-home.png" width="190"> | <img src="docs/images/phone-monitor.png" width="190"> | <img src="docs/images/phone-phones.png" width="190"> | <img src="docs/images/phone-control.png" width="190"> |
@@ -91,11 +99,16 @@ Everything you move lives on one screen, on both sides.
 
 ### 4. A live monitor over every screen
 
-Tap the pulse button (phone) or **Monitor** (page) and a small glass capsule floats over
-whatever you are doing: speed each way, **ping**, and signal strength. Drag it out of the
-way on the phone. Tap it for the full picture:
+Tap the pulse button on the phone and a small glass capsule floats over whatever you are
+doing: speed each way, **ping**, and signal strength. Drag it out of the way; tap it for
+the full picture. On a laptop, **Monitor** in the sidebar docks the full picture as a
+panel on the right.
 
 - a minute of history for both directions;
+- **how full the channel is**, and with what: files, music and speed tests share the one
+  Wi-Fi channel, so music playing during a download takes its share from the download.
+  The bar shows the split against what the link can carry (estimated from the Wi-Fi link
+  rate, or the fastest second seen so far);
 - peak speed, total moved, open requests and running transfers;
 - **gaps**: seconds where a transfer was running but nothing moved;
 - both ends of the Wi-Fi link: the phone's own (standard, band, dBm, link rate) and the
@@ -104,7 +117,14 @@ way on the phone. Tap it for the full picture:
 Ping is measured by the page and the helper and shared with the phone, so both monitors
 show it.
 
-<img src="docs/images/web-monitor.png" width="620" alt="The monitor sheet">
+<img src="docs/images/web-home.png" width="760" alt="Home with the monitor docked on the right">
+
+**Nothing runs that nobody is using.** The phone only samples traffic while a monitor is
+on screen somewhere. The page stops polling when its tab is hidden. A paused player stops
+prefetching at once and lets go of its stream after a minute. The laptop helper reports
+its link every 2 s only while someone is watching (every 15 s otherwise), and the
+trackpad channel drops to a keep-alive every 25 s whenever the phone's Control tab is
+closed. The screen-on and low-latency Wi-Fi locks are held only while Control is open.
 
 ### 5. Phone to phone
 
@@ -114,8 +134,10 @@ with the same 4-digit code, and from then on send files or the clipboard text wi
 tap. Files go over the same parallel, resumable upload the browser uses. If a router
 blocks discovery, *Connect by address* takes the other phone's IP.
 
-Both phones share one Wi-Fi channel, so two phones do not add up to double the speed:
-the radio time is split, not stacked. Expect the same ~65–70 MB/s per link.
+Two phones do not add up to double the speed, even with each hosting a hotspot for the
+other. Each phone has one Wi-Fi chip: on one band both links take turns on the same
+channel, and on two bands the chip splits its antennas and the second link has to use
+2.4 GHz. Expect the same ~65–70 MB/s per link.
 
 ### 6. The phone as the laptop's trackpad and keyboard
 
@@ -172,7 +194,9 @@ The now-playing turntable uses the album cover as the record's label: the arm dr
 you press play, the disc spins, and pausing freezes it exactly where it is. The player
 floats at the bottom as its own piece of glass.
 
-<img src="docs/images/web-music.png" width="620" alt="Music playing on the turntable">
+| Aurora | OLED black |
+| --- | --- |
+| <img src="docs/images/web-music.png" width="420" alt="Music, aurora"> | <img src="docs/images/web-oled.png" width="420" alt="Music, OLED black"> |
 
 ---
 
