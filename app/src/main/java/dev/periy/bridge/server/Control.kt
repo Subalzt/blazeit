@@ -17,7 +17,7 @@ import java.util.concurrent.CopyOnWriteArrayList
  * The phone as the laptop's trackpad and keyboard.
  *
  * A browser tab is not allowed to move the cursor or press keys, so the laptop runs a small
- * helper (tools/xoosh-pc.bat) that pairs like any other computer, then holds one long
+ * helper (tools/blazeit-pc.bat) that pairs like any other computer, then holds one long
  * request open on `/api/control/stream`. Everything the trackpad screen does becomes one
  * short text line on that stream, which the helper turns into real input with SendInput.
  *

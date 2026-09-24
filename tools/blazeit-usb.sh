@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Forwards a local port to Xoosh on the phone over USB. See the .bat for why
+# Forwards a local port to BlazeIt on the phone over USB. See the .bat for why
 # localhost matters: browsers treat it as a secure context even over plain HTTP,
 # which enables parallel downloads and the clipboard API without a certificate.
 set -euo pipefail
@@ -25,7 +25,7 @@ fi
 adb forward "tcp:$PORT" "tcp:$PORT" >/dev/null
 trap 'adb forward --remove tcp:'"$PORT"' >/dev/null 2>&1 || true' EXIT
 
-echo "Xoosh is at  http://localhost:$PORT"
+echo "BlazeIt is at  http://localhost:$PORT"
 ( command -v xdg-open >/dev/null && xdg-open "http://localhost:$PORT" ) 2>/dev/null \
   || ( command -v open >/dev/null && open "http://localhost:$PORT" ) 2>/dev/null || true
 

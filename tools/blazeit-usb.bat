@@ -1,9 +1,9 @@
 @echo off
 setlocal EnableDelayedExpansion
-title Xoosh over USB
+title BlazeIt over USB
 
 REM ---------------------------------------------------------------------------
-REM Forwards a port on this PC to Xoosh on the phone, over the USB cable.
+REM Forwards a port on this PC to BlazeIt on the phone, over the USB cable.
 REM
 REM Why bother when USB tethering also works: this way the browser reaches the
 REM phone at http://localhost, and every browser treats localhost as a SECURE
@@ -75,9 +75,9 @@ if errorlevel 1 (
 )
 
 echo.
-echo   Xoosh is at  http://localhost:%PORT%
+echo   BlazeIt is at  http://localhost:%PORT%
 echo.
-echo   Make sure Xoosh is running on the phone. It will ask you to allow this computer.
+echo   Make sure BlazeIt is running on the phone. It will ask you to allow this computer.
 echo   Leave this window open. Closing it removes the forward.
 echo.
 start "" "http://localhost:%PORT%"

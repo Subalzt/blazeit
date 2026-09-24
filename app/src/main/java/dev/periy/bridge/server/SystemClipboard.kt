@@ -25,7 +25,7 @@ object SystemClipboard {
     fun write(ctx: Context, text: String) {
         runCatching {
             val cm = ctx.getSystemService(Context.CLIPBOARD_SERVICE) as? ClipboardManager ?: return
-            cm.setPrimaryClip(ClipData.newPlainText("Xoosh", text))
+            cm.setPrimaryClip(ClipData.newPlainText("BlazeIt", text))
         }
     }
 

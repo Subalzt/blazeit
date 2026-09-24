@@ -307,7 +307,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                         val id = "share-" + System.nanoTime()
                         app.container.index.add(app.container.storage.importCopy(uri, id))
                         added++
-                    }.onFailure { android.util.Log.w("Xoosh", "Share import failed", it) }
+                    }.onFailure { android.util.Log.w("BlazeIt", "Share import failed", it) }
                 }
             }
             _sendStatus.value = if (added == 0) "Could not copy those files"
