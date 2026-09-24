@@ -54,6 +54,10 @@ The app and the page share one look: sheets of glass over a softly lit backdrop,
 that catches the light, capsule buttons, and the brand yellow as the only accent. On the
 phone the tab bar and the monitor are real blurred glass floating over the content.
 
+| Home | Monitor | Phones | Control |
+| --- | --- | --- | --- |
+| <img src="docs/images/phone-home.png" width="190"> | <img src="docs/images/phone-monitor.png" width="190"> | <img src="docs/images/phone-phones.png" width="190"> | <img src="docs/images/phone-control.png" width="190"> |
+
 ### 2. Connect a computer (approve on the phone)
 
 Open the address the phone shows. The browser asks to connect, the phone shows who is
@@ -123,7 +127,7 @@ keyboard when it opens. Ctrl and Win apply to the next key or click, so Ctrl the
 copies. **Left** and **Right** are real mouse buttons you can hold. The speed chip in the
 pad's corner cycles Slow, Normal and Fast.
 
-<img src="docs/images/phone-control.png" width="240" alt="Control tab">
+<img src="docs/images/phone-control.png" width="260" alt="Control tab">
 
 ### 7. The laptop helper (one file, nothing installed)
 
