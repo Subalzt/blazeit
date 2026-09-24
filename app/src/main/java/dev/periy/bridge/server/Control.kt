@@ -44,6 +44,12 @@ object Control {
     val connected: StateFlow<List<String>> = _connected.asStateFlow()
     private val names = CopyOnWriteArrayList<Pair<Channel<String>, String>>()
 
+    /**
+     * True while the Control tab is on screen. Otherwise nothing will be sent, so the
+     * stream to the helper only needs a rare keep-alive instead of one every few seconds.
+     */
+    @Volatile var inUse = false
+
     fun send(line: String) {
         for (h in helpers) h.trySend(line)
     }

@@ -102,6 +102,7 @@ fun ControlPane(running: Boolean, onStart: () -> Unit, modifier: Modifier = Modi
     // power-save naps in the radio are what make a remote pointer feel sticky.
     DisposableEffect(Unit) {
         view.keepScreenOn = true
+        Control.inUse = true
         @Suppress("DEPRECATION")
         val lock = runCatching {
             ctx.applicationContext.getSystemService(WifiManager::class.java)
@@ -110,6 +111,7 @@ fun ControlPane(running: Boolean, onStart: () -> Unit, modifier: Modifier = Modi
         }.getOrNull()
         onDispose {
             view.keepScreenOn = false
+            Control.inUse = false
             runCatching { lock?.takeIf { it.isHeld }?.release() }
         }
     }

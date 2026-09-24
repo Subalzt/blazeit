@@ -253,6 +253,9 @@ public static class BlazeItPc
     {
         while (true)
         {
+            // Every 2 s while someone has the monitor open; every 15 s otherwise, which is
+            // only there to notice when someone opens it.
+            int wait = 15000;
             try
             {
                 string cookie = session;
@@ -280,11 +283,15 @@ public static class BlazeItPc
                     byte[] body = Encoding.UTF8.GetBytes(json);
                     r.ContentLength = body.Length;
                     using (Stream o = r.GetRequestStream()) o.Write(body, 0, body.Length);
-                    r.GetResponse().Close();
+                    using (WebResponse resp = r.GetResponse())
+                    using (StreamReader rd = new StreamReader(resp.GetResponseStream(), Encoding.UTF8))
+                    {
+                        if (rd.ReadToEnd().Contains("\"watch\"")) wait = 2000;
+                    }
                 }
             }
             catch { }
-            Thread.Sleep(2000);
+            Thread.Sleep(wait);
         }
     }
 
@@ -348,8 +355,11 @@ public static class BlazeItPc
                 r.Proxy = null;
                 r.UserAgent = Ua;
                 r.Timeout = 5000;
-                // The phone sends a keep-alive every 3 s, so silence this long means it is gone.
-                r.ReadWriteTimeout = 10000;
+                // The phone sends a keep-alive every 3 s while its Control tab is open and every
+                // 25 s otherwise (this header says we accept the slow one), so silence this long
+                // means it is gone.
+                r.ReadWriteTimeout = 40000;
+                r.Headers["Bridge-Heartbeat"] = "slow";
                 r.Headers["Cookie"] = cookie;
                 HttpWebResponse resp;
                 try { resp = (HttpWebResponse)r.GetResponse(); }
