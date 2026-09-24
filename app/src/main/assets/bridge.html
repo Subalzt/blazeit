@@ -685,6 +685,43 @@
   .steps li::marker { color: var(--accent); font-weight: 700; }
 
   @media (max-width: 900px) { .tabs::before, .side-foot::before { display: none; } }
+
+  /* the page fills whatever the sidebar and the monitor leave, folded or not */
+  .main > * { max-width: none; }
+
+  /* Songs / Albums: a proper switch */
+  #music-view button { padding: 8px 20px; font-size: 14px; }
+
+  /* albums: buttons you can reach with the keyboard, with a play button over the cover */
+  .albums { grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 18px 14px; }
+  button.album { display: block; width: 100%; padding: 8px; border: 0; border-radius: 16px; background: transparent; color: inherit; font: inherit; text-align: left; cursor: pointer; }
+  button.album:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .album .art { position: relative; }
+  .album-play { position: absolute; right: 10px; bottom: 10px; width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center;
+    color: #111; background: linear-gradient(180deg, #FFE45C, #FFC400); box-shadow: 0 6px 16px rgba(0,0,0,.45);
+    opacity: 0; transform: translateY(6px); transition: opacity .15s, transform .15s; }
+  .album-play svg { width: 20px; height: 20px; margin-left: 2px; }
+  button.album:hover .album-play, button.album:focus-visible .album-play { opacity: 1; transform: none; }
+  .album-play:hover { filter: brightness(1.08); }
+
+  /* an opened album, as iOS Music shows it */
+  .album-page { display: block; margin: 0 0 14px; }
+  .album-page .back { display: inline-flex; align-items: center; gap: 4px; margin: 0 0 14px -6px; padding: 6px 12px 6px 6px; border: 0; border-radius: 999px;
+    background: transparent; color: var(--accent); font: inherit; font-size: 15px; font-weight: 600; cursor: pointer; }
+  .album-page .back:hover { background: rgba(255,214,10,.1); }
+  .album-page .back svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+  .album-head { display: flex; align-items: flex-end; gap: 28px; padding: 22px; border-radius: 26px;
+    background: var(--glass-fill); box-shadow: var(--lift); position: relative; }
+  .album-cover .cover { width: 200px; height: 200px; flex: 0 0 200px; border-radius: 16px; box-shadow: 0 18px 44px rgba(0,0,0,.5); font-size: 48px; }
+  .album-info { min-width: 0; }
+  .album-info .kicker { font-size: 12px; font-weight: 700; letter-spacing: 1.2px; text-transform: uppercase; color: var(--sub); }
+  .album-info h2 { margin: 6px 0 2px; font-size: 30px; font-weight: 700; letter-spacing: -.5px; line-height: 1.12; }
+  .album-info .by { font-size: 17px; font-weight: 600; color: var(--accent); }
+  .album-info .facts { margin-top: 6px; font-size: 13px; color: var(--sub); }
+  .album-actions { display: flex; gap: 10px; margin-top: 18px; }
+  .album-actions .btn { height: 40px; padding: 0 22px; gap: 8px; }
+  .album-actions .btn svg { width: 17px; height: 17px; }
+  @media (max-width: 700px) { .album-head { flex-direction: column; align-items: flex-start; } }
 </style>
 </head>
 <body>
@@ -2424,23 +2461,37 @@ function renderMusic() {
   host.innerHTML = ""; more.innerHTML = "";
 
   if (music.album !== null) {
-    var a = music.tracks.find(function (t) { return t.albumId === music.album; });
+    var tracks = music.tracks.filter(function (t) { return t.albumId === music.album; });
+    var a = tracks[0];
+    var secs = tracks.reduce(function (n, t) { return n + t.durationMs / 1000; }, 0);
+    var years = tracks.map(function (t) { return t.year; }).filter(function (y) { return y > 0; });
     crumb.hidden = false;
-    crumb.innerHTML = "";
-    var back = document.createElement("button");
-    back.className = "btn sm ghost";
-    back.textContent = "← All albums";
-    back.onclick = function () { music.album = null; music.view = "albums"; setViewButtons(); renderMusic(); };
-    var playAll = document.createElement("button");
-    playAll.className = "btn sm";
-    playAll.textContent = "Play album";
-    playAll.onclick = function () { startQueue(musicMatches(), 0); };
-    var title = document.createElement("span");
-    title.className = "meta";
-    title.style.alignSelf = "center";
-    title.textContent = a ? a.album + " · " + a.artist : "";
-    crumb.appendChild(back); crumb.appendChild(playAll); crumb.appendChild(title);
+    crumb.className = "album-page";
+    crumb.innerHTML =
+      '<button type="button" class="back" id="album-back">' +
+        '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14.5 5.5 8 12l6.5 6.5"/></svg>Albums</button>' +
+      '<div class="album-head">' +
+        '<div class="album-cover"></div>' +
+        '<div class="album-info">' +
+          '<div class="kicker">Album</div>' +
+          '<h2></h2><div class="by"></div>' +
+          '<div class="facts"></div>' +
+          '<div class="album-actions">' +
+            '<button type="button" class="btn" id="album-play">' + "<svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path fill=\"currentColor\" d=\"M8 5.6v12.8a.9.9 0 0 0 1.4.8l10-6.4a.9.9 0 0 0 0-1.6l-10-6.4A.9.9 0 0 0 8 5.6Z\"/></svg>" + 'Play</button>' +
+            '<button type="button" class="btn ghost" id="album-shuffle">' + "<svg viewBox=\"0 0 24 24\" aria-hidden=\"true\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M3 7h3.5c2.5 0 3.8 1.3 5.3 4.2l.4.6c1.5 2.9 2.8 4.2 5.3 4.2H21\"/><path d=\"M3 17h3.5c1.4 0 2.4-.4 3.3-1.2M14.2 8.2C15.1 7.4 16.1 7 17.5 7H21\"/><path d=\"m18.5 4.5 2.5 2.5-2.5 2.5M18.5 13.5l2.5 2.5-2.5 2.5\"/></svg>" + 'Shuffle</button>' +
+          '</div>' +
+        '</div>' +
+      '</div>';
+    crumb.querySelector(".album-cover").appendChild(coverEl("cover", music.album));
+    crumb.querySelector("h2").textContent = a ? a.album : "";
+    crumb.querySelector(".by").textContent = a ? a.artist : "";
+    crumb.querySelector(".facts").textContent = tracks.length + (tracks.length === 1 ? " song" : " songs") +
+      " · " + Math.round(secs / 60) + " min" + (years.length ? " · " + Math.max.apply(null, years) : "");
+    $("album-back").onclick = function () { music.album = null; music.view = "albums"; setViewButtons(); renderMusic(); };
+    $("album-play").onclick = function () { playAlbum(music.album, false); };
+    $("album-shuffle").onclick = function () { playAlbum(music.album, true); };
   } else {
+    crumb.className = "actions";
     crumb.hidden = true;
   }
 
@@ -2504,9 +2555,18 @@ function renderAlbums(host) {
   var grid = document.createElement("div");
   grid.className = "albums";
   albums.forEach(function (a) {
-    var tile = document.createElement("div");
+    var tile = document.createElement("button");
+    tile.type = "button";
     tile.className = "album";
-    tile.appendChild(coverEl("art", a.albumId));
+    tile.setAttribute("aria-label", a.album + " by " + a.artist + ", " + a.count + (a.count === 1 ? " track" : " tracks"));
+    var art = coverEl("art", a.albumId);
+    var play = document.createElement("span");
+    play.className = "album-play";
+    play.title = "Play " + a.album;
+    play.innerHTML = "<svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path fill=\"currentColor\" d=\"M8 5.6v12.8a.9.9 0 0 0 1.4.8l10-6.4a.9.9 0 0 0 0-1.6l-10-6.4A.9.9 0 0 0 8 5.6Z\"/></svg>";
+    play.onclick = function (e) { e.stopPropagation(); playAlbum(a.albumId, false); };
+    art.appendChild(play);
+    tile.appendChild(art);
     var cap = document.createElement("div");
     cap.className = "cap";
     cap.innerHTML = '<div class="t"></div><div class="a"></div>';
@@ -2517,6 +2577,15 @@ function renderAlbums(host) {
     grid.appendChild(tile);
   });
   host.appendChild(grid);
+}
+
+function playAlbum(albumId, shuffled) {
+  var list = music.tracks.filter(function (t) { return t.albumId === albumId; })
+    .sort(function (x, y) { return (x.disc - y.disc) || (x.track - y.track); });
+  if (!list.length) return;
+  player.shuffle = !!shuffled;
+  $("pl-shuffle").classList.toggle("on", player.shuffle);
+  startQueue(list, shuffled ? Math.floor(Math.random() * list.length) : 0);
 }
 
 function setViewButtons() {

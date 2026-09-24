@@ -198,6 +198,10 @@ floats at the bottom as its own piece of glass.
 | --- | --- |
 | <img src="docs/images/web-music.png" width="420" alt="Music, aurora"> | <img src="docs/images/web-oled.png" width="420" alt="Music, OLED black"> |
 
+Albums open like iOS Music: the cover large, the artist, the length, and Play or Shuffle.
+
+<img src="docs/images/web-album.png" width="620" alt="An album page">
+
 ---
 
 ## Getting started
