@@ -25,7 +25,7 @@ Measured with real 2 GB files between a Xiaomi 15 and a Wi-Fi 7 laptop on 5 GHz,
 No cloud upload, no relay: the laptop talks to the phone directly, uploads and downloads
 run over **several connections at once**, and files stream straight to disk in large
 blocks without ever being held in memory. A 4 GB video crosses in about a minute. Files of
-**up to 64 GB** are accepted (Setup → *Largest file accepted*).
+**up to 64 GB** are accepted (Setup → *Largest file accepted*), or **no limit** at all, where only the phone's free space counts.
 
 <p align="center">
   <img src="docs/images/web-home.png" width="760" alt="Home: clipboard, files and the monitor">
@@ -216,8 +216,10 @@ every byte crosses the air twice and competes for the router's time; the phone's
 is a direct link. It works with mobile data off, so BlazeIt keeps working with no internet
 at all.
 
-**Over USB:** `tools/blazeit-usb.bat` (or `.sh`) forwards the phone's port over a cable
-with `adb` and opens `http://localhost:8787`.
+**Fastest of all: a USB-C cable.** Plug the phone into the laptop and turn on USB tethering
+(Setup → *Fastest of all: a USB-C cable* → *Set up*); BlazeIt shows the cable's address on
+Home. A cable has no radio to share and no interference. The page's Settings has the same
+steps. For developers, `tools/blazeit-usb.bat` (or `.sh`) forwards the port with `adb` instead.
 
 ---
 
