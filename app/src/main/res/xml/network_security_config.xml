@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- BlazeIt talks to other phones over plain HTTP on the local network, the same way
+     computers talk to it. Android blocks outgoing cleartext by default, which would stop
+     one phone from ever reaching another. -->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="true" />
+</network-security-config>

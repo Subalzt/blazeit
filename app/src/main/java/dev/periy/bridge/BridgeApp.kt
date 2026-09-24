@@ -10,6 +10,7 @@ import dev.periy.bridge.server.EventBus
 import dev.periy.bridge.server.MusicLibrary
 import dev.periy.bridge.server.FileIndex
 import dev.periy.bridge.server.PairingManager
+import dev.periy.bridge.server.PeerManager
 import dev.periy.bridge.server.ServerConfig
 import dev.periy.bridge.server.Storage
 import dev.periy.bridge.server.TusStore
@@ -32,6 +33,7 @@ class Container(ctx: Context) {
     val devices = DeviceRegistry(app)
     val pairing = PairingManager(app, devices)
     val music = MusicLibrary(app)
+    val peers = PeerManager(app, ::deviceName) { prefs.uploadStreams }
 
     private val _glass = MutableStateFlow(prefs.glass)
 

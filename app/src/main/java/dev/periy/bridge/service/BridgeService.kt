@@ -88,7 +88,11 @@ class BridgeService : Service() {
 
         if (container.server?.isRunning != true) {
             scope.launch {
-                runCatching { container.newServer().start() }
+                runCatching {
+                    container.newServer().start()
+                    // Let other phones running BlazeIt find this one on the network.
+                    container.peers.advertise(container.prefs.port)
+                }
                     .onFailure {
                         Log.e(TAG, "Server failed to start", it)
                         stopEverything()
@@ -104,6 +108,7 @@ class BridgeService : Service() {
 
     override fun onDestroy() {
         _running.value = false
+        container.peers.stopAdvertising()
         container.stopServer()
         releaseLocks()
         scope.cancel()
@@ -124,6 +129,7 @@ class BridgeService : Service() {
 
     private fun stopEverything() {
         _running.value = false
+        container.peers.stopAdvertising()
         container.stopServer()
         releaseLocks()
         ServiceCompat.stopForeground(this, ServiceCompat.STOP_FOREGROUND_REMOVE)
@@ -172,7 +178,7 @@ class BridgeService : Service() {
             it.state == dev.periy.bridge.server.TransferState.ACTIVE
         }
 
-        val title = if (active.isEmpty()) "Xoosh is ready" else {
+        val title = if (active.isEmpty()) "BlazeIt is ready" else {
             val rate = active.sumOf { it.bytesPerSec }
             "Transferring ${active.size} file${if (active.size == 1) "" else "s"} - ${formatRate(rate)}"
         }

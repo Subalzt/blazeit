@@ -78,8 +78,10 @@ fun constantTimeEquals(a: ByteArray, b: ByteArray): Boolean {
  */
 fun describeUserAgent(ua: String?): String {
     if (ua.isNullOrBlank()) return "Browser"
-    // The laptop helper names itself: "XooshPC/1 (DESKTOP-ABC)".
-    Regex("""XooshPC/\S+ \((.+)\)""").find(ua)?.let { return "Laptop control on " + it.groupValues[1] }
+    // The laptop helper names itself: "BlazeItPC/1 (DESKTOP-ABC)" (older copies: "XooshPC/1 (...)").
+    // Another phone running BlazeIt: "BlazeItPhone/1 (Xiaomi 24129PN74I)".
+    Regex("""BlazeItPhone/\S+ \((.+)\)""").find(ua)?.let { return "Phone: " + it.groupValues[1] }
+    Regex("""(?:BlazeIt|Xoosh)PC/\S+ \((.+)\)""").find(ua)?.let { return "Laptop control on " + it.groupValues[1] }
     val browser = when {
         "Edg/" in ua -> "Edge"
         "OPR/" in ua -> "Opera"

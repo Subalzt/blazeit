@@ -41,6 +41,7 @@
 
     <application
         android:name=".BridgeApp"
+        android:networkSecurityConfig="@xml/network_security_config"
         android:allowBackup="false"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
@@ -125,7 +126,7 @@
             android:stopWithTask="false">
             <property
                 android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
-                android:value="Xoosh hosts a local HTTP server on this device so a computer on the same network can transfer files and clipboard text to and from the phone. The service must remain running while the browser page is open, because the phone is the server." />
+                android:value="BlazeIt hosts a local HTTP server on this device so a computer on the same network can transfer files and clipboard text to and from the phone. The service must remain running while the browser page is open, because the phone is the server." />
         </service>
     </application>
 </manifest>
