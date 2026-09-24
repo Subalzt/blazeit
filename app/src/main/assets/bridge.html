@@ -6,630 +6,484 @@
 <title>BlazeIt</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20108%20108%22%3E%3Cdefs%3E%3ClinearGradient%20id%3D%22bg%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%221%22%20y2%3D%221%22%3E%3Cstop%20offset%3D%220%22%20stop-color%3D%22%232A2270%22%2F%3E%3Cstop%20offset%3D%22.55%22%20stop-color%3D%22%230C0C18%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%2308080E%22%2F%3E%3C%2FlinearGradient%3E%3CradialGradient%20id%3D%22g1%22%20cx%3D%2298%22%20cy%3D%2218%22%20r%3D%2248%22%20gradientUnits%3D%22userSpaceOnUse%22%3E%3Cstop%20offset%3D%220%22%20stop-color%3D%22%2364D2FF%22%20stop-opacity%3D%22.44%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%2364D2FF%22%20stop-opacity%3D%220%22%2F%3E%3C%2FradialGradient%3E%3CradialGradient%20id%3D%22g2%22%20cx%3D%2230%22%20cy%3D%22100%22%20r%3D%2256%22%20gradientUnits%3D%22userSpaceOnUse%22%3E%3Cstop%20offset%3D%220%22%20stop-color%3D%22%23FFB000%22%20stop-opacity%3D%22.4%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%23FFB000%22%20stop-opacity%3D%220%22%2F%3E%3C%2FradialGradient%3E%3CradialGradient%20id%3D%22g3%22%20cx%3D%22104%22%20cy%3D%22104%22%20r%3D%2250%22%20gradientUnits%3D%22userSpaceOnUse%22%3E%3Cstop%20offset%3D%220%22%20stop-color%3D%22%23BF5AF2%22%20stop-opacity%3D%22.4%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%23BF5AF2%22%20stop-opacity%3D%220%22%2F%3E%3C%2FradialGradient%3E%3ClinearGradient%20id%3D%22body%22%20x1%3D%22330%22%20y1%3D%22272%22%20x2%3D%22520%22%20y2%3D%22586%22%20gradientUnits%3D%22userSpaceOnUse%22%3E%3Cstop%20offset%3D%220%22%20stop-color%3D%22%23FFF4A8%22%2F%3E%3Cstop%20offset%3D%22.42%22%20stop-color%3D%22%23FFD60A%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%23FF9F0A%22%2F%3E%3C%2FlinearGradient%3E%3ClinearGradient%20id%3D%22gloss%22%20x1%3D%220%22%20y1%3D%22260%22%20x2%3D%220%22%20y2%3D%22440%22%20gradientUnits%3D%22userSpaceOnUse%22%3E%3Cstop%20offset%3D%220%22%20stop-color%3D%22%23fff%22%20stop-opacity%3D%22.5%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%23fff%22%20stop-opacity%3D%220%22%2F%3E%3C%2FlinearGradient%3E%3ClinearGradient%20id%3D%22rim%22%20x1%3D%22295%22%20y1%3D%22272%22%20x2%3D%22580%22%20y2%3D%22586%22%20gradientUnits%3D%22userSpaceOnUse%22%3E%3Cstop%20offset%3D%220%22%20stop-color%3D%22%23fff%22%20stop-opacity%3D%22.95%22%2F%3E%3Cstop%20offset%3D%22.45%22%20stop-color%3D%22%23fff%22%20stop-opacity%3D%220%22%2F%3E%3Cstop%20offset%3D%22.8%22%20stop-color%3D%22%23fff%22%20stop-opacity%3D%220%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%23fff%22%20stop-opacity%3D%22.6%22%2F%3E%3C%2FlinearGradient%3E%3CclipPath%20id%3D%22glyph%22%3E%3Cpath%20d%3D%22M295%2C272%20H371%20V358%20A127.5%2C127.5%200%201%201%20371%2C551%20V586%20H295%20V484%20H433%20V527%20L527%2C458%20L433%2C386%20V430%20H295%20Z%22%2F%3E%3C%2FclipPath%3E%3Cfilter%20id%3D%22soft%22%20x%3D%22-20%25%22%20y%3D%22-20%25%22%20width%3D%22140%25%22%20height%3D%22140%25%22%3E%3CfeGaussianBlur%20stdDeviation%3D%2210%22%2F%3E%3C%2Ffilter%3E%3C%2Fdefs%3E%3Crect%20width%3D%22108%22%20height%3D%22108%22%20rx%3D%2224%22%20fill%3D%22url(%23bg)%22%2F%3E%3Crect%20width%3D%22108%22%20height%3D%22108%22%20rx%3D%2224%22%20fill%3D%22url(%23g1)%22%2F%3E%3Crect%20width%3D%22108%22%20height%3D%22108%22%20rx%3D%2224%22%20fill%3D%22url(%23g2)%22%2F%3E%3Crect%20width%3D%22108%22%20height%3D%22108%22%20rx%3D%2224%22%20fill%3D%22url(%23g3)%22%2F%3E%3Cg%20transform%3D%22translate(54%2054)%20scale(0.152)%20translate(-438.5%20-429)%22%3E%3Cpath%20d%3D%22M295%2C272%20H371%20V358%20A127.5%2C127.5%200%201%201%20371%2C551%20V586%20H295%20V484%20H433%20V527%20L527%2C458%20L433%2C386%20V430%20H295%20Z%22%20transform%3D%22translate(6%2022)%22%20fill%3D%22%23000%22%20fill-opacity%3D%22.45%22%20filter%3D%22url(%23soft)%22%2F%3E%3Cpath%20d%3D%22M295%2C272%20H371%20V358%20A127.5%2C127.5%200%201%201%20371%2C551%20V586%20H295%20V484%20H433%20V527%20L527%2C458%20L433%2C386%20V430%20H295%20Z%22%20fill%3D%22url(%23body)%22%2F%3E%3Cpath%20d%3D%22M270%2C250%20H600%20V420%20Q440%2C380%20270%2C440%20Z%22%20fill%3D%22url(%23gloss)%22%20clip-path%3D%22url(%23glyph)%22%2F%3E%3Cpath%20d%3D%22M295%2C272%20H371%20V358%20A127.5%2C127.5%200%201%201%20371%2C551%20V586%20H295%20V484%20H433%20V527%20L527%2C458%20L433%2C386%20V430%20H295%20Z%22%20fill%3D%22none%22%20stroke%3D%22url(%23rim)%22%20stroke-width%3D%227%22%20stroke-linejoin%3D%22round%22%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E">
 <style>
+  /* BlazeIt, for a laptop screen.
+     A sidebar for where you are, the page across the rest of the width, the monitor as a
+     panel docked on the right while it is on, and the player docked along the bottom.
+     Surfaces are quiet; glass is kept for the chrome that floats over content. Corners
+     are small and consistent: 12px for cards, 8px for controls. One accent, the yellow. */
   :root {
-    --yellow: #FFE500;
-    --yellow-dim: #E6CE00;
-    --ink: #0A0A0A;
-    --ink-soft: #2A2A2A;
-    --paper: #FFFFFF;
-    --row: #F0F0F0;
-    --row-alt: #E6E6E6;
-    --chip: #D2D2D2;
-    --muted: #5C5C5C;
-    --line: #CFCFCF;
-    --danger: #C62828;
-    --good: #1B7F3B;
+    --accent: #FFD60A;
+    --txt: rgba(255,255,255,.94);
+    --sub: rgba(235,235,245,.6);
+    --faint: rgba(235,235,245,.32);
+    --surface: rgba(255,255,255,.045);
+    --surface-2: rgba(255,255,255,.08);
+    --surface-3: rgba(255,255,255,.14);
+    --hover: rgba(255,255,255,.06);
+    --line: rgba(255,255,255,.08);
+    --line-2: rgba(255,255,255,.16);
+    --glass: rgba(22,22,28,.62);
+    --glass-strong: rgba(24,24,30,.86);
+    --blur: blur(30px) saturate(180%);
+    --good: #30D158;
+    --bad: #FF453A;
+    --blue: #0A84FF;
+    --music: #BF5AF2;
+    --side: 232px;
+    --panel: 400px;
+    --r-lg: 12px;
+    --r: 8px;
+    --mono: ui-monospace, "SF Mono", "Cascadia Mono", Menlo, monospace;
   }
   * { box-sizing: border-box; }
   html, body { margin: 0; padding: 0; }
   body {
-    background: var(--row-alt);
-    color: var(--ink);
-    font: 15px/1.55 system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
-    padding-bottom: 76px;
+    min-height: 100vh; color: var(--txt);
+    font: 14px/1.5 -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI Variable Text", "Segoe UI", Inter, Roboto, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    background:
+      radial-gradient(900px 700px at 0% 0%, rgba(94,92,230,.22), transparent 70%),
+      radial-gradient(800px 600px at 100% 20%, rgba(100,210,255,.12), transparent 70%),
+      radial-gradient(900px 700px at 60% 110%, rgba(255,159,10,.10), transparent 70%),
+      #0b0b10;
+    background-attachment: fixed;
   }
-  .shell { max-width: 1000px; margin: 0 auto; background: var(--paper); min-height: 100vh; }
-
-  /* ---------------------------------------------------------------- masthead */
-  .mast {
-    background: var(--ink); color: var(--paper);
-    display: flex; align-items: center; gap: 10px;
-    padding: 14px 18px;
-  }
-  .logo { font-size: 26px; font-weight: 900; letter-spacing: -0.5px; }
-  .logo b { color: var(--yellow); font-weight: 900; }
+  body.oled { background: #000; --surface: rgba(255,255,255,.05); --glass: rgba(14,14,16,.78); --glass-strong: rgba(12,12,14,.94); }
+  [hidden] { display: none !important; }
   .grow { flex: 1 1 auto; min-width: 0; }
-  .dot { width: 11px; height: 11px; background: var(--muted); border-radius: 1px; }
-  .dot.on { background: var(--yellow); }
-  .hazard {
-    height: 10px;
-    background: repeating-linear-gradient(45deg, var(--ink) 0 9px, var(--yellow) 9px 18px);
-  }
+  a { color: var(--accent); }
+  b { font-weight: 600; }
+  .kv { font-family: var(--mono); font-weight: 600; font-size: .95em; }
+  .hazard, .theme-toggle { display: none !important; }
 
-  /* ---------------------------------------------------------------- hero */
-  .hero { background: var(--yellow); padding: 18px; }
-  .hero h1 { margin: 0; font-size: 25px; font-weight: 900; letter-spacing: -0.4px; }
-  .hero p { margin: 6px 0 0; font-size: 13.5px; color: var(--ink-soft); max-width: 70ch; }
-
-  /* ---------------------------------------------------------------- tabs */
-  .tabs { display: flex; background: var(--ink); }
-  .tabs button {
-    flex: 1 1 0; border: 0; cursor: pointer;
-    background: var(--ink); color: var(--paper);
-    font: inherit; font-size: 11.5px; font-weight: 800;
-    letter-spacing: 1.4px; text-transform: uppercase;
-    padding: 13px 6px;
+  /* ---------------------------------------------------------------- shell */
+  .side {
+    position: fixed; z-index: 30; left: 0; top: 0; bottom: var(--player-h, 0px); width: var(--side);
+    display: flex; flex-direction: column; padding: 18px 12px 14px;
+    background: var(--glass); -webkit-backdrop-filter: var(--blur); backdrop-filter: var(--blur);
+    border-right: 1px solid var(--line);
   }
-  .tabs button.on { background: var(--yellow); color: var(--ink); }
-  .tabs button:hover:not(.on) { background: var(--ink-soft); }
+  .logo { display: flex; align-items: center; gap: 10px; font-size: 17px; font-weight: 700; letter-spacing: -.2px; }
+  .side .logo { padding: 2px 10px 22px; }
+  .logo .mark { width: 30px; height: 30px; border-radius: 8px; flex: 0 0 auto; box-shadow: 0 0 0 1px rgba(255,255,255,.08); }
+  .tabs { display: flex; flex-direction: column; gap: 2px; }
+  .tabs button, .side-item {
+    display: flex; align-items: center; gap: 12px; width: 100%; padding: 8px 10px; border: 0; border-radius: var(--r);
+    background: transparent; color: var(--sub); font: inherit; font-size: 14px; font-weight: 500; text-align: left; cursor: pointer;
+    transition: background .12s, color .12s;
+  }
+  .tabs button:hover, .side-item:hover { background: var(--hover); color: var(--txt); }
+  .tabs button.on { background: var(--surface-2); color: var(--txt); box-shadow: inset 0 0 0 1px var(--line); }
+  .tabs svg, .side-item svg { width: 18px; height: 18px; flex: 0 0 18px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+  .tabs button.on svg { stroke: var(--accent); }
+  .tabs .eq { display: inline-flex; align-items: flex-end; gap: 2px; height: 12px; margin-left: auto; }
+  .tabs .eq b { width: 2.5px; border-radius: 1px; background: var(--accent); animation: eq .9s ease-in-out infinite alternate; }
+  .tabs .eq b:nth-child(2) { animation-delay: -.35s; }
+  .tabs .eq b:nth-child(3) { animation-delay: -.7s; }
+  @keyframes eq { from { height: 25%; } to { height: 100%; } }
+  .tabs .count { margin-left: auto; font-style: normal; font-size: 11px; font-weight: 700; color: #111; background: var(--accent);
+    min-width: 18px; height: 18px; line-height: 18px; border-radius: 9px; padding: 0 5px; text-align: center; }
+  .side-foot { margin-top: auto; display: flex; flex-direction: column; gap: 8px; }
+  .switch { margin-left: auto; position: relative; width: 30px; height: 18px; border-radius: 9px; background: rgba(255,255,255,.18); transition: background .15s; flex: 0 0 auto; }
+  .switch::after { content: ""; position: absolute; left: 2px; top: 2px; width: 14px; height: 14px; border-radius: 50%; background: #fff; transition: left .15s; box-shadow: 0 1px 2px rgba(0,0,0,.4); }
+  .mon-toggle.on { color: var(--txt); }
+  .mon-toggle.on .switch { background: var(--good); }
+  .mon-toggle.on .switch::after { left: 14px; }
+  .status { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 10px; background: var(--surface); border: 1px solid var(--line); min-width: 0; }
+  .status-text { display: flex; flex-direction: column; min-width: 0; line-height: 1.3; }
+  .status .dev { font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .status .lbl { font-size: 12px; color: var(--sub); }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--faint); flex: 0 0 8px; }
+  .dot.on { background: var(--good); box-shadow: 0 0 8px rgba(48,209,88,.7); }
+
+  .main { margin-left: var(--side); padding: 30px 40px calc(var(--player-h, 0px) + 48px); min-width: 0; }
+  body.mon-dock .main { margin-right: var(--panel); }
+  .main > * { max-width: 1320px; }
+  .page-head h1 { margin: 0; font-size: 26px; font-weight: 700; letter-spacing: -.4px; }
+  .page-head p { margin: 2px 0 0; color: var(--sub); }
+  .hero { display: none; }
 
   /* ---------------------------------------------------------------- sections */
-  .bar {
-    background: var(--ink); color: var(--yellow);
-    font-size: 11.5px; font-weight: 800; letter-spacing: 1.4px; text-transform: uppercase;
-    padding: 10px 18px; display: flex; align-items: center; gap: 10px;
-  }
-  .bar .act { color: var(--paper); cursor: pointer; text-decoration: underline; }
-  .pad { padding: 18px; }
-  .note { font-size: 13px; color: var(--muted); margin: 8px 0 0; max-width: 78ch; }
-  .note.warn { color: var(--danger); }
+  .bar { display: flex; align-items: center; gap: 10px; margin: 28px 2px 10px; font-size: 13px; font-weight: 600; color: var(--sub); }
+  .bar .act { margin-left: auto; color: var(--accent); cursor: pointer; font-weight: 600; }
+  .pad { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-lg); padding: 18px 20px; }
+  .grid2 { display: grid; grid-template-columns: minmax(0, 1fr); column-gap: 24px; }
+  .block { display: flex; flex-direction: column; min-width: 0; }
+  .block > .pad { flex: 1 1 auto; }
+  @media (min-width: 1150px) { .grid2 { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } }
+  .note { font-size: 13px; color: var(--sub); margin: 10px 0 0; max-width: 72ch; }
+  .note b { color: var(--txt); }
+  .note.warn { color: var(--bad); }
+  .empty { color: var(--sub); margin: 4px 0; }
+  .meta { font-size: 12.5px; color: var(--sub); font-variant-numeric: tabular-nums; }
+  .actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; align-items: center; }
 
   /* ---------------------------------------------------------------- controls */
-  button.btn, a.btn {
-    display: inline-block; text-decoration: none;
-    font: inherit; font-size: 11.5px; font-weight: 800;
-    letter-spacing: 1.3px; text-transform: uppercase;
-    padding: 11px 18px; border-radius: 2px; cursor: pointer;
-    background: var(--yellow); color: var(--ink); border: 2px solid var(--yellow);
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 6px; height: 34px; padding: 0 16px;
+    border: 1px solid transparent; border-radius: var(--r); background: var(--accent); color: #111;
+    font: inherit; font-size: 13.5px; font-weight: 600; text-decoration: none; white-space: nowrap; cursor: pointer;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.35); transition: filter .12s, background .12s, transform .08s;
   }
-  a.btn:hover, button.btn:hover:not(:disabled) { background: var(--yellow-dim); border-color: var(--yellow-dim); }
-  button.btn.ghost { background: var(--paper); border: 2px solid var(--ink); color: var(--ink); }
-  button.btn.ghost:hover:not(:disabled) { background: var(--row); }
-  button.btn.danger { background: var(--paper); border-color: var(--danger); color: var(--danger); }
-  button.btn:disabled { opacity: .4; cursor: default; }
-  button.btn.sm { padding: 7px 12px; font-size: 10.5px; }
-  .actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
-
-  textarea {
-    width: 100%; font: inherit; font-size: 14px;
-    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-    min-height: 150px; resize: vertical;
-    padding: 12px; border: 2px solid var(--ink); border-radius: 2px;
-    background: var(--paper); color: var(--ink);
+  .btn:hover:not(:disabled) { filter: brightness(1.07); }
+  .btn:active:not(:disabled) { transform: scale(.98); }
+  .btn:disabled { opacity: .4; cursor: default; }
+  .btn.ghost { background: var(--surface-2); color: var(--txt); border-color: var(--line); box-shadow: none; }
+  .btn.ghost:hover:not(:disabled) { background: var(--surface-3); filter: none; }
+  .btn.danger { color: #FF6961; }
+  .btn.sm { height: 30px; padding: 0 12px; font-size: 13px; }
+  textarea, input[type=search], input[type=text] {
+    width: 100%; font: inherit; font-size: 14px; color: var(--txt);
+    background: rgba(0,0,0,.25); border: 1px solid var(--line); border-radius: 10px; padding: 11px 14px; outline: none;
+    transition: border-color .12s, box-shadow .12s;
   }
-  textarea:focus { outline: 3px solid var(--yellow); outline-offset: -1px; }
-
-  .seg { display: inline-flex; border: 2px solid var(--ink); border-radius: 2px; overflow: hidden; }
-  .seg button {
-    border: 0; background: var(--paper); color: var(--ink); cursor: pointer;
-    font: inherit; font-size: 11.5px; font-weight: 800; letter-spacing: 1px;
-    padding: 9px 15px;
-  }
-  .seg button.on { background: var(--ink); color: var(--yellow); }
+  textarea { min-height: 150px; resize: vertical; line-height: 1.5; }
+  textarea:focus, input[type=search]:focus { border-color: rgba(255,214,10,.55); box-shadow: 0 0 0 3px rgba(255,214,10,.15); }
+  textarea::placeholder, input::placeholder { color: var(--faint); }
+  input[type=search] { height: 38px; padding: 0 14px; border-radius: var(--r); }
+  .seg { display: inline-flex; gap: 2px; padding: 3px; border-radius: 9px; background: rgba(0,0,0,.28); border: 1px solid var(--line); }
+  .seg button { border: 0; border-radius: 6px; background: transparent; color: var(--sub); font: inherit; font-size: 13px; font-weight: 600; padding: 6px 14px; cursor: pointer; }
+  .seg button:hover { color: var(--txt); }
+  .seg button.on { background: var(--surface-3); color: var(--txt); box-shadow: 0 1px 2px rgba(0,0,0,.4), inset 0 0 0 1px var(--line); }
 
   /* ---------------------------------------------------------------- rows */
-  .row {
-    background: var(--row); margin-bottom: 3px;
-    padding: 12px 14px; display: flex; gap: 12px; align-items: flex-start;
-  }
-  .row.accent { background: var(--yellow); }
-  .glyph {
-    width: 34px; height: 34px; flex: 0 0 34px;
-    background: var(--chip); border-radius: 2px;
-    display: flex; align-items: center; justify-content: center;
-    font-weight: 900; font-size: 15px;
-  }
-  .row.accent .glyph { background: var(--ink); color: var(--yellow); }
+  .row { display: flex; align-items: center; gap: 14px; padding: 12px 14px; margin-bottom: 8px;
+    background: var(--surface); border: 1px solid var(--line); border-radius: 10px; }
+  .pad .row { background: transparent; border: 0; border-radius: 0; margin: 0; padding: 11px 6px; }
+  .pad .row + .row { border-top: 1px solid var(--line); }
   .row .body { flex: 1 1 auto; min-width: 0; }
-  .row .title {
-    font-weight: 800; font-size: 15px; letter-spacing: .1px;
-    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-  }
-  .row .meta { font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
-  .row.accent .meta { color: var(--ink-soft); }
-
-  .track { height: 8px; background: var(--chip); margin-top: 8px; }
-  .track > i { display: block; height: 100%; background: var(--ink); width: 0; transition: width .25s linear; }
+  .row .title { font-size: 14px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .glyph { width: 34px; height: 34px; flex: 0 0 34px; display: grid; place-items: center; border-radius: var(--r);
+    background: var(--surface-2); color: var(--sub); font-size: 14px; font-weight: 700; }
+  .row.accent { background: rgba(255,214,10,.08); box-shadow: inset 0 0 0 1px rgba(255,214,10,.22); }
+  .row.accent .glyph { background: var(--accent); color: #111; }
+  /* files and transfers: text on the left, actions on the right, on one line */
+  #files .row .body, #transfers .row .body { display: grid; grid-template-columns: minmax(0, 1fr) auto; column-gap: 16px; align-items: center; }
+  #files .row .body > *, #transfers .row .body > * { grid-column: 1; }
+  #files .row .actions, #transfers .row .actions { grid-column: 2; grid-row: 1 / span 4; margin: 0; flex-wrap: nowrap; }
+  .track { height: 4px; margin-top: 8px; border-radius: 2px; background: rgba(255,255,255,.1); overflow: hidden; }
+  .track > i { display: block; height: 100%; width: 0; background: var(--accent); transition: width .25s linear; }
   .lanes { display: flex; gap: 2px; margin-top: 3px; }
-  .lanes > i { flex: 1 1 0; height: 4px; background: var(--chip); }
-  .lanes > i > b { display: block; height: 100%; background: var(--ink); width: 0; opacity: .55; }
+  .lanes > i { flex: 1 1 0; height: 3px; border-radius: 2px; background: rgba(255,255,255,.07); overflow: hidden; }
+  .lanes > i > b { display: block; height: 100%; width: 0; background: var(--accent); opacity: .5; }
+  .drop { border: 1.5px dashed var(--line-2); border-radius: var(--r-lg); padding: 38px 18px; text-align: center; cursor: pointer;
+    background: rgba(0,0,0,.14); transition: border-color .12s, background .12s; }
+  .drop:hover, .drop.over { border-color: rgba(255,214,10,.7); background: rgba(255,214,10,.05); }
+  .drop .big { font-size: 16px; font-weight: 600; }
+  .banner { padding: 11px 14px; border-radius: 10px; font-size: 13px; font-weight: 500;
+    background: rgba(255,214,10,.08); color: var(--accent); border: 1px solid rgba(255,214,10,.22); }
+  .banner.bad { background: rgba(255,69,58,.1); color: #FF6961; border-color: rgba(255,69,58,.28); }
+  .badge { font-size: 9.5px; font-weight: 700; letter-spacing: .6px; padding: 2px 5px; margin-left: 8px; vertical-align: 2px;
+    border-radius: 4px; background: rgba(255,255,255,.1); color: var(--sub); }
 
-  /* ---------------------------------------------------------------- drop */
-  .drop {
-    border: 3px dashed var(--ink); background: var(--row);
-    padding: 44px 18px; text-align: center; cursor: pointer;
-  }
-  .drop.over { background: var(--yellow); }
-  .drop .big { font-size: 19px; font-weight: 900; text-transform: uppercase; letter-spacing: .5px; }
-
-  /* ---------------------------------------------------------------- dock */
-  .dock {
-    position: fixed; left: 0; right: 0; bottom: 0; z-index: 30;
-    background: var(--ink); color: var(--paper);
-    border-top: 4px solid var(--yellow);
-  }
-  .dock .head {
-    display: flex; align-items: center; gap: 12px; padding: 12px 18px; cursor: pointer;
-    max-width: 1000px; margin: 0 auto;
-  }
-  .dock .rate { font-size: 19px; font-weight: 900; color: var(--yellow); font-variant-numeric: tabular-nums; }
-  .dock .lbl { font-size: 11.5px; font-weight: 800; letter-spacing: 1.3px; text-transform: uppercase; }
-  .dock .list { max-height: 46vh; overflow-y: auto; background: var(--paper); color: var(--ink); }
-  .dock .list .inner { max-width: 1000px; margin: 0 auto; padding: 3px 0; }
+  /* ---------------------------------------------------------------- dock: transfers */
+  .dock { position: fixed; z-index: 35; right: 24px; bottom: calc(var(--player-h, 0px) + 16px); width: min(560px, calc(100vw - var(--side) - 48px));
+    border-radius: var(--r-lg); overflow: hidden; background: var(--glass-strong); border: 1px solid var(--line-2);
+    -webkit-backdrop-filter: var(--blur); backdrop-filter: var(--blur); box-shadow: 0 16px 48px rgba(0,0,0,.5); }
+  body.mon-dock .dock { right: calc(var(--panel) + 24px); }
+  .dock .head { display: flex; align-items: center; gap: 12px; padding: 11px 16px; cursor: pointer; }
+  .dock .rate { font-size: 16px; font-weight: 700; color: var(--accent); font-variant-numeric: tabular-nums; }
+  .dock .lbl { font-size: 12px; font-weight: 600; color: var(--sub); }
+  .dock .list { max-height: 46vh; overflow-y: auto; border-top: 1px solid var(--line); }
+  .dock .list .inner { padding: 6px 12px; }
 
   /* ---------------------------------------------------------------- login */
-  #login { max-width: 420px; margin: 9vh auto; background: var(--paper); }
-  .code {
-    font-size: 46px; letter-spacing: 14px; text-align: center;
-    font-family: ui-monospace, monospace; font-weight: 900;
-    padding: 16px; margin: 12px 0 8px; background: var(--yellow); color: var(--ink);
-  }
-  .banner {
-    padding: 12px 14px; font-size: 13px; font-weight: 600;
-    background: var(--yellow); border-left: 6px solid var(--ink);
-  }
-  .banner.bad { background: #FFE0E0; border-left-color: var(--danger); color: var(--danger); }
-  .empty { color: var(--muted); font-size: 14px; }
-
-  /* ---------------------------------------------------------------- theme toggle */
-  .theme-toggle {
-    border: 2px solid rgba(255,255,255,.45); background: transparent; color: #fff; cursor: pointer;
-    font: inherit; font-size: 10.5px; font-weight: 800; letter-spacing: 1.3px;
-    padding: 5px 9px; border-radius: 0; margin-right: 6px;
-  }
-  .theme-toggle.on { background: var(--yellow); border-color: var(--yellow); color: var(--ink); }
+  #login { max-width: 420px; margin: 14vh auto 0; border-radius: 16px; overflow: hidden;
+    background: var(--glass-strong); border: 1px solid var(--line-2); -webkit-backdrop-filter: var(--blur); backdrop-filter: var(--blur);
+    box-shadow: 0 24px 64px rgba(0,0,0,.5); }
+  #login .mast { padding: 22px 24px 0; }
+  #login .hero { display: block; padding: 18px 24px 0; }
+  #login .hero h1 { margin: 0; font-size: 20px; font-weight: 700; }
+  #login .hero p { margin: 4px 0 0; color: var(--sub); }
+  #login .pad { background: transparent; border: 0; padding: 18px 24px 24px; }
+  #login .actions .btn { flex: 1; height: 38px; }
+  .code { font-family: var(--mono); font-size: 40px; font-weight: 700; letter-spacing: 12px; text-align: center;
+    padding: 14px; margin: 12px 0 8px; border-radius: var(--r-lg); color: var(--accent);
+    background: rgba(255,214,10,.08); border: 1px solid rgba(255,214,10,.22); }
 
   /* ---------------------------------------------------------------- music */
-  .music-tools { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 12px; }
-  input[type=search] {
-    flex: 1 1 260px; min-width: 0; font: inherit; font-size: 14px; color: var(--ink);
-    padding: 10px 12px; border: 2px solid var(--ink); border-radius: 0; background: var(--paper);
-  }
-  input[type=search]:focus { outline: 3px solid var(--yellow); outline-offset: -1px; }
-  .cover {
-    width: 44px; height: 44px; flex: 0 0 44px; background: var(--chip);
-    display: flex; align-items: center; justify-content: center; font-weight: 900; overflow: hidden;
-  }
+  .music-tools { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin: 4px 0 12px; }
+  .music-tools input[type=search] { flex: 1 1 260px; width: auto; }
+  .cover { width: 44px; height: 44px; flex: 0 0 44px; display: grid; place-items: center; overflow: hidden;
+    border-radius: var(--r); background: var(--surface-2); color: var(--sub); font-weight: 700; }
   .cover img { width: 100%; height: 100%; object-fit: cover; display: block; }
-  /* The note sits under the cover and shows until (or unless) the image arrives. */
   .has-glyph { position: relative; }
   .has-glyph > img { position: absolute; inset: 0; }
-  .song { cursor: pointer; align-items: center; }
-  .song:hover { outline: 2px solid var(--ink); outline-offset: -2px; }
-  .song .dur { font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
-  /* The playing row is yellow; its cover chip goes black so the note glyph still reads. */
-  .row.accent .cover, body.glass .row.accent .cover { background: var(--ink); color: var(--yellow); }
-  .badge {
-    font-size: 9.5px; font-weight: 900; letter-spacing: 1px; padding: 2px 5px;
-    background: var(--ink); color: var(--yellow); margin-left: 6px; vertical-align: 1px;
-  }
-  .albums { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 3px; }
-  .album { cursor: pointer; background: var(--row); }
-  .album:hover { outline: 2px solid var(--ink); outline-offset: -2px; }
-  .album .art { aspect-ratio: 1 / 1; background: var(--chip); display: flex; align-items: center;
-    justify-content: center; font-size: 34px; font-weight: 900; overflow: hidden; }
+  #music-list .song { cursor: pointer; border-radius: var(--r); padding: 7px 10px; }
+  #music-list .song + .song { border-top: 0; }
+  #music-list .song:hover { background: var(--hover); }
+  #music-list .song.accent { background: rgba(255,214,10,.08); box-shadow: none; }
+  #music-list .song.accent .title { color: var(--accent); }
+  .song .dur { font-size: 12.5px; color: var(--sub); font-variant-numeric: tabular-nums; }
+  .albums { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 12px; }
+  .album { cursor: pointer; border-radius: 10px; padding: 8px; transition: background .12s; }
+  .album:hover { background: var(--hover); }
+  .album .art { aspect-ratio: 1 / 1; display: grid; place-items: center; overflow: hidden; border-radius: var(--r);
+    background: var(--surface-2); color: var(--faint); font-size: 34px; box-shadow: 0 8px 20px rgba(0,0,0,.35); }
   .album .art img { width: 100%; height: 100%; object-fit: cover; display: block; }
-  .album .cap { padding: 8px 10px; }
-  .album .cap .t { font-weight: 800; font-size: 13.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .album .cap .a { font-size: 12px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .album .cap { padding: 8px 2px 0; }
+  .album .cap .t { font-size: 13.5px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .album .cap .a { font-size: 12px; color: var(--sub); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
-  /* ---------------------------------------------------------------- turntable
-     Ported from the Vinyl Glass widget: the same 1000-unit design square, record,
-     sheen and tonearm. Only the label turns (the grooves look the same at any angle),
-     so pausing freezes it exactly where it is and playing carries on from there. */
-  .deck {
-    position: relative; overflow: hidden; display: flex; align-items: center; gap: 22px;
-    background: var(--ink); color: var(--paper); padding: 18px; margin-bottom: 12px;
-  }
+  /* turntable, ported from the Vinyl Glass widget: same 1000-unit square, record, sheen and arm.
+     Only the label turns, so pausing freezes it exactly where it is. */
+  .deck { position: relative; overflow: hidden; display: flex; align-items: center; gap: 36px; padding: 26px 30px;
+    margin-bottom: 16px; border-radius: var(--r-lg); background: rgba(0,0,0,.3); border: 1px solid var(--line); }
   .deck-bg { position: absolute; inset: -40px; background-size: cover; background-position: center;
-    filter: blur(40px) saturate(150%); opacity: 0; transition: opacity .6s; pointer-events: none; }
-  .tt { position: relative; flex: 0 0 auto; width: min(300px, 44vw); aspect-ratio: 1 / 1; cursor: pointer; }
+    filter: blur(50px) saturate(150%); opacity: 0; transition: opacity .6s; pointer-events: none; }
+  .deck-bg.on { opacity: .45; }
+  .tt { position: relative; flex: 0 0 auto; width: min(280px, 32vw); aspect-ratio: 1 / 1; cursor: pointer; }
   .tt > * { position: absolute; display: block; }
-  .tt-label {
-    left: 18.5%; top: 19%; width: 56%; height: 56%; border-radius: 50%; overflow: hidden;
-    background: var(--yellow); color: var(--ink); display: flex; align-items: center; justify-content: center;
-    font-weight: 900; letter-spacing: 3px; font-size: clamp(11px, 2.4vw, 17px);
-    animation: tt-spin 5.28s linear infinite; animation-play-state: paused;
-  }
+  .tt-label { left: 18.5%; top: 19%; width: 56%; height: 56%; border-radius: 50%; overflow: hidden;
+    background: var(--accent); color: #111; display: flex; align-items: center; justify-content: center;
+    font-weight: 800; letter-spacing: 3px; font-size: clamp(11px, 1.6vw, 16px);
+    animation: tt-spin 5.28s linear infinite; animation-play-state: paused; }
   .tt-label img { width: 100%; height: 100%; object-fit: cover; display: block; }
   .tt.spin .tt-label { animation-play-state: running; }
   @keyframes tt-spin { to { transform: rotate(360deg); } }
   .tt-record, .tt-sheen { left: 2.5%; top: 3%; width: 88%; height: 88%; pointer-events: none; }
   .tt-arm { left: 0; top: 0; width: 100%; height: 100%; pointer-events: none; overflow: visible; }
-  /* Swing timings are the widget's: 900 ms down, 750 ms up, both fast-out-slow-in. */
-  #tt-arm { transform-origin: 915px 75px; transform: rotate(-5deg);
-    transition: transform 750ms cubic-bezier(.4, 0, .2, 1); }
+  #tt-arm { transform-origin: 915px 75px; transform: rotate(-5deg); transition: transform 750ms cubic-bezier(.4, 0, .2, 1); }
   .tt.arm #tt-arm { transform: rotate(17deg); transition-duration: 900ms; }
   .deck-meta { position: relative; flex: 1 1 auto; min-width: 0; }
-  .deck-kicker { display: inline-block; background: var(--yellow); color: var(--ink); font-size: 11px;
-    font-weight: 900; letter-spacing: 2px; padding: 3px 7px; margin-bottom: 12px; }
-  .deck-title { font-size: clamp(20px, 3.4vw, 32px); font-weight: 900; line-height: 1.1; letter-spacing: -.5px;
+  .deck-kicker { font-size: 11px; font-weight: 700; letter-spacing: 1.4px; color: var(--accent); margin-bottom: 10px; }
+  .deck-title { font-size: clamp(22px, 2.4vw, 34px); font-weight: 700; line-height: 1.12; letter-spacing: -.5px;
     overflow-wrap: anywhere; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
-  .deck-artist { font-size: 16px; font-weight: 700; margin-top: 8px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .deck-album { font-size: 13px; color: #aaa; margin-top: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .deck-next { font-size: 12px; color: #aaa; margin-top: 16px; padding-top: 10px; border-top: 1px solid #333;
+  .deck-artist { font-size: 16px; font-weight: 600; margin-top: 8px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .deck-album { font-size: 13px; color: var(--sub); margin-top: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .deck-next { font-size: 12.5px; color: var(--sub); margin-top: 18px; padding-top: 12px; border-top: 1px solid var(--line);
     overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .deck-next b { color: var(--yellow); letter-spacing: 1px; font-size: 11px; margin-right: 6px; }
-  .deck .badge { background: var(--yellow); color: var(--ink); }
-  .pl-row .cover { cursor: pointer; }
-  @media (max-width: 560px) {
-    .deck { flex-direction: column; align-items: stretch; }
-    .tt { width: min(300px, 80vw); align-self: center; }
-  }
+  .deck-next b { color: var(--accent); letter-spacing: 1px; font-size: 11px; margin-right: 8px; }
 
-  /* ---------------------------------------------------------------- player */
-  .player {
-    position: fixed; left: 0; right: 0; bottom: 0; z-index: 32;
-    background: var(--ink); color: var(--paper); border-top: 4px solid var(--yellow);
-  }
-  .player .inner { max-width: 1000px; margin: 0 auto; }
-  #pl-seek {
-    -webkit-appearance: none; appearance: none; display: block; width: 100%; height: 8px;
-    margin: 0; cursor: pointer; background: #333; border-radius: 0;
-  }
-  #pl-seek::-webkit-slider-thumb { -webkit-appearance: none; width: 12px; height: 18px; background: var(--yellow); border: 0; border-radius: 0; }
-  #pl-seek::-moz-range-thumb { width: 12px; height: 18px; background: var(--yellow); border: 0; border-radius: 0; }
-  .pl-row { display: flex; align-items: center; gap: 12px; padding: 10px 18px; }
-  .pl-row .cover { width: 48px; height: 48px; flex-basis: 48px; background: #222; color: var(--yellow); }
-  .pl-meta { flex: 1 1 auto; min-width: 0; }
-  .pl-title { font-weight: 800; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .pl-sub { font-size: 12px; color: #aaa; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .pl-time { font-size: 12px; color: #aaa; font-variant-numeric: tabular-nums; white-space: nowrap; }
-  .pl-btn {
-    background: transparent; color: #fff; border: 2px solid #444; border-radius: 0; cursor: pointer;
-    font: inherit; font-size: 12px; font-weight: 900; letter-spacing: 1px; padding: 8px 10px; min-width: 40px;
-  }
-  .pl-btn:hover { border-color: var(--yellow); }
-  .pl-btn.on { background: var(--yellow); color: var(--ink); border-color: var(--yellow); }
-  .pl-btn.play { background: var(--yellow); color: var(--ink); border-color: var(--yellow); min-width: 52px; font-size: 14px; }
-  .dock { bottom: var(--player-h, 0px); }
-  @media (max-width: 640px) { .pl-time, #pl-shuffle, #pl-repeat { display: none; } }
+  /* ---------------------------------------------------------------- player, docked along the bottom */
+  .player { position: fixed; z-index: 40; left: 0; right: 0; bottom: 0;
+    display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.6fr) minmax(0, 1fr); align-items: center; gap: 24px;
+    padding: 10px 24px; background: var(--glass-strong); border-top: 1px solid var(--line);
+    -webkit-backdrop-filter: var(--blur); backdrop-filter: var(--blur); }
+  .pl-left { display: flex; align-items: center; gap: 12px; min-width: 0; }
+  .player .cover { width: 52px; height: 52px; flex: 0 0 52px; cursor: pointer; font-size: 20px; box-shadow: 0 4px 12px rgba(0,0,0,.4); }
+  .pl-meta { min-width: 0; }
+  .pl-title { font-size: 14px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .pl-sub { font-size: 12.5px; color: var(--sub); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .pl-center { display: flex; flex-direction: column; align-items: center; gap: 4px; min-width: 0; }
+  .pl-ctrls { display: flex; align-items: center; gap: 12px; }
+  .pl-btn { position: relative; width: 34px; height: 34px; display: grid; place-items: center; padding: 0;
+    border: 0; border-radius: var(--r); background: transparent; color: var(--sub); cursor: pointer; transition: color .12s, background .12s; }
+  .pl-btn svg { width: 19px; height: 19px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+  .pl-btn svg .fill { fill: currentColor; stroke: none; }
+  .pl-btn:hover { color: var(--txt); background: var(--hover); }
+  .pl-btn.on { color: var(--accent); }
+  #pl-prev, #pl-next { color: var(--txt); }
+  .pl-btn.play { width: 38px; height: 38px; border-radius: 50%; color: #111; background: #fff; }
+  .pl-btn.play:hover { background: #fff; transform: scale(1.05); }
+  .pl-btn.play svg { width: 20px; height: 20px; }
+  #pl-repeat .one { display: none; position: absolute; top: 3px; right: 3px; width: 12px; height: 12px; border-radius: 50%;
+    background: var(--accent); color: #111; font: 800 8.5px/12px system-ui; text-align: center; }
+  #pl-repeat.one .one { display: block; }
+  .pl-bar { display: flex; align-items: center; gap: 10px; width: 100%; max-width: 640px; }
+  .pl-t { font-size: 11.5px; color: var(--sub); font-variant-numeric: tabular-nums; min-width: 36px; text-align: center; }
+  #pl-seek, #pl-vol { -webkit-appearance: none; appearance: none; display: block; flex: 1 1 auto; height: 4px; margin: 0; border-radius: 2px; cursor: pointer;
+    background: linear-gradient(to right, var(--accent) var(--p, 0%), rgba(255,255,255,.16) var(--p, 0%)); }
+  #pl-vol { flex: 0 1 110px; background: linear-gradient(to right, var(--txt) var(--p, 100%), rgba(255,255,255,.16) var(--p, 100%)); }
+  #pl-seek::-webkit-slider-thumb, #pl-vol::-webkit-slider-thumb { -webkit-appearance: none; width: 12px; height: 12px; border-radius: 50%;
+    background: #fff; border: 0; box-shadow: 0 1px 4px rgba(0,0,0,.5); opacity: 0; transition: opacity .12s; }
+  #pl-seek:hover::-webkit-slider-thumb, #pl-vol:hover::-webkit-slider-thumb { opacity: 1; }
+  #pl-seek::-moz-range-thumb, #pl-vol::-moz-range-thumb { width: 12px; height: 12px; border-radius: 50%; background: #fff; border: 0; }
+  .pl-right { display: flex; align-items: center; justify-content: flex-end; gap: 6px; }
+  .pl-btn.small { width: 32px; height: 32px; }
+  #pl-mute.low .w2, #pl-mute.muted .w1, #pl-mute.muted .w2 { display: none; }
 
-  /* ================================================================ glass ======
-     Dark frosted panels over a glowing backdrop, with a real blur behind each sheet.
-     Still square everywhere: the brief was the material, not the rounded corners. */
-  body.glass {
-    color: #f5f5f5;
-    background:
-      radial-gradient(60vmax 60vmax at 8% 4%, rgba(255,229,0,.42), transparent 62%),
-      radial-gradient(55vmax 55vmax at 100% 45%, rgba(255,159,28,.32), transparent 62%),
-      radial-gradient(55vmax 55vmax at 85% 105%, rgba(61,90,254,.22), transparent 62%),
-      radial-gradient(45vmax 45vmax at 0% 100%, rgba(255,244,194,.10), transparent 62%),
-      #07070a;
-    background-attachment: fixed;
-  }
-  body.glass .shell, body.glass #login { background: transparent; }
-  body.glass .mast, body.glass .tabs, body.glass .bar, body.glass .dock .head, body.glass .player {
-    background: rgba(0,0,0,.52);
-    -webkit-backdrop-filter: blur(24px) saturate(160%); backdrop-filter: blur(24px) saturate(160%);
-  }
-  body.glass .tabs button { background: transparent; color: #fff; }
-  body.glass .tabs button.on { background: var(--yellow); color: var(--ink); }
-  body.glass .tabs button:hover:not(.on) { background: rgba(255,255,255,.08); }
-  /* The hero stays yellow, so its text must stay black -- it would otherwise inherit the
-     glass theme's white and vanish. */
-  body.glass .hero { background: rgba(255,229,0,.86); color: var(--ink);
-    -webkit-backdrop-filter: blur(20px); backdrop-filter: blur(20px); }
-  body.glass .pad {
-    background: rgba(255,255,255,.055); border: 1px solid rgba(255,255,255,.13); border-top: 0;
-    -webkit-backdrop-filter: blur(28px) saturate(170%); backdrop-filter: blur(28px) saturate(170%);
-  }
-  body.glass .row, body.glass .album { background: rgba(255,255,255,.075); border: 1px solid rgba(255,255,255,.11); }
-  body.glass .row.accent { background: var(--yellow); color: var(--ink); border-color: transparent; }
-  body.glass .glyph, body.glass .cover, body.glass .album .art { background: rgba(255,255,255,.13); color: #fff; }
-  body.glass .row .meta, body.glass .note, body.glass .hint, body.glass .empty,
-  body.glass .song .dur, body.glass .album .cap .a { color: rgba(255,255,255,.64); }
-  body.glass .row.accent .meta, body.glass .row.accent .dur { color: var(--ink-soft); }
-  body.glass textarea, body.glass input[type=search] {
-    background: rgba(255,255,255,.06); color: #fff; border-color: rgba(255,255,255,.4);
-  }
-  body.glass button.btn.ghost { background: rgba(255,255,255,.06); border-color: rgba(255,255,255,.55); color: #fff; }
-  body.glass button.btn.ghost.danger { border-color: #ff8a80; color: #ff8a80; }
-  body.glass .track, body.glass .lanes > i { background: rgba(255,255,255,.14); }
-  body.glass .track > i, body.glass .lanes > i > b { background: #fff; }
-  body.glass .drop { border-color: rgba(255,255,255,.5); background: rgba(255,255,255,.04); }
-  body.glass .drop.over { background: rgba(255,229,0,.22); }
-  body.glass .seg { border-color: rgba(255,255,255,.4); }
-  body.glass .seg button { background: transparent; color: #fff; }
-  body.glass .seg button.on { background: var(--yellow); color: var(--ink); }
-  body.glass .song:hover, body.glass .album:hover { outline-color: rgba(255,255,255,.7); }
-  body.glass .dock .list { background: rgba(10,10,10,.6); color: #fff;
-    -webkit-backdrop-filter: blur(24px); backdrop-filter: blur(24px); }
-  /* A yellow banner keeps black text; glass would otherwise turn it white on yellow. */
-  body.glass .banner { color: var(--ink); }
-  body.glass .banner.bad { background: rgba(255,138,128,.16); color: #ff8a80; }
-  body.glass #pl-seek { background: rgba(255,255,255,.18); }
-  body.glass .pl-btn { border-color: rgba(255,255,255,.28); }
-  body.glass a { color: var(--yellow); }
-  body.glass a.btn { color: var(--ink); }
-  /* Glass turntable: the album's own colours, blurred, behind a smoked sheet. */
-  body.glass .deck { background: rgba(0,0,0,.34); border: 1px solid rgba(255,255,255,.13);
-    -webkit-backdrop-filter: blur(28px) saturate(170%); backdrop-filter: blur(28px) saturate(170%); }
-  body.glass .deck-bg.on { opacity: .55; }
-  body.glass .deck-album, body.glass .deck-next { color: rgba(255,255,255,.66); }
-  body.glass .deck-next { border-top-color: rgba(255,255,255,.16); }
-  /* ============================================================ iOS glass ======
-     One look: frosted, rounded sheets over a softly lit dark background, system type,
-     white text in three strengths, and the brand yellow as the only accent. */
-  body.glass {
-    --accent: #FFD60A; --txt: rgba(255,255,255,.95); --sub: rgba(235,235,245,.62);
-    --faint: rgba(235,235,245,.3); --card: rgba(255,255,255,.075); --card2: rgba(255,255,255,.13);
-    --hair: rgba(255,255,255,.13); --r: 20px;
-    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI Variable Text", "Segoe UI", Inter, Roboto, sans-serif;
-    -webkit-font-smoothing: antialiased; color: var(--txt);
-    background:
-      radial-gradient(70vmax 70vmax at 0% 0%, rgba(94,92,230,.42), transparent 60%),
-      radial-gradient(60vmax 60vmax at 100% 38%, rgba(100,210,255,.26), transparent 60%),
-      radial-gradient(60vmax 60vmax at 20% 100%, rgba(255,214,10,.18), transparent 60%),
-      radial-gradient(50vmax 50vmax at 100% 100%, rgba(191,90,242,.20), transparent 60%),
-      #050507;
-    background-attachment: fixed;
-  }
-  body.glass .shell { max-width: 980px; padding: 0 16px 40px; box-sizing: border-box; }
-  body.glass .hazard, body.glass .theme-toggle { display: none !important; }
-  body.glass .mast { background: transparent !important; -webkit-backdrop-filter: none; backdrop-filter: none; padding: 22px 4px 12px; gap: 8px; }
-  body.glass .logo { display: inline-flex; align-items: center; gap: 10px; font-size: 30px; font-weight: 700; letter-spacing: -.5px; color: var(--txt); }
-  body.glass .logo .mark { width: 34px; height: 34px; border-radius: 8px; }
-  body.glass .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--faint); }
-  body.glass .dot.on { background: #30D158; }
-  body.glass #conn { font-weight: 500 !important; letter-spacing: 0 !important; color: var(--sub); text-transform: capitalize; }
-  body.glass .hero {
-    background: var(--card) !important; border: 1px solid var(--hair); border-radius: var(--r); color: var(--txt) !important;
-    -webkit-backdrop-filter: blur(30px) saturate(180%); backdrop-filter: blur(30px) saturate(180%);
-    padding: 18px 20px; margin: 4px 0 14px;
-  }
-  body.glass .hero h1 { font-size: 21px; font-weight: 600; letter-spacing: -.2px; }
-  body.glass .hero p { color: var(--sub); }
-  body.glass .tabs {
-    background: rgba(118,118,128,.24) !important; border-radius: 12px; padding: 3px; gap: 2px;
-    position: sticky; top: 10px; z-index: 30; margin-bottom: 4px;
-    -webkit-backdrop-filter: blur(30px) saturate(180%); backdrop-filter: blur(30px) saturate(180%);
-  }
-  body.glass .tabs button { border-radius: 9px; font-weight: 600; font-size: 13.5px; letter-spacing: 0; text-transform: none; padding: 9px 6px; color: var(--txt) !important; background: transparent !important; }
-  body.glass .tabs button.on { background: rgba(255,255,255,.22) !important; box-shadow: 0 3px 10px rgba(0,0,0,.25); }
-  body.glass .bar {
-    background: transparent !important; -webkit-backdrop-filter: none !important; backdrop-filter: none !important;
-    color: var(--sub) !important; font-size: 12.5px; font-weight: 500; letter-spacing: .5px; text-transform: uppercase; padding: 22px 20px 8px;
-  }
-  body.glass .bar .act { color: var(--accent); text-decoration: none; text-transform: none; letter-spacing: 0; font-weight: 600; }
-  body.glass .pad {
-    background: var(--card) !important; border: 1px solid var(--hair) !important; border-radius: var(--r); padding: 16px 18px;
-    -webkit-backdrop-filter: blur(30px) saturate(180%); backdrop-filter: blur(30px) saturate(180%);
-  }
-  body.glass .row, body.glass .album { background: var(--card) !important; border: 1px solid var(--hair) !important; border-radius: 16px; margin-bottom: 8px; }
-  body.glass .pad .row { background: rgba(255,255,255,.05) !important; }
-  body.glass .row.accent { background: var(--accent) !important; color: #000 !important; border-color: transparent !important; }
-  body.glass .glyph { border-radius: 50%; background: var(--card2) !important; }
-  body.glass .cover, body.glass .album .art, body.glass .album { border-radius: 12px; overflow: hidden; }
-  body.glass button.btn, body.glass a.btn {
-    border-radius: 12px; border: 0 !important; background: var(--accent); color: #000 !important;
-    text-transform: none; letter-spacing: 0; font-weight: 600; font-size: 14px; padding: 11px 18px;
-  }
-  body.glass a.btn:hover, body.glass button.btn:hover:not(:disabled) { filter: brightness(1.08); background: var(--accent); }
-  body.glass button.btn.ghost { background: var(--card2) !important; color: var(--txt) !important; }
-  body.glass button.btn.danger { background: var(--card2) !important; color: #FF453A !important; }
-  body.glass button.btn.sm { font-size: 13px; padding: 8px 14px; }
-  body.glass textarea, body.glass input[type=search] { border-radius: 12px; border: 1px solid var(--hair) !important; background: rgba(255,255,255,.06) !important; }
-  body.glass textarea:focus, body.glass input[type=search]:focus { outline: 2px solid rgba(255,214,10,.6); }
-  body.glass .seg { border: 0 !important; border-radius: 10px; background: rgba(118,118,128,.24); padding: 2px; gap: 2px; }
-  body.glass .seg button { border-radius: 8px; text-transform: none; letter-spacing: 0; font-weight: 600; background: transparent !important; color: var(--txt) !important; }
-  body.glass .seg button.on { background: rgba(255,255,255,.22) !important; }
-  body.glass .drop { border: 1.5px dashed rgba(255,255,255,.28) !important; border-radius: 16px; background: rgba(255,255,255,.03) !important; }
-  body.glass .drop .big { text-transform: none; font-weight: 600; font-size: 18px; letter-spacing: 0; }
-  body.glass .track, body.glass .lanes > i { border-radius: 99px; overflow: hidden; }
-  body.glass .track > i { background: var(--accent) !important; border-radius: 99px; }
-  body.glass .banner { border-radius: 12px; border-left: 0 !important; background: rgba(255,214,10,.14) !important; color: var(--accent) !important; }
-  body.glass .banner.bad { background: rgba(255,69,58,.14) !important; color: #FF453A !important; }
-  body.glass .code { border-radius: 14px; }
-  body.glass .deck { border-radius: var(--r); }
-  body.glass .badge { border-radius: 5px; }
-  body.glass .dock .head { border-radius: 18px 18px 0 0; }
-  body.glass .player { background: rgba(28,28,30,.72) !important; border-top: 1px solid var(--hair) !important; }
-  body.glass .pl-btn { border-radius: 10px; }
-  body.glass .pl-btn.play { border-radius: 50%; }
-  body.glass #login {
-    background: var(--card) !important; border: 1px solid var(--hair); border-radius: 24px; overflow: hidden; margin-top: 12vh;
-    -webkit-backdrop-filter: blur(30px) saturate(180%); backdrop-filter: blur(30px) saturate(180%);
-  }
-  body.glass #login .hero { border: 0; background: transparent !important; margin: 0; -webkit-backdrop-filter: none; backdrop-filter: none; }
-  body.glass #login .pad { border: 0 !important; background: transparent !important; -webkit-backdrop-filter: none; backdrop-filter: none; }
+  /* ---------------------------------------------------------------- monitor */
+  .mon-pill { position: fixed; z-index: 45; top: 16px; right: 16px; display: flex; align-items: center; gap: 12px;
+    padding: 8px 14px; border-radius: 10px; border: 1px solid var(--line-2); cursor: pointer; font: inherit; font-size: 13px;
+    color: var(--txt); font-variant-numeric: tabular-nums; background: var(--glass-strong);
+    -webkit-backdrop-filter: var(--blur); backdrop-filter: var(--blur); box-shadow: 0 8px 24px rgba(0,0,0,.4); }
+  .mon-pill b { font-weight: 600; white-space: nowrap; }
+  .mon-pill .in { color: var(--accent); min-width: 74px; }
+  .mon-pill .out { color: #64B5FF; min-width: 74px; }
+  .mon-pill .ping.good { color: var(--good); }
+  .mon-pill .ping.bad { color: var(--bad); }
+  .pill-ch { width: 40px; height: 5px; border-radius: 3px; background: rgba(255,255,255,.14); overflow: hidden; display: block; }
+  .pill-ch i { display: block; height: 100%; width: 0; background: var(--accent); transition: width .6s; }
+  .pill-ch i.hot { background: var(--bad); }
 
-  /* monitor */
-  #mon-link { grid-template-columns: 1fr; }
-  body.glass .dock { border-top: 1px solid var(--hair) !important; background: rgba(22,22,24,.8) !important; -webkit-backdrop-filter: blur(30px) saturate(180%); backdrop-filter: blur(30px) saturate(180%); }
-  body.glass .dock .head { background: transparent !important; }
-  body.glass .dock .lbl { text-transform: none; letter-spacing: 0; font-weight: 600; color: var(--sub); }
-  body.glass .dock .list { background: transparent !important; color: var(--txt) !important; }
-  .mon-rates { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 12px; }
+  .mon-sheet { position: fixed; z-index: 46; top: 50%; left: 50%; transform: translate(-50%, -50%);
+    width: min(1000px, calc(100vw - 48px)); max-height: calc(100vh - 48px); overflow-y: auto; padding: 4px 0 20px;
+    border-radius: 14px; border: 1px solid var(--line-2); background: var(--glass-strong);
+    -webkit-backdrop-filter: var(--blur); backdrop-filter: var(--blur);
+    box-shadow: 0 30px 80px rgba(0,0,0,.6), 0 0 0 100vmax rgba(0,0,0,.45); }
+  body.mon-dock .mon-sheet { top: 0; right: 0; left: auto; bottom: var(--player-h, 0px); transform: none; width: var(--panel);
+    max-height: none; border-radius: 0; border: 0; border-left: 1px solid var(--line); box-shadow: none; z-index: 31;
+    background: var(--glass); }
+  .mon-head { display: flex; align-items: center; gap: 10px; padding: 18px 20px 4px; }
+  .mon-head > b { font-size: 17px; font-weight: 700; }
+  .mon-live { font-size: 11.5px; font-weight: 600; color: var(--good); background: rgba(48,209,88,.12); padding: 2px 8px; border-radius: 6px; }
+  .mon-head .x { width: 28px; height: 28px; border: 0; border-radius: var(--r); background: var(--surface-2); color: var(--sub); cursor: pointer; font-size: 12px; }
+  .mon-head .x:hover { color: var(--txt); background: var(--surface-3); }
+  .mon-body { display: grid; grid-template-columns: minmax(0, 1fr); column-gap: 36px; padding: 0 20px; }
+  @media (min-width: 900px) { body:not(.mon-dock) .mon-body { grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); } }
+  .mon-sub { margin: 20px 0 8px; font-size: 12px; font-weight: 600; letter-spacing: .5px; text-transform: uppercase; color: var(--sub); }
+  .mon-rates { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-top: 12px; }
   .mon-rates .k { display: flex; align-items: center; gap: 6px; font-size: 12.5px; color: var(--sub); }
-  .mon-rates b { display: block; font-size: 26px; font-weight: 600; letter-spacing: -.5px; font-variant-numeric: tabular-nums; margin-top: 2px; }
-  .sw { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
-  .sw.in { background: #FFD60A; } .sw.out { background: #0A84FF; }
-  .mon-graph { width: 100%; height: 160px; display: block; }
-  .mon-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 1px 18px; margin-top: 10px; }
-  .mon-grid > div { display: flex; justify-content: space-between; gap: 12px; padding: 9px 0; border-bottom: 1px solid var(--hair); font-size: 13.5px; }
+  .mon-rates b { display: block; margin-top: 2px; font-size: 30px; font-weight: 600; letter-spacing: -.6px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  body.mon-dock .mon-rates b { font-size: 22px; }
+  .sw { width: 8px; height: 8px; border-radius: 50%; display: inline-block; flex: 0 0 8px; background: var(--faint); }
+  .sw.in, .sw.files { background: var(--accent); }
+  .sw.out, .sw.test { background: var(--blue); }
+  .sw.music { background: var(--music); }
+  .sw.live.on { background: var(--good); box-shadow: 0 0 6px var(--good); }
+  .mon-graph { display: block; width: 100%; height: 240px; margin-top: 14px; }
+  body.mon-dock .mon-graph { height: 170px; }
+  .mon-grid { display: grid; grid-template-columns: minmax(0, 1fr); }
+  .mon-grid > div { display: flex; justify-content: space-between; gap: 12px; padding: 9px 0; border-bottom: 1px solid var(--line); font-size: 13.5px; }
   .mon-grid span { color: var(--sub); }
   .mon-grid b { font-weight: 500; text-align: right; font-variant-numeric: tabular-nums; }
-  .bars { display: inline-flex; gap: 2px; align-items: flex-end; margin-right: 4px; }
-  .bars i { width: 3px; background: rgba(255,255,255,.25); border-radius: 1px; }
+  .bars { display: inline-flex; gap: 2px; align-items: flex-end; margin-right: 6px; }
+  .bars i { width: 3px; border-radius: 1px; background: rgba(255,255,255,.22); }
   .bars i.on { background: #fff; }
-  .kv { font-family: ui-monospace, monospace; font-weight: 700; }
+  .ch-head { display: flex; align-items: baseline; gap: 10px; }
+  .ch-head b { font-size: 26px; font-weight: 600; letter-spacing: -.5px; font-variant-numeric: tabular-nums; }
+  .ch-head span { color: var(--sub); font-size: 13px; }
+  .ch-bar { display: flex; height: 10px; margin: 10px 0; border-radius: 5px; overflow: hidden; background: rgba(255,255,255,.08); }
+  .ch-bar i { display: block; height: 100%; transition: width .6s; }
+  .ch-bar .files { background: var(--accent); }
+  .ch-bar .music { background: var(--music); }
+  .ch-bar .test { background: var(--blue); }
+  .ch-legend { display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: 12.5px; color: var(--sub); }
+  .ch-legend span { display: inline-flex; align-items: center; gap: 6px; }
+  .ch-legend b { color: var(--txt); font-variant-numeric: tabular-nums; }
 
-  /* ========================================================= liquid glass ======
-     Apple's Liquid Glass: every sheet is a lens. A glossy fill brighter at the top, a
-     rim that catches light on its upper-left and glints again bottom-right, a specular
-     line along the top edge, a deep soft shadow, and a strong blur + saturation of
-     whatever passes behind. Controls are capsules; the brand yellow is the only accent. */
-  body.glass {
-    --lg-fill: linear-gradient(180deg, rgba(255,255,255,.15) 0%, rgba(255,255,255,.06) 100%);
-    --lg-fill-hi: linear-gradient(180deg, rgba(255,255,255,.26) 0%, rgba(255,255,255,.10) 100%);
-    --lg-rim: linear-gradient(135deg, rgba(255,255,255,.7) 0%, rgba(255,255,255,.12) 30%, rgba(255,255,255,.04) 60%, rgba(255,255,255,.35) 100%);
-    --lg-shade: inset 0 1px 0 rgba(255,255,255,.35), inset 0 -8px 24px rgba(255,255,255,.03), 0 18px 50px rgba(0,0,0,.38), 0 2px 6px rgba(0,0,0,.2);
-    --lg-blur: blur(26px) saturate(210%) brightness(1.06);
-    --r: 28px;
+  /* ---------------------------------------------------------------- narrow screens: the sidebar becomes a bottom bar */
+  @media (max-width: 900px) {
+    .side { top: auto; bottom: var(--player-h, 0px); right: 0; width: auto; height: auto; flex-direction: row; align-items: center;
+      padding: 6px 10px; border-right: 0; border-top: 1px solid var(--line); }
+    .side .logo, .side .status { display: none; }
+    .tabs { flex-direction: row; flex: 1 1 auto; }
+    .tabs button { flex: 1 1 0; flex-direction: column; gap: 2px; padding: 6px 4px; font-size: 11px; text-align: center; }
+    .tabs .eq, .tabs .count { position: absolute; margin: 0; }
+    .side-foot { margin: 0; flex-direction: row; }
+    .side-item { width: auto; flex-direction: column; gap: 2px; font-size: 11px; padding: 6px 10px; }
+    .side-item .switch { display: none; }
+    .main { margin-left: 0; padding: 20px 16px calc(var(--player-h, 0px) + 96px); }
+    .dock { right: 12px; left: 12px; width: auto; bottom: calc(var(--player-h, 0px) + 72px); }
+    .player { grid-template-columns: minmax(0, 1fr) auto; gap: 12px; padding: 8px 12px; }
+    .pl-right, .pl-bar, #pl-shuffle, #pl-repeat { display: none; }
+    .deck { flex-direction: column; align-items: stretch; }
+    .tt { width: min(280px, 70vw); align-self: center; }
+    .mon-rates b { font-size: 22px; }
+  }
+
+  /* ================================================================ the phone's look
+     The same material as the app: the aurora backdrop, glossy glass sheets with a rim
+     that catches the light top-left, capsule controls, large titles. The chrome --
+     sidebar, player, monitor -- floats inset from the window edges, as on iPadOS 26. */
+  :root {
+    --glass-fill: linear-gradient(180deg, rgba(255,255,255,.15), rgba(255,255,255,.055));
+    --glass-fill-hi: linear-gradient(180deg, rgba(255,255,255,.26), rgba(255,255,255,.10));
+    --float: linear-gradient(180deg, rgba(40,40,52,.58), rgba(16,16,24,.66));
+    --rim: linear-gradient(135deg, rgba(255,255,255,.62) 0%, rgba(255,255,255,.10) 32%, rgba(255,255,255,.04) 68%, rgba(255,255,255,.28) 100%);
+    --lift: inset 0 1px 0 rgba(255,255,255,.28), 0 18px 50px rgba(0,0,0,.32);
+    --gap: 12px;
+    --r-card: 22px;
+  }
+  body {
     background:
-      radial-gradient(52vmax 52vmax at 4% 2%, rgba(94,92,230,.75), transparent 62%),
-      radial-gradient(46vmax 46vmax at 98% 22%, rgba(100,210,255,.55), transparent 62%),
-      radial-gradient(48vmax 48vmax at 88% 92%, rgba(191,90,242,.55), transparent 62%),
-      radial-gradient(52vmax 52vmax at 8% 96%, rgba(255,214,10,.42), transparent 62%),
-      radial-gradient(34vmax 34vmax at 55% 55%, rgba(255,159,10,.20), transparent 62%),
-      #05050a;
+      radial-gradient(62vmax 62vmax at 0% 5%, rgba(94,92,230,.62), transparent 62%),
+      radial-gradient(52vmax 52vmax at 100% 30%, rgba(100,210,255,.45), transparent 62%),
+      radial-gradient(50vmax 50vmax at 85% 80%, rgba(191,90,242,.38), transparent 62%),
+      radial-gradient(55vmax 55vmax at 12% 96%, rgba(255,214,10,.32), transparent 62%),
+      radial-gradient(40vmax 40vmax at 55% 55%, rgba(255,159,10,.16), transparent 62%),
+      #06060a;
     background-attachment: fixed;
   }
-  body.glass .pad, body.glass .hero, body.glass .tabs, body.glass #login, body.glass .deck,
-  body.glass .album, body.glass .row, body.glass .mon-pill, body.glass .mon-sheet,
-  body.glass .player, body.glass .dock, body.glass .mon-toggle, body.glass .status {
-    isolation: isolate;
-    background: var(--lg-fill) !important; border: 0 !important;
-    box-shadow: var(--lg-shade);
-    -webkit-backdrop-filter: var(--lg-blur); backdrop-filter: var(--lg-blur);
+  body.oled { background: #000; --float: linear-gradient(180deg, rgba(30,30,34,.8), rgba(10,10,12,.86)); }
+
+  /* glass sheets, with the rim drawn as a masked gradient border */
+  .pad, .side, .player, .mon-sheet, .dock, #login, .status, .mon-pill, #music-list, .deck {
+    background: var(--glass-fill); border: 0; box-shadow: var(--lift);
+    -webkit-backdrop-filter: blur(26px) saturate(200%); backdrop-filter: blur(26px) saturate(200%);
   }
-  body.glass .pad::before, body.glass .hero::before, body.glass .tabs::before, body.glass #login::before,
-  body.glass .deck::before, body.glass .album::before, body.glass .row::before, body.glass .mon-pill::before,
-  body.glass .mon-sheet::before, body.glass .player::before, body.glass .dock::before,
-  body.glass .mon-toggle::before, body.glass .status::before, body.glass button.btn::before, body.glass a.btn::before {
+  .pad, .status, #login, #music-list, .deck { position: relative; }
+  .pad::before, .side::before, .player::before, .mon-sheet::before, .dock::before, #login::before, .status::before,
+  .mon-pill::before, #music-list::before, .deck::before, .btn.ghost::before, .tabs button.on::before {
     content: ""; position: absolute; inset: 0; border-radius: inherit; padding: 1px; pointer-events: none; z-index: 2;
-    background: var(--lg-rim);
+    background: var(--rim);
     -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
     -webkit-mask-composite: xor; mask-composite: exclude;
   }
-  body.glass .pad, body.glass .hero, body.glass #login, body.glass .album, body.glass .row,
-  body.glass .mon-toggle, body.glass .status { position: relative; }
-  body.glass .pad { border-radius: var(--r); padding: 18px 20px; }
-  body.glass .row { border-radius: 20px; }
-  /* Glass inside glass: lighter, no second blur (it would only see its parent). */
-  body.glass .pad .row { background: rgba(255,255,255,.06) !important; box-shadow: inset 0 1px 0 rgba(255,255,255,.14);
-    -webkit-backdrop-filter: none; backdrop-filter: none; }
-  body.glass .row.accent, body.glass .pad .row.accent {
-    background: linear-gradient(180deg, #FFE45C, #FFC400) !important; color: #000 !important;
-    box-shadow: inset 0 1px 0 rgba(255,255,255,.7), 0 10px 30px rgba(255,196,0,.25);
-  }
+  .pad { border-radius: var(--r-card); padding: 20px 22px; }
 
-  /* masthead: the logo, then capsules */
-  body.glass .mast { padding: 22px 2px 14px; gap: 10px; }
-  body.glass .logo .mark { width: 38px; height: 38px; border-radius: 10px;
-    box-shadow: 0 6px 18px rgba(255,196,0,.28), inset 0 0 0 1px rgba(255,255,255,.2); }
-  body.glass .mon-toggle, body.glass .status {
-    display: inline-flex; align-items: center; gap: 7px; border-radius: 999px; padding: 8px 14px;
-    color: var(--txt); font: inherit; font-size: 13.5px; font-weight: 600; cursor: pointer;
-  }
-  body.glass .status { cursor: default; }
-  body.glass .mon-toggle svg { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
-  body.glass .mon-toggle.on { color: #000; background: linear-gradient(180deg, #FFE45C, #FFC400) !important;
-    box-shadow: inset 0 1px 0 rgba(255,255,255,.7), 0 8px 24px rgba(255,196,0,.3); }
-  body.glass .mon-toggle:hover:not(.on) { background: var(--lg-fill-hi) !important; }
-  .mon-toggle { display: none; }
+  /* floating chrome */
+  .side { top: var(--gap); left: var(--gap); bottom: calc(var(--player-h, 0px) + var(--gap) * 2); border-radius: 26px; border-right: 0; background: var(--float); padding: 20px 12px 12px; }
+  .main { margin-left: calc(var(--side) + var(--gap) * 2); padding: 36px 36px calc(var(--player-h, 0px) + 56px); }
+  body.mon-dock .main { margin-right: calc(var(--panel) + var(--gap) * 2); }
+  body.mon-dock .mon-sheet { top: var(--gap); right: var(--gap); bottom: calc(var(--player-h, 0px) + var(--gap) * 2); border-radius: 26px; border-left: 0; background: var(--float); box-shadow: var(--lift); }
+  .player { left: var(--gap); right: var(--gap); bottom: var(--gap); border-radius: 22px; border-top: 0; background: var(--float); }
+  .dock { border-radius: 18px; background: var(--float); bottom: calc(var(--player-h, 0px) + var(--gap) * 2 + 8px); }
+  .mon-sheet { border-radius: 28px; background: var(--float); }
+  .mon-pill { border-radius: 999px; background: var(--float); padding: 9px 16px; }
 
-  body.glass .hero { border-radius: var(--r); padding: 18px 22px; margin: 4px 0 16px; }
-  body.glass .hero h1 { font-size: 22px; font-weight: 700; letter-spacing: -.3px; }
+  /* type: iOS large titles, sentence-case section titles */
+  .page-head h1 { font-size: 34px; letter-spacing: -.7px; }
+  .page-head p { font-size: 14.5px; }
+  .bar { font-size: 15px; font-weight: 600; color: rgba(255,255,255,.86); margin: 28px 6px 10px; }
+  .mon-sub { color: rgba(255,255,255,.7); }
 
-  /* tabs: a floating capsule with a lens over the current one */
-  body.glass .tabs {
-    width: fit-content; min-width: 300px; margin: 0 auto 6px; border-radius: 999px; padding: 5px; gap: 4px;
-    position: sticky; top: 12px; z-index: 30;
-  }
-  body.glass .tabs button { border-radius: 999px; padding: 10px 26px; font-size: 14px; font-weight: 600;
-    color: var(--sub) !important; transition: color .2s, background .25s, box-shadow .25s; }
-  body.glass .tabs button:hover:not(.on) { color: var(--txt) !important; }
-  body.glass .tabs button.on {
-    color: var(--txt) !important; background: var(--lg-fill-hi) !important;
-    box-shadow: inset 0 1px 0 rgba(255,255,255,.55), inset 0 -1px 0 rgba(255,255,255,.1), 0 4px 14px rgba(0,0,0,.3);
-  }
+  /* navigation: the current item sits under a lens */
+  .side .logo { font-size: 18px; }
+  .logo .mark { width: 32px; height: 32px; border-radius: 9px; }
+  .tabs button, .side-item { border-radius: 14px; padding: 10px 12px; font-size: 14.5px; color: rgba(255,255,255,.72); }
+  .tabs button.on { position: relative; background: var(--glass-fill-hi); box-shadow: inset 0 1px 0 rgba(255,255,255,.4), 0 6px 16px rgba(0,0,0,.25); color: #fff; }
+  .status { border-radius: 16px; }
+  .switch { width: 38px; height: 23px; border-radius: 12px; }
+  .switch::after { width: 19px; height: 19px; }
+  .mon-toggle.on .switch::after { left: 17px; }
 
-  /* section headers */
-  body.glass .bar { padding: 24px 22px 9px; font-size: 12.5px; font-weight: 600; letter-spacing: .6px; color: var(--sub) !important; }
+  /* controls: capsules, the primary one a drop of yellow */
+  .btn { border-radius: 999px; height: 36px; padding: 0 18px; background: linear-gradient(180deg, #FFE45C, #FFC400);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.7), 0 6px 18px rgba(255,196,0,.2); }
+  .btn.ghost { position: relative; background: var(--glass-fill-hi); border: 0; box-shadow: inset 0 1px 0 rgba(255,255,255,.3); }
+  .btn.ghost:hover:not(:disabled) { background: linear-gradient(180deg, rgba(255,255,255,.32), rgba(255,255,255,.14)); }
+  .btn.sm { height: 32px; padding: 0 14px; }
+  textarea { border-radius: 18px; border: 0; background: rgba(0,0,0,.24); box-shadow: inset 0 1px 3px rgba(0,0,0,.4), inset 0 -1px 0 rgba(255,255,255,.1); }
+  input[type=search] { border-radius: 999px; border: 0; background: rgba(0,0,0,.24); box-shadow: inset 0 1px 3px rgba(0,0,0,.4), inset 0 -1px 0 rgba(255,255,255,.1); padding: 0 18px; }
+  .seg { border-radius: 999px; border: 0; background: rgba(0,0,0,.26); box-shadow: inset 0 1px 2px rgba(0,0,0,.4); }
+  .seg button { border-radius: 999px; padding: 7px 16px; }
+  .seg button.on { background: var(--glass-fill-hi); box-shadow: inset 0 1px 0 rgba(255,255,255,.45), 0 3px 10px rgba(0,0,0,.3); }
+  .drop { border-radius: 18px; border-color: rgba(255,255,255,.26); }
+  .banner { border-radius: 14px; }
+  .glyph { border-radius: 50%; background: rgba(255,255,255,.12); }
+  .code { border-radius: 16px; }
+  #login { border-radius: 28px; background: var(--float); }
 
-  /* buttons: capsules. The primary one is a drop of yellow with a highlight on top. */
-  body.glass button.btn, body.glass a.btn {
-    position: relative; border-radius: 999px; padding: 12px 22px; font-weight: 600; font-size: 14.5px;
-    background: linear-gradient(180deg, #FFE45C, #FFC400) !important; color: #000 !important;
-    box-shadow: inset 0 1px 0 rgba(255,255,255,.75), 0 8px 22px rgba(255,196,0,.22);
-    transition: transform .12s, filter .2s;
-  }
-  body.glass button.btn:active:not(:disabled), body.glass a.btn:active { transform: scale(.97); }
-  body.glass button.btn.ghost, body.glass button.btn.danger {
-    background: var(--lg-fill-hi) !important; color: var(--txt) !important;
-    box-shadow: inset 0 1px 0 rgba(255,255,255,.4), 0 6px 18px rgba(0,0,0,.25);
-    -webkit-backdrop-filter: blur(18px) saturate(180%); backdrop-filter: blur(18px) saturate(180%);
-  }
-  body.glass button.btn.danger { color: #FF6961 !important; }
-  body.glass button.btn.sm { padding: 9px 16px; font-size: 13.5px; }
-  body.glass .seg { border-radius: 999px; padding: 3px; background: rgba(0,0,0,.25) !important;
-    box-shadow: inset 0 1px 2px rgba(0,0,0,.35), inset 0 -1px 0 rgba(255,255,255,.08); }
-  body.glass .seg button { border-radius: 999px; padding: 8px 18px; }
-  body.glass .seg button.on { background: var(--lg-fill-hi) !important; box-shadow: inset 0 1px 0 rgba(255,255,255,.5), 0 3px 10px rgba(0,0,0,.3); }
+  /* music, the way iOS Music does it: art first, a quiet list, a floating mini player */
+  section[data-panel="music"] > .pad { background: transparent; box-shadow: none; padding: 0; -webkit-backdrop-filter: none; backdrop-filter: none; }
+  section[data-panel="music"] > .pad::before { display: none; }
+  .deck { border-radius: 26px; background: rgba(0,0,0,.28); padding: 28px 32px; margin-bottom: 18px; }
+  .deck-bg.on { opacity: .7; }
+  .deck-kicker { color: rgba(255,255,255,.7); }
+  .deck-next b { color: rgba(255,255,255,.7); }
+  #music-list { border-radius: 22px; padding: 8px; }
+  #music-list .song { border-radius: 14px; padding: 8px 12px; }
+  #music-list .song .cover { width: 48px; height: 48px; flex-basis: 48px; border-radius: 9px; box-shadow: 0 4px 12px rgba(0,0,0,.35); }
+  #music-list .song .title { font-size: 15px; }
+  #music-list .song:hover { background: rgba(255,255,255,.08); }
+  #music-list .song.accent { background: var(--glass-fill-hi); box-shadow: inset 0 1px 0 rgba(255,255,255,.3); }
+  #music-list .albums { padding: 8px; }
+  .album .art { border-radius: 14px; box-shadow: 0 14px 34px rgba(0,0,0,.45); transition: transform .2s; }
+  .album:hover { background: transparent; }
+  .album:hover .art { transform: scale(1.03); }
+  .album .cap .t { font-size: 14px; }
+  .player .cover { border-radius: 11px; }
+  .pl-btn { border-radius: 50%; }
+  .pl-btn.play { width: 42px; height: 42px; box-shadow: 0 6px 16px rgba(0,0,0,.4); }
 
-  /* wells */
-  body.glass textarea, body.glass input[type=search] {
-    border-radius: 20px; border: 0 !important; background: rgba(0,0,0,.24) !important; color: var(--txt);
-    box-shadow: inset 0 1px 3px rgba(0,0,0,.4), inset 0 -1px 0 rgba(255,255,255,.1);
+  @media (max-width: 900px) {
+    .side { left: var(--gap); right: var(--gap); top: auto; bottom: calc(var(--player-h, 0px) + var(--gap) * 2); border-radius: 999px; padding: 6px 8px; }
+    .main { margin-left: 0; padding: 22px 16px calc(var(--player-h, 0px) + 110px); }
   }
-  body.glass input[type=search] { border-radius: 999px; padding: 11px 18px; }
-  body.glass .drop { border-radius: 22px; border: 1.5px dashed rgba(255,255,255,.3) !important; background: rgba(0,0,0,.14) !important; }
-  body.glass .drop:hover, body.glass .drop.over { border-color: rgba(255,214,10,.8) !important; background: rgba(255,214,10,.1) !important; }
-  body.glass .track { height: 6px; border-radius: 99px; background: rgba(0,0,0,.3) !important; }
-  body.glass .track > i { background: linear-gradient(90deg, #FFC400, #FFE45C) !important; box-shadow: 0 0 10px rgba(255,214,10,.6); }
-  body.glass .banner { border-radius: 18px; }
-  body.glass .album { border-radius: 22px; overflow: hidden; }
-  body.glass .deck { border-radius: var(--r); }
-  body.glass #login { border-radius: 32px; }
-  body.glass #login .mast { padding: 22px 22px 4px; }
-  body.glass #login .hero, body.glass #login .pad { box-shadow: none; -webkit-backdrop-filter: none; backdrop-filter: none; background: transparent !important; }
-  body.glass #login .hero::before, body.glass #login .pad::before { display: none; }
-
-  /* the player floats as its own lens above the page */
-  body.glass .player {
-    left: 12px; right: 12px; bottom: 12px; max-width: 980px; margin: 0 auto; border-radius: 28px; overflow: hidden;
-    background: linear-gradient(180deg, rgba(40,40,48,.55), rgba(20,20,26,.6)) !important;
-  }
-  body.glass #pl-seek { height: 5px; background: rgba(255,255,255,.14); }
-  body.glass #pl-seek::-webkit-slider-thumb { width: 14px; height: 14px; border-radius: 50%; background: #fff; box-shadow: 0 0 8px rgba(255,214,10,.8); }
-  body.glass .pl-btn { border: 0 !important; border-radius: 999px; background: rgba(255,255,255,.1); }
-  body.glass .pl-btn.on, body.glass .pl-btn.play { background: linear-gradient(180deg, #FFE45C, #FFC400); color: #000; box-shadow: inset 0 1px 0 rgba(255,255,255,.7); }
-  body.glass .pl-btn.play { width: 48px; height: 48px; border-radius: 50%; }
-  body.glass .dock { left: 12px; right: 12px; max-width: 980px; margin: 0 auto; border-radius: 24px; bottom: calc(var(--player-h, 0px) + 20px) !important; overflow: hidden;
-    background: linear-gradient(180deg, rgba(40,40,48,.55), rgba(20,20,26,.6)) !important; }
-
-  /* the monitor: a capsule over every tab, and a sheet under it */
-  .mon-pill, .mon-sheet { display: none; }
-  body.glass .mon-pill {
-    position: fixed; top: 14px; left: 50%; transform: translateX(-50%); z-index: 40; display: flex; align-items: center; gap: 12px;
-    border-radius: 999px; padding: 10px 16px; cursor: pointer; font: inherit; color: var(--txt);
-    font-variant-numeric: tabular-nums; font-size: 13.5px;
-    background: linear-gradient(180deg, rgba(30,30,38,.5), rgba(14,14,20,.55)) !important;
-  }
-  body.glass .mon-pill b { font-weight: 600; white-space: nowrap; }
-  body.glass .mon-pill .in { color: #FFD60A; min-width: 78px; }
-  body.glass .mon-pill .out { color: #64B5FF; min-width: 78px; }
-  body.glass .mon-pill .ping.good { color: #30D158; }
-  body.glass .mon-pill .ping.bad { color: #FF453A; }
-  body.glass .mon-pill .sw.live { background: rgba(255,255,255,.35); }
-  body.glass .mon-pill .sw.live.on { background: #30D158; box-shadow: 0 0 8px #30D158; }
-  body.glass .mon-pill:hover { background: linear-gradient(180deg, rgba(50,50,60,.55), rgba(24,24,30,.6)) !important; }
-  body.glass .mon-sheet {
-    position: fixed; top: 70px; left: 50%; transform: translateX(-50%); z-index: 41; display: block;
-    width: min(460px, calc(100vw - 32px)); max-height: calc(100vh - 92px); overflow-y: auto;
-    border-radius: 30px; padding: 6px 8px 14px;
-    background: linear-gradient(180deg, rgba(34,34,42,.62), rgba(16,16,22,.7)) !important;
-  }
-  body.glass .mon-sheet[hidden], body.glass .mon-pill[hidden] { display: none !important; }
-  body.glass .mon-head { display: flex; align-items: center; padding: 14px 14px 0 18px; font-size: 20px; }
-  body.glass .mon-head .x { border: 0; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; color: var(--sub);
-    background: rgba(255,255,255,.1); font-size: 13px; }
-  body.glass .mon-sheet .bar { padding: 16px 12px 6px; }
-  body.glass .mon-sheet .pad { background: transparent !important; box-shadow: none; padding: 4px 12px;
-    -webkit-backdrop-filter: none; backdrop-filter: none; }
-  body.glass .mon-sheet .pad::before { display: none; }
-  body.glass .mon-sheet .mon-rates b { font-size: 22px; }
-  body.glass .mon-sheet .mon-grid { grid-template-columns: 1fr; }
-  @media (max-width: 640px) {
-    body.glass .mon-pill { top: auto; bottom: calc(var(--player-h, 0px) + 18px); }
-    body.glass .mon-sheet { top: auto; bottom: calc(var(--player-h, 0px) + 72px); }
-    body.glass .mon-toggle span { display: none; }
-    body.glass .tabs { min-width: 0; width: 100%; }
-    body.glass .tabs button { padding: 10px 8px; }
-  }
-  [hidden] { display: none !important; }
+  #login .pad { background: transparent; box-shadow: none; -webkit-backdrop-filter: none; backdrop-filter: none; padding-top: 14px; }
+  #login .pad::before { display: none; }
 </style>
 </head>
 <body>
@@ -658,26 +512,28 @@
 
 <!-- -------------------------------------------------------------------- app -->
 <div class="shell" id="app" hidden>
-  <div class="mast">
-    <span class="logo"><svg class="mark" viewBox="0 0 108 108" aria-hidden="true"><defs><linearGradient id="m-bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#2A2270"/><stop offset=".55" stop-color="#0C0C18"/><stop offset="1" stop-color="#08080E"/></linearGradient><radialGradient id="m-g1" cx="98" cy="18" r="48" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#64D2FF" stop-opacity=".44"/><stop offset="1" stop-color="#64D2FF" stop-opacity="0"/></radialGradient><radialGradient id="m-g2" cx="30" cy="100" r="56" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#FFB000" stop-opacity=".4"/><stop offset="1" stop-color="#FFB000" stop-opacity="0"/></radialGradient><radialGradient id="m-g3" cx="104" cy="104" r="50" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#BF5AF2" stop-opacity=".4"/><stop offset="1" stop-color="#BF5AF2" stop-opacity="0"/></radialGradient><linearGradient id="m-body" x1="330" y1="272" x2="520" y2="586" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#FFF4A8"/><stop offset=".42" stop-color="#FFD60A"/><stop offset="1" stop-color="#FF9F0A"/></linearGradient><linearGradient id="m-gloss" x1="0" y1="260" x2="0" y2="440" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#fff" stop-opacity=".5"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient><linearGradient id="m-rim" x1="295" y1="272" x2="580" y2="586" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#fff" stop-opacity=".95"/><stop offset=".45" stop-color="#fff" stop-opacity="0"/><stop offset=".8" stop-color="#fff" stop-opacity="0"/><stop offset="1" stop-color="#fff" stop-opacity=".6"/></linearGradient><clipPath id="m-glyph"><path d="M295,272 H371 V358 A127.5,127.5 0 1 1 371,551 V586 H295 V484 H433 V527 L527,458 L433,386 V430 H295 Z"/></clipPath><filter id="m-soft" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="10"/></filter></defs><rect width="108" height="108" rx="24" fill="url(#m-bg)"/><rect width="108" height="108" rx="24" fill="url(#m-g1)"/><rect width="108" height="108" rx="24" fill="url(#m-g2)"/><rect width="108" height="108" rx="24" fill="url(#m-g3)"/><g transform="translate(54 54) scale(0.152) translate(-438.5 -429)"><path d="M295,272 H371 V358 A127.5,127.5 0 1 1 371,551 V586 H295 V484 H433 V527 L527,458 L433,386 V430 H295 Z" transform="translate(6 22)" fill="#000" fill-opacity=".45" filter="url(#m-soft)"/><path d="M295,272 H371 V358 A127.5,127.5 0 1 1 371,551 V586 H295 V484 H433 V527 L527,458 L433,386 V430 H295 Z" fill="url(#m-body)"/><path d="M270,250 H600 V420 Q440,380 270,440 Z" fill="url(#m-gloss)" clip-path="url(#m-glyph)"/><path d="M295,272 H371 V358 A127.5,127.5 0 1 1 371,551 V586 H295 V484 H433 V527 L527,458 L433,386 V430 H295 Z" fill="none" stroke="url(#m-rim)" stroke-width="7" stroke-linejoin="round"/></g></svg>BlazeIt</span>
-    <span class="grow"></span>
-    <button class="theme-toggle" id="theme-toggle" title="Switch appearance on the phone and every open page">GLASS</button>
-    <button class="mon-toggle" id="mon-toggle" title="Show the live monitor over every tab">
-      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12h4l3-7 5 14 3-9 2 2h3"/></svg><span>Monitor</span>
-    </button>
-    <span class="status"><span class="dot" id="dot"></span><span class="lbl" id="conn" style="font-size:13px">Connecting</span></span>
-  </div>
-  <div class="hazard"></div>
-
-  <div class="hero">
-    <h1 id="hero-title">CONNECTED</h1>
-    <p id="hero-sub"></p>
-  </div>
-
-  <nav class="tabs" id="tabs"></nav>
+  <aside class="side">
+    <div class="logo"><svg class="mark" viewBox="0 0 108 108" aria-hidden="true"><defs><linearGradient id="m-bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#2A2270"/><stop offset=".55" stop-color="#0C0C18"/><stop offset="1" stop-color="#08080E"/></linearGradient><radialGradient id="m-g1" cx="98" cy="18" r="48" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#64D2FF" stop-opacity=".44"/><stop offset="1" stop-color="#64D2FF" stop-opacity="0"/></radialGradient><radialGradient id="m-g2" cx="30" cy="100" r="56" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#FFB000" stop-opacity=".4"/><stop offset="1" stop-color="#FFB000" stop-opacity="0"/></radialGradient><radialGradient id="m-g3" cx="104" cy="104" r="50" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#BF5AF2" stop-opacity=".4"/><stop offset="1" stop-color="#BF5AF2" stop-opacity="0"/></radialGradient><linearGradient id="m-body" x1="330" y1="272" x2="520" y2="586" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#FFF4A8"/><stop offset=".42" stop-color="#FFD60A"/><stop offset="1" stop-color="#FF9F0A"/></linearGradient><linearGradient id="m-gloss" x1="0" y1="260" x2="0" y2="440" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#fff" stop-opacity=".5"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient><linearGradient id="m-rim" x1="295" y1="272" x2="580" y2="586" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#fff" stop-opacity=".95"/><stop offset=".45" stop-color="#fff" stop-opacity="0"/><stop offset=".8" stop-color="#fff" stop-opacity="0"/><stop offset="1" stop-color="#fff" stop-opacity=".6"/></linearGradient><clipPath id="m-glyph"><path d="M295,272 H371 V358 A127.5,127.5 0 1 1 371,551 V586 H295 V484 H433 V527 L527,458 L433,386 V430 H295 Z"/></clipPath><filter id="m-soft" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="10"/></filter></defs><rect width="108" height="108" rx="24" fill="url(#m-bg)"/><rect width="108" height="108" rx="24" fill="url(#m-g1)"/><rect width="108" height="108" rx="24" fill="url(#m-g2)"/><rect width="108" height="108" rx="24" fill="url(#m-g3)"/><g transform="translate(54 54) scale(0.152) translate(-438.5 -429)"><path d="M295,272 H371 V358 A127.5,127.5 0 1 1 371,551 V586 H295 V484 H433 V527 L527,458 L433,386 V430 H295 Z" transform="translate(6 22)" fill="#000" fill-opacity=".45" filter="url(#m-soft)"/><path d="M295,272 H371 V358 A127.5,127.5 0 1 1 371,551 V586 H295 V484 H433 V527 L527,458 L433,386 V430 H295 Z" fill="url(#m-body)"/><path d="M270,250 H600 V420 Q440,380 270,440 Z" fill="url(#m-gloss)" clip-path="url(#m-glyph)"/><path d="M295,272 H371 V358 A127.5,127.5 0 1 1 371,551 V586 H295 V484 H433 V527 L527,458 L433,386 V430 H295 Z" fill="none" stroke="url(#m-rim)" stroke-width="7" stroke-linejoin="round"/></g></svg><span class="wordmark">BlazeIt</span></div>
+    <nav class="tabs" id="tabs"></nav>
+    <div class="side-foot">
+      <button class="side-item mon-toggle" id="mon-toggle" title="Live speed, ping and the Wi-Fi link">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12h4l3-7 5 14 3-9 2 2h3"/></svg><span>Monitor</span><i class="switch"></i>
+      </button>
+      <button class="theme-toggle" id="theme-toggle" hidden></button>
+      <div class="status" id="status" title="The phone this page is connected to">
+        <span class="dot" id="dot"></span>
+        <span class="status-text"><b class="dev" id="status-device">Phone</b><span class="lbl" id="conn">Connecting</span></span>
+      </div>
+    </div>
+  </aside>
+  <main class="main" id="main">
+  <div class="page-head"><h1 id="page-title">Home</h1><p id="page-sub"></p></div>
+  <div class="hero" hidden><h1 id="hero-title"></h1><p id="hero-sub"></p></div>
 
   <!-- ---------------------------------------------------------- home -->
   <section data-panel="home" hidden>
+    <div class="grid2">
+    <div class="block">
     <div class="bar">Clipboard</div>
     <div class="pad">
       <textarea id="clip" placeholder="Type or paste text here, then send it to the phone."></textarea>
@@ -691,8 +547,10 @@
       <p class="note">From the phone: copy anything there, open BlazeIt and tap <b>Paste</b>. It lands here in a moment.</p>
       <p class="note" id="clip-note"></p>
     </div>
+    </div>
 
-    <div class="bar">Files</div>
+    <div class="block">
+    <div class="bar">Send to the phone</div>
     <div class="pad">
       <div id="drop" class="drop">
         <div class="big">Drop files or folders here</div>
@@ -707,13 +565,15 @@
       <p class="note">A folder arrives on the phone as the same folder, subfolders included.</p>
       <p class="note" id="limit"></p>
     </div>
+    </div>
+    </div>
     <div class="bar">On the phone</div>
     <div class="pad" id="files"><p class="empty">Nothing here yet.</p></div>
   </section>
 
   <!-- ---------------------------------------------------------- music -->
   <section data-panel="music" hidden>
-    <div class="bar">Music on the phone <span class="grow"></span><span class="act" id="music-rescan">RESCAN</span></div>
+    <div class="bar">Library <span class="grow"></span><span class="act" id="music-rescan">Rescan</span></div>
     <div class="pad">
       <div class="deck" id="deck" hidden>
         <div class="deck-bg" id="deck-bg"></div>
@@ -763,7 +623,19 @@
   </section>
 
   <!-- ---------------------------------------------------------- settings -->
-  <section data-panel="settings" hidden>
+  <section data-panel="settings" class="grid2" hidden>
+    <div class="block">
+    <div class="bar">Appearance</div>
+    <div class="pad">
+      <div class="seg" id="theme-seg">
+        <button data-v="aurora">Aurora</button>
+        <button data-v="oled">OLED black</button>
+      </div>
+      <p class="note">Liquid glass either way. OLED black turns the pixels off behind it. The phone and every open page follow this.</p>
+    </div>
+    </div>
+
+    <div class="block">
     <div class="bar">Full speed and laptop control</div>
     <div class="pad">
       <div class="banner" id="helper-state"></div>
@@ -780,7 +652,9 @@
         crosses the air twice and shares the router's time, which roughly halves the rate at best.
       </p>
     </div>
+    </div>
 
+    <div class="block">
     <div class="bar">Parallel connections</div>
     <div class="pad">
       <div class="seg" id="streams-seg"></div>
@@ -791,7 +665,9 @@
         sweet spot. On a USB cable one or two is already enough.
       </p>
     </div>
+    </div>
 
+    <div class="block">
     <div class="bar">Measure the link</div>
     <div class="pad">
       <button id="measure" class="btn">Measure now</button>
@@ -801,8 +677,9 @@
         network is the ceiling, far below it means storage is.
       </p>
     </div>
+    </div>
   </section>
-  </section>
+  </main>
 </div>
 
 <!-- ------------------------------------------------------------------ monitor -->
@@ -811,53 +688,74 @@
   <b class="in" id="pill-in">-</b>
   <b class="out" id="pill-out">-</b>
   <b class="ping" id="pill-rtt">- ms</b>
+  <span class="pill-ch" title="How full the Wi-Fi channel is"><i id="pill-ch"></i></span>
   <span id="pill-bars"></span>
 </button>
 <div class="mon-sheet" id="mon-sheet" hidden>
-  <div class="mon-head"><b>Monitor</b><span class="grow"></span><button class="x" id="mon-close" title="Close">&#x2715;</button></div>
-  <div class="bar">Right now</div>
-  <div class="pad">
-    <div class="mon-rates">
-      <div><span class="k"><i class="sw in"></i>To phone</span><b id="mon-in">-</b></div>
-      <div><span class="k"><i class="sw out"></i>From phone</span><b id="mon-out">-</b></div>
-      <div><span class="k">Ping</span><b id="mon-rtt">-</b></div>
-    </div>
-    <canvas id="mon-graph" class="mon-graph"></canvas>
-    <div class="mon-grid" id="mon-stats"></div>
+  <div class="mon-head">
+    <b>Monitor</b>
+    <span class="mon-live" id="mon-state">Live</span>
+    <span class="grow"></span>
+    <button class="x" id="mon-close" title="Close (Esc)">&#x2715;</button>
   </div>
-  <div class="bar">Wi-Fi link</div>
-  <div class="pad"><div class="mon-grid" id="mon-link"></div></div>
-
+  <div class="mon-body">
+    <section class="mon-main">
+      <div class="mon-rates">
+        <div><span class="k"><i class="sw in"></i>To phone</span><b id="mon-in">-</b></div>
+        <div><span class="k"><i class="sw out"></i>From phone</span><b id="mon-out">-</b></div>
+        <div><span class="k">Ping</span><b id="mon-rtt">-</b></div>
+      </div>
+      <canvas id="mon-graph" class="mon-graph"></canvas>
+      <div class="mon-sub">Channel</div>
+      <div class="mon-channel" id="mon-channel"></div>
+    </section>
+    <section class="mon-side">
+      <div class="mon-sub">Session</div>
+      <div class="mon-grid" id="mon-stats"></div>
+      <div class="mon-sub">Wi-Fi link</div>
+      <div class="mon-grid" id="mon-link"></div>
+    </section>
+  </div>
 </div>
 
 <!-- ------------------------------------------------------------------ dock -->
 <div class="dock" id="dock" hidden>
   <div class="head" id="dock-head">
     <span class="rate" id="dock-rate">-</span>
-    <span class="lbl" id="dock-label">IDLE</span>
+    <span class="lbl" id="dock-label">Idle</span>
     <span class="grow"></span>
-    <span class="lbl" id="dock-toggle">SHOW</span>
+    <span class="lbl" id="dock-toggle">Show</span>
   </div>
   <div class="list" id="dock-list" hidden><div class="inner" id="transfers"></div></div>
 </div>
 
 <!-- ------------------------------------------------------------------ player -->
 <div class="player" id="player" hidden>
-  <input id="pl-seek" type="range" min="0" max="1000" value="0" aria-label="Seek">
-  <div class="inner">
-    <div class="pl-row">
-      <div class="cover" id="pl-art">&#9834;</div>
-      <div class="pl-meta">
-        <div class="pl-title" id="pl-title"></div>
-        <div class="pl-sub" id="pl-sub"></div>
-      </div>
-      <span class="pl-time" id="pl-time">0:00 / 0:00</span>
-      <button class="pl-btn" id="pl-shuffle" title="Shuffle">SHUF</button>
-      <button class="pl-btn" id="pl-prev" title="Previous">&#9664;&#9664;</button>
-      <button class="pl-btn play" id="pl-play" title="Play / pause (space)">&#9654;</button>
-      <button class="pl-btn" id="pl-next" title="Next">&#9654;&#9654;</button>
-      <button class="pl-btn" id="pl-repeat" title="Repeat">RPT</button>
+  <div class="pl-left">
+    <div class="cover" id="pl-art" title="Open the turntable">&#9834;</div>
+    <div class="pl-meta">
+      <div class="pl-title" id="pl-title"></div>
+      <div class="pl-sub" id="pl-sub"></div>
     </div>
+  </div>
+  <div class="pl-center">
+    <div class="pl-ctrls">
+      <button class="pl-btn" id="pl-shuffle" title="Shuffle"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7h3.5c2.5 0 3.8 1.3 5.3 4.2l.4.6c1.5 2.9 2.8 4.2 5.3 4.2H21"/><path d="M3 17h3.5c1.4 0 2.4-.4 3.3-1.2M14.2 8.2C15.1 7.4 16.1 7 17.5 7H21"/><path d="m18.5 4.5 2.5 2.5-2.5 2.5M18.5 13.5l2.5 2.5-2.5 2.5"/></svg></button>
+      <button class="pl-btn" id="pl-prev" title="Previous"><svg viewBox="0 0 24 24" aria-hidden="true"><path class="fill" d="M18.5 6.2v11.6a.8.8 0 0 1-1.2.7L9 12.7a.8.8 0 0 1 0-1.4l8.3-5.8a.8.8 0 0 1 1.2.7Z"/><path d="M6 6v12"/></svg></button>
+      <button class="pl-btn play" id="pl-play" title="Play / pause (space)"></button>
+      <button class="pl-btn" id="pl-next" title="Next"><svg viewBox="0 0 24 24" aria-hidden="true"><path class="fill" d="M5.5 6.2v11.6a.8.8 0 0 0 1.2.7l8.3-5.8a.8.8 0 0 0 0-1.4L6.7 5.5a.8.8 0 0 0-1.2.7Z"/><path d="M18 6v12"/></svg></button>
+      <button class="pl-btn" id="pl-repeat" title="Repeat"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M17 3l3 3-3 3"/><path d="M4 11V9.5A3.5 3.5 0 0 1 7.5 6H20"/><path d="M7 21l-3-3 3-3"/><path d="M20 13v1.5a3.5 3.5 0 0 1-3.5 3.5H4"/></svg><i class="one">1</i></button>
+    </div>
+    <div class="pl-bar">
+      <span class="pl-t" id="pl-cur">0:00</span>
+      <input id="pl-seek" type="range" min="0" max="1000" value="0" aria-label="Seek">
+      <span class="pl-t" id="pl-dur">0:00</span>
+    </div>
+  </div>
+  <div class="pl-right">
+    <span class="pl-time" id="pl-time" hidden></span>
+    <button class="pl-btn small" id="pl-mute" title="Mute"><svg viewBox="0 0 24 24" aria-hidden="true"><path class="fill" d="M4 9.5h3l4.5-3.8v12.6L7 14.5H4z"/><path class="w1" d="M15 9.5a3.5 3.5 0 0 1 0 5"/><path class="w2" d="M17.8 7a7 7 0 0 1 0 10"/></svg></button>
+    <input id="pl-vol" type="range" min="0" max="100" value="100" aria-label="Volume">
   </div>
 </div>
 <audio id="audio" preload="auto"></audio>
@@ -882,9 +780,9 @@ var transfers = [];
 var events = null;
 var ticker = null;
 var TABS = [
-  { id: "home", label: "Home" },
-  { id: "music", label: "Music" },
-  { id: "settings", label: "Settings" },
+  { id: "home", sub: "Clipboard and files, both ways", label: "Home", icon: "<path d=\"M3.5 10.5 12 3.5l8.5 7\"/><path d=\"M5.5 9v10a1.5 1.5 0 0 0 1.5 1.5h10a1.5 1.5 0 0 0 1.5-1.5V9\"/><path d=\"M10 20.5V15a2 2 0 0 1 4 0v5.5\"/>" },
+  { id: "music", sub: "Your phone's library, streamed over the local link", label: "Music", icon: "<path d=\"M9 18V5.5l11-2V16\"/><circle cx=\"6.5\" cy=\"18\" r=\"2.5\"/><circle cx=\"17.5\" cy=\"16\" r=\"2.5\"/>" },
+  { id: "settings", sub: "Appearance, the laptop helper and speed", label: "Settings", icon: "<path d=\"M3.5 7.5H13M18 7.5h2.5M3.5 16.5H6M11 16.5h9.5\"/><circle cx=\"15.5\" cy=\"7.5\" r=\"2.5\"/><circle cx=\"8.5\" cy=\"16.5\" r=\"2.5\"/>" },
 ];
 
 function $(id) { return document.getElementById(id); }
@@ -931,8 +829,11 @@ function buildTabs() {
   host.innerHTML = "";
   TABS.forEach(function (t, i) {
     var b = document.createElement("button");
-    b.textContent = t.label;
+    b.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true">' + t.icon + '</svg><span>' + t.label + '</span>' +
+      (t.id === "music" ? '<i class="eq" id="tab-eq" hidden><b></b><b></b><b></b></i>' : "") +
+      (t.id === "home" ? '<i class="count" id="tab-count" hidden></i>' : "");
     b.dataset.tab = t.id;
+    b.title = t.label;
     b.addEventListener("click", function () { selectTab(t.id); });
     host.appendChild(b);
   });
@@ -954,10 +855,10 @@ function monitorWanted() { try { return localStorage.getItem(MON_KEY) === "1"; }
 
 function setMonitor(on) {
   try { localStorage.setItem(MON_KEY, on ? "1" : "0"); } catch (e) {}
-  $("mon-toggle").classList.toggle("on", on);
-  $("mon-pill").hidden = !on;
-  if (!on) $("mon-sheet").hidden = true;
-  if (on) startMonitor(); else stopMonitor();
+  monOn = !!on;
+  $("mon-toggle").classList.toggle("on", monOn);
+  layoutMonitor();
+  if (on && monitorShouldRun()) startMonitor(); else stopMonitor();
 }
 
 function startMonitor() {
@@ -971,14 +872,40 @@ function stopMonitor() {
   monTimer = null;
 }
 
+var monOn = false;
+var DOCK_MIN = 1180;
+function monitorShouldRun() { return monOn && document.visibilityState === "visible"; }
+
+/**
+ * Wide screen: the monitor is a panel docked on the right, always open while it is on.
+ * Narrower: a capsule over the page that opens the full view on click.
+ */
+function layoutMonitor() {
+  var dock = monOn && window.innerWidth >= DOCK_MIN;
+  var was = document.body.classList.contains("mon-dock");
+  document.body.classList.toggle("mon-dock", dock);
+  $("mon-pill").hidden = !monOn || dock;
+  if (dock) $("mon-sheet").hidden = false;
+  else if (!monOn || was) $("mon-sheet").hidden = true;
+  if (dock) pollMonitor();
+}
+
 function wireMonitor() {
-  $("mon-toggle").addEventListener("click", function () { setMonitor($("mon-pill").hidden); });
+  document.addEventListener("visibilitychange", function () {
+    if (monitorShouldRun()) startMonitor(); else stopMonitor();
+  });
+  $("mon-toggle").addEventListener("click", function () { setMonitor(!monOn); });
+  window.addEventListener("resize", layoutMonitor);
   $("mon-pill").addEventListener("click", function () {
     $("mon-sheet").hidden = !$("mon-sheet").hidden;
     pollMonitor();
   });
-  $("mon-close").addEventListener("click", function () { $("mon-sheet").hidden = true; });
-  document.addEventListener("keydown", function (e) { if (e.key === "Escape") $("mon-sheet").hidden = true; });
+  $("mon-close").addEventListener("click", function () {
+    if (document.body.classList.contains("mon-dock")) setMonitor(false); else $("mon-sheet").hidden = true;
+  });
+  document.addEventListener("keydown", function (e) {
+    if (e.key === "Escape" && !document.body.classList.contains("mon-dock")) $("mon-sheet").hidden = true;
+  });
   setMonitor(monitorWanted());
 }
 
@@ -1008,7 +935,12 @@ function renderMonitor(m, rtt) {
   $("pill-rtt").className = "ping " + (rtt <= 15 ? "good" : rtt <= 60 ? "" : "bad");
   $("pill-bars").innerHTML = bars(level);
   $("mon-live").classList.toggle("on", m.activeTransfers > 0);
+  var used = (m.filesBps || 0) + (m.musicBps || 0) + (m.testBps || 0), cap = m.capacityBps || 0;
+  var pct = cap > 0 ? Math.min(100, Math.round(used / cap * 100)) : 0;
+  $("pill-ch").style.width = pct + "%";
+  $("pill-ch").className = pct > 85 ? "hot" : "";
   if ($("mon-sheet").hidden) return;
+  renderChannel(m, used, cap, pct);
 
   $("mon-in").textContent = mbs(m.inBps);
   $("mon-out").textContent = mbs(m.outBps);
@@ -1042,6 +974,28 @@ function renderMonitor(m, rtt) {
     rows.push(["Phone", "Hosting the hotspot (its link is the laptop's, above)."]);
   }
   $("mon-link").innerHTML = rows.map(function (kv) { return '<div><span>' + kv[0] + '</span><b>' + kv[1] + '</b></div>'; }).join("");
+}
+
+/**
+ * How full the Wi-Fi channel is, and with what. Files, music and speed tests share the
+ * one channel, so music playing during a download takes its share from the download --
+ * that dip is expected, and this shows where it went.
+ */
+function renderChannel(m, used, cap, pct) {
+  var parts = [["Files", m.filesBps || 0, "files"], ["Music", m.musicBps || 0, "music"], ["Speed test", m.testBps || 0, "test"]];
+  var seg = parts.map(function (p) {
+    var w = cap > 0 ? Math.min(100, p[1] / cap * 100) : 0;
+    return w > 0.2 ? '<i class="' + p[2] + '" style="width:' + w.toFixed(2) + '%"></i>' : "";
+  }).join("");
+  var legend = parts.filter(function (p, k) { return k < 2 || p[1] > 0; }).map(function (p) {
+    return '<span><i class="sw ' + p[2] + '"></i>' + p[0] + ' <b>' + mbs(p[1]) + '</b></span>';
+  }).join("");
+  $("mon-channel").innerHTML =
+    '<div class="ch-head"><b>' + (cap > 0 ? pct + "%" : "-") + '</b><span>' +
+      (cap > 0 ? "of about " + mbs(cap) + (m.capacityFrom === "measured" ? " (fastest seen)" : " (from the link rate)") : "waiting for the link") +
+    '</span></div>' +
+    '<div class="ch-bar">' + seg + '</div>' +
+    '<div class="ch-legend">' + legend + '</div>';
 }
 
 function bars(level) {
@@ -1084,6 +1038,11 @@ function drawMonitor(samples) {
 }
 
 function selectTab(id) {
+  var tab = TABS.filter(function (t) { return t.id === id; })[0];
+  if (tab) {
+    $("page-title").textContent = tab.label;
+    $("page-sub").textContent = tab.sub || "";
+  }
   Array.prototype.forEach.call($("tabs").children, function (b) {
     b.classList.toggle("on", b.dataset.tab === id);
   });
@@ -1824,12 +1783,14 @@ function ensureTicker() {
 }
 
 function updateDock(active, totalBps) {
+  var count = $("tab-count");
+  if (count) { count.hidden = !active; count.textContent = active; }
   var dock = $("dock");
   dock.hidden = transfers.length === 0;
   $("dock-rate").textContent = active ? rate(totalBps) : "-";
   $("dock-label").textContent = active
-    ? (active + (active === 1 ? " TRANSFER" : " TRANSFERS"))
-    : (transfers.length ? "IDLE" : "");
+    ? (active + (active === 1 ? " transfer" : " transfers"))
+    : (transfers.length ? "Idle" : "");
 }
 
 // ------------------------------------------------------------------ rendering
@@ -2054,7 +2015,7 @@ function connectEvents() {
   events.addEventListener("error", function () {
     $("conn").textContent = "Reconnecting"; $("dot").classList.remove("on");
   });
-  events.addEventListener("theme", function (e) { applyTheme(e.data === "glass"); });
+  events.addEventListener("theme", function (e) { applyTheme(e.data === "oled"); });
   events.addEventListener("files", function (e) {
     try { state.files = JSON.parse(e.data); renderFiles(); } catch (err) {}
   });
@@ -2073,7 +2034,7 @@ async function refreshState() {
   state.files = s.files || [];
   state.maxUpload = s.maxUploadSize || 0;
   state.device = s.deviceName || "";
-  applyTheme(!!s.glass);
+  applyTheme(!!s.oled);
   state.parallelThreshold = s.parallelThreshold || state.parallelThreshold;
 
   var saved = null;
@@ -2081,6 +2042,7 @@ async function refreshState() {
   state.streams = saved ? parseInt(saved, 10) : (s.uploadStreams || 4);
 
   $("hero-title").textContent = state.device || "Phone";
+  $("status-device").textContent = state.device || "Phone";
   $("hero-sub").textContent =
     "Move text and files between this computer and the phone. The phone is the server; " +
     "nothing is installed here, and nothing leaves your network.";
@@ -2098,26 +2060,27 @@ async function refreshState() {
 // other computer changes all of them live. The last value is also kept locally, only so
 // the page does not flash the wrong theme for a frame while it loads.
 
-function applyTheme(glass) {
-  // One look now: iOS-style glass. The shared setting is kept for older pages.
-  glass = true;
-  document.body.classList.toggle("glass", glass);
-  var t = $("theme-toggle");
-  if (t) t.classList.toggle("on", glass);
-  try { localStorage.setItem("xoosh.glass", glass ? "1" : "0"); } catch (e) {}
+/** Liquid glass always; the shared choice is only the backdrop: aurora, or OLED black. */
+function applyTheme(oled) {
+  document.body.classList.add("glass");
+  document.body.classList.toggle("oled", !!oled);
+  var seg = $("theme-seg");
+  if (seg) Array.prototype.forEach.call(seg.children, function (b) { b.classList.toggle("on", (b.dataset.v === "oled") === !!oled); });
+  try { localStorage.setItem("blazeit.oled", oled ? "1" : "0"); } catch (e) {}
 }
 
-async function toggleTheme() {
-  var next = !document.body.classList.contains("glass");
-  applyTheme(next);
+async function setOled(oled) {
+  applyTheme(oled);
   try {
     await api("/api/theme", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ glass: next }),
+      body: JSON.stringify({ oled: oled }),
     });
   } catch (e) {}
 }
+
+function toggleTheme() { setOled(!document.body.classList.contains("oled")); }
 
 // ------------------------------------------------------------------ music
 //
@@ -2140,7 +2103,8 @@ var MUSIC_PAGE = 300;
 var music = { tracks: [], granted: true, loaded: false, loading: false,
               view: "songs", album: null, filter: "", shown: MUSIC_PAGE };
 var player = { queue: [], order: [], pos: -1, shuffle: false, repeat: "off",
-               blobs: {}, prefetchCtl: null, prefetchTimer: null };
+               blobs: {}, prefetchCtl: null, prefetchTimer: null,
+               parkTimer: null, parked: false, parkedAt: 0 };
 
 function fmtTime(sec) {
   if (!isFinite(sec) || sec < 0) sec = 0;
@@ -2485,7 +2449,7 @@ function showPlayer(t) {
   img.src = artUrl(t.albumId);
   showDeck(t);
   document.documentElement.style.setProperty("--player-h", pl.offsetHeight + "px");
-  document.body.style.paddingBottom = (pl.offsetHeight + 90) + "px";
+  document.body.style.paddingBottom = (pl.offsetHeight + 110) + "px";
 
   if ("mediaSession" in navigator && typeof MediaMetadata !== "undefined") {
     navigator.mediaSession.metadata = new MediaMetadata({
@@ -2500,7 +2464,7 @@ function playNext(auto) {
   if (auto && player.repeat === "one") { audio.currentTime = 0; audio.play(); return; }
   if (player.pos + 1 < player.order.length) { player.pos++; playCurrent(); return; }
   if (player.repeat === "all" && player.order.length) { player.pos = 0; playCurrent(); return; }
-  if (auto) { $("pl-play").innerHTML = "&#9654;"; }
+  if (auto) { setPlayIcon(false); }
 }
 
 function playPrev() {
@@ -2511,20 +2475,73 @@ function playPrev() {
   playCurrent();
 }
 
+var PLAY_ICON = "<svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path class=\"fill\" d=\"M8 5.6v12.8a.9.9 0 0 0 1.4.8l10-6.4a.9.9 0 0 0 0-1.6l-10-6.4A.9.9 0 0 0 8 5.6Z\"/></svg>";
+var PAUSE_ICON = "<svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><rect class=\"fill\" x=\"6.5\" y=\"5\" width=\"4\" height=\"14\" rx=\"1.2\"/><rect class=\"fill\" x=\"13.5\" y=\"5\" width=\"4\" height=\"14\" rx=\"1.2\"/></svg>";
+function setPlayIcon(playing) {
+  $("pl-play").innerHTML = playing ? PAUSE_ICON : PLAY_ICON;
+  var eq = $("tab-eq");
+  if (eq) eq.hidden = !playing;
+}
+
+// ---- keeping the channel clear
+//
+// A paused player should cost nothing. Prefetching of the next tracks stops the moment
+// playback pauses; after a minute of pause the stream itself is let go, so no socket to
+// the phone stays busy for music nobody is listening to. Play picks up exactly where it
+// stopped.
+var PARK_AFTER_MS = 60000;
+function stopPrefetch() {
+  clearTimeout(player.prefetchTimer);
+  if (player.prefetchCtl) { player.prefetchCtl.abort(); player.prefetchCtl = null; }
+}
+function parkSoon() {
+  clearTimeout(player.parkTimer);
+  player.parkTimer = setTimeout(function () {
+    var audio = $("audio");
+    if (!audio.paused || player.parked || !currentTrack()) return;
+    player.parkedAt = audio.currentTime;
+    player.parked = true;
+    audio.removeAttribute("src");
+    audio.load();
+  }, PARK_AFTER_MS);
+}
+function resume() {
+  var audio = $("audio"), t = currentTrack();
+  if (!t) return;
+  clearTimeout(player.parkTimer);
+  if (player.parked) {
+    player.parked = false;
+    audio.src = player.blobs[t.id] || streamUrl(t.id);
+    var at = player.parkedAt || 0;
+    audio.addEventListener("loadedmetadata", function once() {
+      audio.removeEventListener("loadedmetadata", once);
+      try { audio.currentTime = at; } catch (e) {}
+    });
+  }
+  var p = audio.play();
+  if (p && p.catch) p.catch(function () {});
+}
+
 function togglePlay() {
   var audio = $("audio");
   if (!currentTrack()) return;
-  if (audio.paused) audio.play(); else audio.pause();
+  if (audio.paused) resume(); else audio.pause();
 }
 
 function setupPlayer() {
   var audio = $("audio"), seek = $("pl-seek");
   var seeking = false;
 
-  audio.addEventListener("play", function () { $("pl-play").innerHTML = "&#10074;&#10074;"; deckPlaying(true); });
-  audio.addEventListener("pause", function () { $("pl-play").innerHTML = "&#9654;"; deckPlaying(false); });
+  audio.addEventListener("play", function () {
+    setPlayIcon(true); deckPlaying(true);
+    clearTimeout(player.parkTimer);
+    clearTimeout(player.prefetchTimer);
+    player.prefetchTimer = setTimeout(prefetchAhead, 1500);
+  });
+  audio.addEventListener("pause", function () { setPlayIcon(false); deckPlaying(false); stopPrefetch(); parkSoon(); });
   audio.addEventListener("ended", function () { playNext(true); });
   audio.addEventListener("error", function () {
+    if (player.parked || !audio.getAttribute("src")) return;
     var t = currentTrack();
     $("pl-sub").textContent = "This browser cannot play " + (t ? (formatBadge(t.mime) || t.mime) : "this file") + " - skipping";
     setTimeout(function () { playNext(true); }, 1500);
@@ -2533,11 +2550,12 @@ function setupPlayer() {
     var t = currentTrack();
     var dur = audio.duration && isFinite(audio.duration) ? audio.duration : (t ? t.durationMs / 1000 : 0);
     $("pl-time").textContent = fmtTime(audio.currentTime) + " / " + fmtTime(dur);
+    $("pl-cur").textContent = fmtTime(audio.currentTime);
+    $("pl-dur").textContent = fmtTime(dur);
     if (!seeking && dur > 0) {
       var pct = audio.currentTime / dur * 100;
       seek.value = Math.round(pct * 10);
-      seek.style.background = "linear-gradient(to right, var(--yellow) " + pct + "%, " +
-        (document.body.classList.contains("glass") ? "rgba(255,255,255,.18)" : "#333") + " " + pct + "%)";
+      seek.style.setProperty("--p", pct + "%");
     }
   });
   seek.addEventListener("input", function () { seeking = true; });
@@ -2566,11 +2584,31 @@ function setupPlayer() {
   };
   $("pl-repeat").onclick = function () {
     player.repeat = player.repeat === "off" ? "all" : player.repeat === "all" ? "one" : "off";
-    this.textContent = player.repeat === "one" ? "RPT 1" : "RPT";
+    this.classList.toggle("one", player.repeat === "one");
     this.classList.toggle("on", player.repeat !== "off");
     prefetchAhead();
     deckNext();
   };
+
+  // Volume, remembered on this computer.
+  var vol = $("pl-vol");
+  function paintVol() {
+    var v = audio.muted ? 0 : Math.round(audio.volume * 100);
+    vol.value = v;
+    vol.style.setProperty("--p", v + "%");
+    $("pl-mute").classList.toggle("muted", v === 0);
+    $("pl-mute").classList.toggle("low", v > 0 && v < 50);
+  }
+  try { var sv = localStorage.getItem("blazeit.volume"); if (sv !== null) audio.volume = Math.max(0, Math.min(1, sv / 100)); } catch (e) {}
+  vol.addEventListener("input", function () {
+    audio.muted = false;
+    audio.volume = vol.value / 100;
+    try { localStorage.setItem("blazeit.volume", vol.value); } catch (e) {}
+    paintVol();
+  });
+  $("pl-mute").onclick = function () { audio.muted = !audio.muted; paintVol(); };
+  paintVol();
+  setPlayIcon(false);
 
   // Keyboard, when you are not typing: space plays and pauses, arrows seek.
   document.addEventListener("keydown", function (e) {
@@ -2584,7 +2622,7 @@ function setupPlayer() {
   // Hardware media keys and the OS media overlay.
   if ("mediaSession" in navigator) {
     try {
-      navigator.mediaSession.setActionHandler("play", function () { audio.play(); });
+      navigator.mediaSession.setActionHandler("play", resume);
       navigator.mediaSession.setActionHandler("pause", function () { audio.pause(); });
       navigator.mediaSession.setActionHandler("nexttrack", function () { playNext(false); });
       navigator.mediaSession.setActionHandler("previoustrack", playPrev);
@@ -2616,6 +2654,7 @@ function showLogin() {
   $("mon-pill").hidden = true;
   $("mon-sheet").hidden = true;
   stopMonitor();
+  document.body.classList.remove("mon-dock");
   $("login").hidden = false;
   pairReset();
   if (events) { events.close(); events = null; }
@@ -2637,6 +2676,9 @@ function showApp() {
     wireMonitor();
     $("theme-toggle").onclick = toggleTheme;
     $("measure").addEventListener("click", measure);
+    Array.prototype.forEach.call($("theme-seg").children, function (b) {
+      b.addEventListener("click", function () { setOled(b.dataset.v === "oled"); });
+    });
     renderPending();
   } else setMonitor(monitorWanted());
   refreshState();
@@ -2728,7 +2770,7 @@ function setupDock() {
   $("dock-head").addEventListener("click", function () {
     var list = $("dock-list");
     list.hidden = !list.hidden;
-    $("dock-toggle").textContent = list.hidden ? "SHOW" : "HIDE";
+    $("dock-toggle").textContent = list.hidden ? "Show" : "Hide";
   });
 }
 
@@ -2740,6 +2782,8 @@ window.addEventListener("beforeunload", function (e) {
 
 $("pair").addEventListener("click", pair);
 $("pair-cancel").addEventListener("click", pairReset);
+
+try { if (localStorage.getItem("blazeit.oled") === "1") document.body.classList.add("oled"); } catch (e) {}
 
 (async function boot() {
   // Paint the last-known theme immediately; the phone's real setting follows a moment later.
