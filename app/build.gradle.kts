@@ -15,8 +15,8 @@ android {
         // that the storage layer would need a second implementation.
         minSdk = 29
         targetSdk = 36
-        versionCode = 6
-        versionName = "0.4.0"
+        versionCode = 7
+        versionName = "0.5.0"
 
         // Default advertised Tus-Max-Size. Overridable at runtime in Settings; this is
         // only the value a fresh install starts with.
@@ -88,8 +88,6 @@ dependencies {
     implementation(libs.compose.ui.graphics)
     implementation(libs.compose.ui.tooling.preview)
     implementation(libs.compose.material3)
-    // Real backdrop blur behind floating glass (tab bar, monitor overlay), as on iOS.
-    implementation("dev.chrisbanes.haze:haze:1.6.10")
     debugImplementation(libs.compose.ui.tooling)
 
     implementation(libs.kotlinx.coroutines.android)

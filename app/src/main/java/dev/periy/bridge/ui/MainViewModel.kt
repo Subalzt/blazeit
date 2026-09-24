@@ -157,11 +157,55 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     val pairRequests: StateFlow<List<PairRequest>>
         get() = getApplication<Application>().container.pairing.pending
 
-    /** OLED black or the colourful backdrop: the app and every connected page follow it. */
-    val oled: StateFlow<Boolean>
-        get() = getApplication<Application>().container.oled
+    /** "system", "light" or "dark": the app and every connected page follow it. */
+    val theme: StateFlow<String>
+        get() = getApplication<Application>().container.theme
 
-    fun setOled(on: Boolean) = getApplication<Application>().container.setOled(on)
+    fun setTheme(value: String) = getApplication<Application>().container.setTheme(value)
+
+    // ------------------------------------------------------------------ direct link
+
+    /** The phone's own offline network, for the laptop or another phone. */
+    val direct: StateFlow<dev.periy.bridge.net.DirectLink.State>
+        get() = getApplication<Application>().container.direct.state
+
+    /** Starts BlazeIt too if it is off: the link is only useful with the server behind it. */
+    fun startDirect() {
+        val app = getApplication<Application>()
+        dev.periy.bridge.service.BridgeService.start(app)
+        app.container.direct.start(app.container.prefs.port)
+    }
+
+    fun stopDirect() = getApplication<Application>().container.direct.stop()
+
+    private val _phoneDirect = MutableStateFlow(app.container.prefs.phoneDirect)
+    /** Sends to other phones go over a direct link between the two. */
+    val phoneDirect: StateFlow<Boolean> = _phoneDirect
+
+    fun setPhoneDirect(on: Boolean) {
+        getApplication<Application>().container.prefs.phoneDirect = on
+        _phoneDirect.value = on
+    }
+
+    // ------------------------------------------------------------------ laptop link mode
+
+    data class LaptopLink(val mode: String, val ssid: String, val pass: String)
+
+    private val _laptopLink = MutableStateFlow(
+        app.container.prefs.let { LaptopLink(it.laptopLink, it.hotspotSsid, it.hotspotPass) }
+    )
+    /** Direct link (fastest, laptop offline) or the phone's hotspot (the laptop keeps internet). */
+    val laptopLink: StateFlow<LaptopLink> = _laptopLink
+
+    fun setLaptopLink(mode: String? = null, ssid: String? = null, pass: String? = null) {
+        val prefs = getApplication<Application>().container.prefs
+        mode?.let { prefs.laptopLink = it }
+        ssid?.let { prefs.hotspotSsid = it }
+        pass?.let { prefs.hotspotPass = it }
+        _laptopLink.value = LaptopLink(prefs.laptopLink, prefs.hotspotSsid, prefs.hotspotPass)
+        // Open pages and the laptop helper look again.
+        dev.periy.bridge.server.EventBus.emit("direct", "mode")
+    }
 
     /** Every computer that has been allowed in. */
     val devices: StateFlow<List<PairedDevice>>

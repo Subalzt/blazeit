@@ -116,8 +116,8 @@ fun ControlPane(running: Boolean, onStart: () -> Unit, modifier: Modifier = Modi
         }
     }
 
-    // Whichever is taller, the keyboard or the navigation bar, and never both stacked.
-    Column(modifier.windowInsetsPadding(WindowInsets.ime.union(WindowInsets.navigationBars))) {
+    // The keyboard's room is made by the screen around this pane.
+    Column(modifier) {
         if (!running || laptops.isEmpty()) {
             Column(Modifier.fillMaxWidth().panel().padding(14.dp)) {
                 if (!running) {
@@ -208,8 +208,8 @@ private fun Trackpad(pad: PadState, status: String, live: Boolean, modifier: Mod
 
     Box(
         modifier
-            .padding(8.dp)
-            .panel()
+            .padding(horizontal = 16.dp, vertical = 8.dp)
+            .card()
             // Keep Android's back gesture from eating swipes that start near the edges.
             .systemGestureExclusion()
             .pointerInput(Unit) {
@@ -412,7 +412,8 @@ private fun SpeedControl(pad: PadState, modifier: Modifier) {
     Box(modifier.padding(8.dp)) {
         Row(
             Modifier
-                .glass(ButtonShape)
+                .clip(ButtonShape)
+                .background(Bridge.Chip)
                 .clickable {
                     view.performHapticFeedback(HapticFeedbackConstants.CLOCK_TICK)
                     pad.chooseSpeed(SPEEDS[(level + 1) % SPEEDS.size].second)
@@ -514,7 +515,8 @@ private fun KeyChip(label: String, modifier: Modifier = Modifier, on: Boolean = 
         modifier
             .widthIn(min = 44.dp)
             .height(40.dp)
-            .then(if (on) Modifier.clip(ButtonShape).background(Bridge.Yellow) else Modifier.glass(ButtonShape))
+            .clip(ButtonShape)
+            .background(if (on) Bridge.Yellow else Bridge.Surface)
             .clickable {
                 view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
                 onClick()

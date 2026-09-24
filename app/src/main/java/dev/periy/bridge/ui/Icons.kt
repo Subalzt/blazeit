@@ -81,7 +81,7 @@ object BlazeIcons {
     /** An arrow going up and away: send. */
     val Send: ImageVector = stroked("send", "M12 19V5.5", "M6.5 11 12 5.5 17.5 11")
 
-    /** A sun: the aurora backdrop. */
+    /** A sun. */
     val Sun: ImageVector = stroked(
         "sun",
         "M12 8a4 4 0 1 1 0 8a4 4 0 1 1 0-8Z",
@@ -89,7 +89,7 @@ object BlazeIcons {
         "M5.3 5.3l1.4 1.4", "M17.3 17.3l1.4 1.4", "M5.3 18.7l1.4-1.4", "M17.3 6.7l1.4-1.4",
     )
 
-    /** A crescent: OLED black. */
+    /** A crescent. */
     val Moon: ImageVector = stroked("moon", "M19.5 14.5A8 8 0 1 1 9.5 4.5a6.5 6.5 0 0 0 10 10Z")
 
     /** A chevron pointing on. */
@@ -102,13 +102,76 @@ object BlazeIcons {
         "M14,10 A4,4 0 0 0 8.34,10 L5.51,12.83 A4,4 0 0 0 11.17,18.49 L12.5,17.16",
     )
 
+    /** A lightning bolt: the direct link. */
+    val Bolt: ImageVector = stroked("bolt", "M13.5 2.5 5 13.5h6.5l-1 8 8.5-11h-6.5l1-8Z")
+
+    /** Waves over a dot: the phone's hotspot. */
+    val Hotspot: ImageVector = stroked(
+        "hotspot",
+        "M12 13.2a1.3 1.3 0 1 1 0 2.6a1.3 1.3 0 1 1 0-2.6Z",
+        "M8.2 11.6a5.4 5.4 0 0 1 7.6 0",
+        "M5.2 8.6a9.6 9.6 0 0 1 13.6 0",
+        "M12 16v4.5",
+    )
+
+    /** A power symbol: BlazeIt on and off. */
+    val Power: ImageVector = stroked("power", "M12 3v8.5", "M6.9 6.4a7.5 7.5 0 1 0 10.2 0")
+
+    /** A square of squares: show the QR code. */
+    val Qr: ImageVector = stroked(
+        "qr",
+        "M4 4h6v6H4Z", "M14 4h6v6h-6Z", "M4 14h6v6H4Z",
+        "M14 14h2.5", "M20 14v2.5", "M14 20h6", "M17 17h3", "M14 17v3",
+    )
+
+    /** A laptop. */
+    val Laptop: ImageVector = stroked(
+        "laptop",
+        "M5.5 5.5h13a1 1 0 0 1 1 1V16h-15V6.5a1 1 0 0 1 1-1Z",
+        "M2.5 18.5h19",
+    )
+
+    /** A document: a file on the phone. */
+    val File: ImageVector = stroked(
+        "file",
+        "M13.5 3.5H7A1.5 1.5 0 0 0 5.5 5v14A1.5 1.5 0 0 0 7 20.5h10a1.5 1.5 0 0 0 1.5-1.5V8.5Z",
+        "M13.5 3.5v5h5",
+    )
+
+    /** An arrow coming down into a tray: received. */
+    val Download: ImageVector = stroked(
+        "download",
+        "M12 4v11", "M7.5 10.5 12 15l4.5-4.5",
+        "M4 14v4a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-4",
+    )
+
+    /** A cross. */
+    val Close: ImageVector = stroked("close", "M6.5 6.5l11 11", "M17.5 6.5l-11 11")
+
+    /** A tick. */
+    val Check: ImageVector = stroked("check", "M5 12.5 10 17.5 19 7")
+
+    /** A speech bubble: send text. */
+    val Message: ImageVector = stroked(
+        "message",
+        "M5 5.5h14a1.5 1.5 0 0 1 1.5 1.5v8.5A1.5 1.5 0 0 1 19 17h-8l-4.5 3.5V17H5a1.5 1.5 0 0 1-1.5-1.5V7A1.5 1.5 0 0 1 5 5.5Z",
+    )
+
+    /** A half-filled circle: appearance. */
+    val Contrast: ImageVector = stroked(
+        "contrast",
+        "M12 3.5a8.5 8.5 0 1 1 0 17a8.5 8.5 0 1 1 0-17Z",
+        "M12 3.5v17",
+        "M12 7.5h4.5", "M12 11.5h5.5", "M12 15.5h4.5",
+    )
+
     private fun stroked(name: String, vararg paths: String): ImageVector =
         ImageVector.Builder(name, 24.dp, 24.dp, 24f, 24f).apply {
             paths.forEach { d ->
                 addPath(
                     pathData = PathParser().parsePathString(d).toNodes(),
                     stroke = SolidColor(Color.Black),
-                    strokeLineWidth = 1.8f,
+                    strokeLineWidth = 1.9f,
                     strokeLineCap = StrokeCap.Round,
                     strokeLineJoin = StrokeJoin.Round,
                 )

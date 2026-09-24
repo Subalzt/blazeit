@@ -33,8 +33,6 @@ import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -68,7 +66,7 @@ import kotlin.math.max
 import kotlin.math.roundToInt
 
 /**
- * The live monitor, floating over whatever screen is open: a small glass capsule with speed
+ * The live monitor, floating over whatever screen is open: a small pill with speed
  * each way, ping and signal. Drag it out of the way; tap it for the full picture -- a minute
  * of history, gaps (seconds where a transfer was running but nothing moved), and both ends
  * of the Wi-Fi link.
@@ -102,7 +100,7 @@ fun MonitorOverlay(m: MonitorSnapshot, running: Boolean, onClose: () -> Unit) {
                         dy = (dy + drag.y).coerceIn(-50f, maxY)
                     }
                 }
-                .liquidGlass(depth = 12.dp, blur = 6.dp, tint = Color(0x3308080C))
+                .floating()
                 .clickable { expanded = true }
                 .padding(horizontal = 14.dp, vertical = 9.dp)
         ) { Capsule(m, running) }
@@ -111,7 +109,7 @@ fun MonitorOverlay(m: MonitorSnapshot, running: Boolean, onClose: () -> Unit) {
             Box(
                 Modifier
                     .fillMaxSize()
-                    .background(Color(0x66000000))
+                    .background(Color(0x59000000))
                     .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) { expanded = false }
             )
         }
@@ -135,8 +133,8 @@ private fun Capsule(m: MonitorSnapshot, running: Boolean) {
             Text("Off", style = num, color = Bridge.Muted)
             return@Row
         }
-        Text("↓ " + short(m.inBps), style = num, color = Bridge.Yellow)
-        Text("↑ " + short(m.outBps), style = num, color = Color(0xFF64B5FF))
+        Text("↓ " + short(m.inBps), style = num, color = Bridge.Orange)
+        Text("↑ " + short(m.outBps), style = num, color = Bridge.Blue)
         Text(if (m.rttMs >= 0) "${m.rttMs} ms" else "– ms", style = num, color = pingColor(m.rttMs))
         SignalBars(linkLevel(m))
     }
@@ -149,7 +147,7 @@ private fun Sheet(m: MonitorSnapshot, running: Boolean, onHide: () -> Unit, onCl
             .padding(horizontal = 12.dp, vertical = 56.dp)
             .fillMaxWidth()
             .heightIn(max = 640.dp)
-            .liquidGlass(cornerRadius = 28.dp, depth = 20.dp, blur = 20.dp, tint = Color(0x8C0E0E14))
+            .floating(CardShape)
             .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) {}
             .verticalScroll(rememberScrollState())
             .padding(vertical = 14.dp)
@@ -158,7 +156,7 @@ private fun Sheet(m: MonitorSnapshot, running: Boolean, onHide: () -> Unit, onCl
             Text("Monitor", style = TitleStyle.copy(fontSize = 20.sp), color = Bridge.Text, modifier = Modifier.weight(1f))
             Text("Hide", style = LabelStyle, color = Bridge.Muted, modifier = Modifier.clip(ButtonShape).clickable(onClick = onClose).padding(8.dp))
             Spacer(Modifier.width(4.dp))
-            IconChip(Icons.Rounded.Close, "Close", tint = Bridge.Muted, onClick = onHide)
+            IconChip(BlazeIcons.Close, "Close", tint = Bridge.Muted, onClick = onHide)
         }
         if (!running) {
             Text("Turn BlazeIt on to see live traffic.", style = BodyStyle, color = Bridge.Muted, modifier = Modifier.padding(20.dp))
@@ -166,7 +164,7 @@ private fun Sheet(m: MonitorSnapshot, running: Boolean, onHide: () -> Unit, onCl
         }
 
         Row(Modifier.padding(horizontal = 20.dp, vertical = 10.dp)) {
-            Rate("Receiving", m.inBps, Bridge.Yellow, Modifier.weight(1f))
+            Rate("Receiving", m.inBps, Bridge.Orange, Modifier.weight(1f))
             Rate("Sending", m.outBps, Bridge.Blue, Modifier.weight(1f))
             Column(Modifier.weight(0.7f)) {
                 Text("Ping", style = LabelStyle, color = Bridge.Muted)
@@ -212,8 +210,8 @@ private fun ChannelUse(m: MonitorSnapshot) {
             )
         }
         Spacer(Modifier.height(8.dp))
-        val parts = listOf(m.filesBps to Bridge.Yellow, m.musicBps to LaneMusic, m.testBps to Bridge.Blue)
-        Row(Modifier.fillMaxWidth().height(10.dp).clip(ButtonShape).background(Color(0x33000000))) {
+        val parts = listOf(m.filesBps to Bridge.Orange, m.musicBps to LaneMusic, m.testBps to Bridge.Blue)
+        Row(Modifier.fillMaxWidth().height(10.dp).clip(ButtonShape).background(Bridge.Chip)) {
             if (cap > 0) {
                 var left = 1f
                 parts.forEach { (bps, color) ->
@@ -225,7 +223,7 @@ private fun ChannelUse(m: MonitorSnapshot) {
         }
         Spacer(Modifier.height(8.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(14.dp), verticalAlignment = Alignment.CenterVertically) {
-            Legend("Files", Bridge.Yellow, m.filesBps)
+            Legend("Files", Bridge.Orange, m.filesBps)
             Legend("Music", LaneMusic, m.musicBps)
             if (m.testBps > 0) Legend("Test", Bridge.Blue, m.testBps)
         }
@@ -263,7 +261,7 @@ private fun Dot(color: Color) = Box(Modifier.size(8.dp).clip(CircleShape).backgr
 
 @Composable
 private fun Graph(m: MonitorSnapshot) {
-    val inColor = Bridge.Yellow
+    val inColor = Bridge.Orange
     val outColor = Bridge.Blue
     val grid = Bridge.Outline
     val samples = m.samples

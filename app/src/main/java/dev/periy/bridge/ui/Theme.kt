@@ -1,24 +1,25 @@
 package dev.periy.bridge.ui
 
 import androidx.compose.animation.animateColorAsState
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.Canvas
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -26,8 +27,11 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material3.Icon
+import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.Text
+import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.getValue
@@ -37,8 +41,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.SolidColor
@@ -50,165 +52,150 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import dev.chrisbanes.haze.HazeState
-import dev.chrisbanes.haze.HazeTint
-import dev.chrisbanes.haze.hazeEffect
 
 /**
- * Apple's Liquid Glass, as closely as Android allows.
+ * BlazeIt's look: plain, quick, and at home next to the phone's own apps.
  *
- * Every surface is a sheet of glass: a glossy fill that is lighter at the top, and a rim
- * that catches light along its upper-left edge and fades across the sheet. Things that
- * float -- the tab bar, the monitor -- also blur whatever scrolls behind them. Controls are
- * capsules. One accent, the brand yellow, for the thing to act on.
+ * Solid surfaces on a quiet background, large confident type, and colour used the way a
+ * home screen uses it: small bright tiles that say what a thing is. Nothing is blurred or
+ * refracted, so nothing costs a frame. Light or dark follows the phone unless chosen.
  */
 @Immutable
 data class Palette(
-    val yellow: Color,
-    val onYellow: Color,
-    val onYellowSoft: Color,
+    val dark: Boolean,
+    val bg: Color,
+    val surface: Color,
+    /** A well inside a surface: text fields, tracks, secondary buttons. */
+    val surface2: Color,
     val text: Color,
     val muted: Color,
     val faint: Color,
-    val panel: Color,
-    val row: Color,
-    val chip: Color,
-    val bar: Color,
-    val onBar: Color,
     val outline: Color,
-    val danger: Color,
-    val good: Color,
+    val yellow: Color,
+    val onYellow: Color,
     val blue: Color,
+    val green: Color,
+    val orange: Color,
+    val purple: Color,
+    val red: Color,
 )
 
-val GlassPalette = Palette(
-    yellow = Color(0xFFFFD60A),
-    onYellow = Color(0xFF0A0A0A),
-    onYellowSoft = Color(0xB30A0A0A),
-    text = Color(0xF7FFFFFF),
-    muted = Color(0xA6EBEBF5),
-    faint = Color(0x4DEBEBF5),
-    panel = Color(0x1FFFFFFF),
-    row = Color(0x1AFFFFFF),
-    chip = Color(0x2EFFFFFF),
-    bar = Color(0x59101014),
-    onBar = Color(0xFFFFFFFF),
-    outline = Color(0x26FFFFFF),
-    danger = Color(0xFFFF453A),
-    good = Color(0xFF30D158),
-    blue = Color(0xFF0A84FF),
+val LightPalette = Palette(
+    dark = false,
+    bg = Color(0xFFF2F2F5),
+    surface = Color(0xFFFFFFFF),
+    surface2 = Color(0xFFEFEFF3),
+    text = Color(0xFF0B0B0D),
+    muted = Color(0xFF6C6C75),
+    faint = Color(0xFFABABB4),
+    outline = Color(0x14000000),
+    yellow = Color(0xFFFFC21A),
+    onYellow = Color(0xFF15120A),
+    blue = Color(0xFF1F78FF),
+    green = Color(0xFF1FB855),
+    orange = Color(0xFFFF7A1A),
+    purple = Color(0xFF7B5CFF),
+    red = Color(0xFFF23B30),
 )
 
-val LocalPalette = staticCompositionLocalOf { GlassPalette }
+val DarkPalette = Palette(
+    dark = true,
+    bg = Color(0xFF000000),
+    surface = Color(0xFF151518),
+    surface2 = Color(0xFF232328),
+    text = Color(0xFFF5F5F7),
+    muted = Color(0xFF9C9CA5),
+    faint = Color(0xFF5A5A62),
+    outline = Color(0x1FFFFFFF),
+    yellow = Color(0xFFFFC933),
+    onYellow = Color(0xFF15120A),
+    blue = Color(0xFF3D8BFF),
+    green = Color(0xFF30D158),
+    orange = Color(0xFFFF8A2A),
+    purple = Color(0xFF9079FF),
+    red = Color(0xFFFF453A),
+)
 
-/** What floating glass blurs: everything drawn behind it. Null where no blur is set up. */
-val LocalHaze = staticCompositionLocalOf<HazeState?> { null }
+val LocalPalette = staticCompositionLocalOf { DarkPalette }
+
+/** Picks the palette from the shared setting: "system", "light" or "dark". */
+@Composable
+fun BlazeTheme(theme: String, content: @Composable () -> Unit) {
+    val dark = when (theme) {
+        "dark" -> true
+        "light" -> false
+        else -> isSystemInDarkTheme()
+    }
+    val p = if (dark) DarkPalette else LightPalette
+    CompositionLocalProvider(
+        LocalPalette provides p,
+        LocalTextStyle provides TextStyle(color = p.text),
+        content = content,
+    )
+}
 
 /** Shorthand for the current palette's roles, readable at any call site in a composable. */
 object Bridge {
+    val Dark: Boolean @Composable @ReadOnlyComposable get() = LocalPalette.current.dark
+    val Bg: Color @Composable @ReadOnlyComposable get() = LocalPalette.current.bg
+    val Surface: Color @Composable @ReadOnlyComposable get() = LocalPalette.current.surface
+    val Chip: Color @Composable @ReadOnlyComposable get() = LocalPalette.current.surface2
+    val Bar: Color @Composable @ReadOnlyComposable get() = LocalPalette.current.surface
     val Yellow: Color @Composable @ReadOnlyComposable get() = LocalPalette.current.yellow
     val OnYellow: Color @Composable @ReadOnlyComposable get() = LocalPalette.current.onYellow
-    val OnYellowSoft: Color @Composable @ReadOnlyComposable get() = LocalPalette.current.onYellowSoft
     val Text: Color @Composable @ReadOnlyComposable get() = LocalPalette.current.text
     val Muted: Color @Composable @ReadOnlyComposable get() = LocalPalette.current.muted
     val Faint: Color @Composable @ReadOnlyComposable get() = LocalPalette.current.faint
-    val Paper: Color @Composable @ReadOnlyComposable get() = LocalPalette.current.panel
-    val RowBg: Color @Composable @ReadOnlyComposable get() = LocalPalette.current.row
-    val Chip: Color @Composable @ReadOnlyComposable get() = LocalPalette.current.chip
-    val Bar: Color @Composable @ReadOnlyComposable get() = LocalPalette.current.bar
-    val OnBar: Color @Composable @ReadOnlyComposable get() = LocalPalette.current.onBar
     val Outline: Color @Composable @ReadOnlyComposable get() = LocalPalette.current.outline
-    val Danger: Color @Composable @ReadOnlyComposable get() = LocalPalette.current.danger
-    val Good: Color @Composable @ReadOnlyComposable get() = LocalPalette.current.good
+    val Danger: Color @Composable @ReadOnlyComposable get() = LocalPalette.current.red
+    val Good: Color @Composable @ReadOnlyComposable get() = LocalPalette.current.green
     val Blue: Color @Composable @ReadOnlyComposable get() = LocalPalette.current.blue
+    val Orange: Color @Composable @ReadOnlyComposable get() = LocalPalette.current.orange
+    val Purple: Color @Composable @ReadOnlyComposable get() = LocalPalette.current.purple
 }
 
-val CardShape = RoundedCornerShape(28.dp)
+val CardShape = RoundedCornerShape(26.dp)
+val TileShape = RoundedCornerShape(24.dp)
 val ButtonShape = RoundedCornerShape(50)
-val BlockShape = RoundedCornerShape(14.dp)
-
-// ---------------------------------------------------------------------------- glass
-
-/** The light-catching rim: bright at the top-left, clear through the middle, a glint at the bottom-right. */
-private val RimBrush = Brush.linearGradient(
-    0f to Color(0x99FFFFFF),
-    0.35f to Color(0x14FFFFFF),
-    0.7f to Color(0x0AFFFFFF),
-    1f to Color(0x40FFFFFF),
-    start = Offset(0f, 0f),
-    end = Offset(Float.POSITIVE_INFINITY, Float.POSITIVE_INFINITY),
-)
-
-/** The glossy fill: a little more light at the top, as if lit from above. */
-private val FillBrush = Brush.verticalGradient(listOf(Color(0x2EFFFFFF), Color(0x12FFFFFF)))
-
-/** Floating glass is clearer than a card: less fill, and a bright specular band along the top. */
-private val FloatFillBrush = Brush.verticalGradient(
-    0f to Color(0x33FFFFFF),
-    0.35f to Color(0x0FFFFFFF),
-    1f to Color(0x0AFFFFFF),
-)
-
-/** A sheet of glass in [shape]. [strong] for floating glass that sits over content and blurs it. */
-@Composable
-fun Modifier.glass(shape: Shape = CardShape, strong: Boolean = false): Modifier {
-    val haze = LocalHaze.current
-    return this
-        .then(
-            if (strong) Modifier.shadow(18.dp, shape, ambientColor = Color.Black, spotColor = Color.Black)
-            else Modifier
-        )
-        .clip(shape)
-        .then(
-            if (strong && haze != null) Modifier.hazeEffect(state = haze) {
-                blurRadius = 22.dp
-                backgroundColor = Color(0xFF0B0B12)
-                tints = listOf(HazeTint(Color(0x14FFFFFF)))
-                noiseFactor = 0.03f
-            } else Modifier
-        )
-        .background(if (strong) FloatFillBrush else FillBrush)
-        .border(BorderStroke(if (strong) 1.2.dp else 1.dp, RimBrush), shape)
-}
-
-/** A card: glass inset from the screen edges. */
-@Composable
-fun Modifier.panel(): Modifier = this.padding(horizontal = 16.dp).glass(CardShape)
+val IconShape = RoundedCornerShape(13.dp)
 
 // ---------------------------------------------------------------------------- type
 
-val LargeTitleStyle = TextStyle(fontSize = 34.sp, fontWeight = FontWeight.Bold, letterSpacing = (-0.6).sp)
-val TitleStyle = TextStyle(fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
+val LargeTitleStyle = TextStyle(fontSize = 32.sp, fontWeight = FontWeight.Bold, letterSpacing = (-0.8).sp)
+val DisplayStyle = TextStyle(fontSize = 30.sp, fontWeight = FontWeight.Bold, letterSpacing = (-0.6).sp, fontFeatureSettings = "tnum")
+val TitleStyle = TextStyle(fontSize = 17.sp, fontWeight = FontWeight.SemiBold, letterSpacing = (-0.2).sp)
 val LabelStyle = TextStyle(fontSize = 13.sp, fontWeight = FontWeight.Medium)
-val BodyStyle = TextStyle(fontSize = 14.sp, lineHeight = 20.sp)
+val BodyStyle = TextStyle(fontSize = 14.sp, lineHeight = 19.sp)
 val MonoStyle = TextStyle(fontSize = 15.sp, fontFamily = FontFamily.Monospace, fontWeight = FontWeight.SemiBold)
-val NumberStyle = TextStyle(fontSize = 28.sp, fontWeight = FontWeight.SemiBold, letterSpacing = (-0.5).sp)
+val NumberStyle = TextStyle(fontSize = 28.sp, fontWeight = FontWeight.Bold, letterSpacing = (-0.5).sp, fontFeatureSettings = "tnum")
+
+// ---------------------------------------------------------------------------- surfaces
+
+/** A card: a solid surface with rounded corners. */
+@Composable
+fun Modifier.card(shape: Shape = CardShape, color: Color = Bridge.Surface): Modifier =
+    this.clip(shape).background(color)
+
+/** A card inset from the screen edges, as every card on a screen is. */
+@Composable
+fun Modifier.panel(): Modifier = this.padding(horizontal = 16.dp).card()
+
+/** A floating piece: the monitor pill and its sheet. Solid, with a soft shadow. */
+@Composable
+fun Modifier.floating(shape: Shape = ButtonShape): Modifier =
+    this.shadow(if (Bridge.Dark) 0.dp else 14.dp, shape, ambientColor = Color(0x33000000), spotColor = Color(0x33000000))
+        .clip(shape)
+        .background(Bridge.Surface)
+        .then(if (Bridge.Dark) Modifier.background(Color(0x0DFFFFFF)) else Modifier)
+
+/** Tappable with the platform ripple, clipped to [shape]. */
+@Composable
+fun Modifier.tap(shape: Shape? = null, onClick: () -> Unit): Modifier =
+    (if (shape != null) this.clip(shape) else this).clickable(onClick = onClick)
 
 // ---------------------------------------------------------------------------- parts
 
-/**
- * The wallpaper the glass sits on: deep and dark, with large soft pools of colour. Liquid
- * Glass is only as good as what shows through it, so this carries real colour.
- */
-@Composable
-fun Backdrop(modifier: Modifier = Modifier, oled: Boolean = false) {
-    Canvas(modifier.fillMaxSize()) {
-        val d = size.maxDimension
-        // OLED: true black, so the pixels are off; the glass keeps its rims and gloss.
-        drawRect(if (oled) Color.Black else Color(0xFF06060A))
-        if (oled) return@Canvas
-        fun glow(color: Color, x: Float, y: Float, r: Float) = drawRect(
-            Brush.radialGradient(listOf(color, Color.Transparent), Offset(size.width * x, size.height * y), d * r)
-        )
-        glow(Color(0xA65E5CE6), 0.00f, 0.05f, 0.62f)
-        glow(Color(0x8064D2FF), 1.00f, 0.30f, 0.52f)
-        glow(Color(0x66BF5AF2), 0.85f, 0.78f, 0.50f)
-        glow(Color(0x59FFD60A), 0.10f, 0.95f, 0.55f)
-        glow(Color(0x33FF9F0A), 0.55f, 0.55f, 0.40f)
-    }
-}
-
-/** A grouped-list section header: small, grey, above its card. */
+/** A section title above a card: small, bold, out of the way. */
 @Composable
 fun SectionBar(
     title: String,
@@ -216,155 +203,143 @@ fun SectionBar(
     trailing: @Composable RowScope.() -> Unit = {},
 ) {
     Row(
-        modifier.fillMaxWidth().padding(start = 30.dp, end = 28.dp, top = 24.dp, bottom = 9.dp),
+        modifier.fillMaxWidth().padding(start = 28.dp, end = 24.dp, top = 22.dp, bottom = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(
             title,
-            style = TextStyle(fontSize = 15.sp, fontWeight = FontWeight.SemiBold, letterSpacing = (-0.1).sp),
-            color = Bridge.Text.copy(alpha = 0.86f),
+            style = TextStyle(fontSize = 14.sp, fontWeight = FontWeight.SemiBold),
+            color = Bridge.Muted,
             modifier = Modifier.weight(1f),
         )
         trailing()
     }
 }
 
-/** The accent capsule, for the one obvious next step. Lambda last, so `BridgeButton("Go") { }` reads right. */
+/**
+ * An icon on a rounded square of solid colour, like an app icon on the home screen. It
+ * says at a glance what a row or a tile is about.
+ */
+@Composable
+fun AppIcon(icon: ImageVector, color: Color, modifier: Modifier = Modifier, size: Dp = 38.dp) {
+    Box(
+        modifier.size(size).clip(RoundedCornerShape(size * 0.32f)).background(color),
+        contentAlignment = Alignment.Center,
+    ) { Icon(icon, null, tint = Color.White, modifier = Modifier.size(size * 0.56f)) }
+}
+
+/** The main button: a solid capsule. Lambda last, so `BridgeButton("Go") { }` reads right. */
 @Composable
 fun BridgeButton(
     label: String,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
-    onClick: () -> Unit,
-) {
-    Box(
-        modifier
-            .clip(ButtonShape)
-            .background(
-                if (enabled) Brush.verticalGradient(listOf(Color(0xFFFFE45C), Color(0xFFFFC400)))
-                else SolidColor(Bridge.Chip)
-            )
-            .border(BorderStroke(1.dp, Brush.verticalGradient(listOf(Color(0xB3FFFFFF), Color(0x00FFFFFF)))), ButtonShape)
-            .then(if (enabled) Modifier.clickable(onClick = onClick) else Modifier)
-            .padding(horizontal = 20.dp, vertical = 12.dp),
-        contentAlignment = Alignment.Center,
-    ) {
-        Text(label, style = TextStyle(fontSize = 15.sp, fontWeight = FontWeight.SemiBold), color = if (enabled) Bridge.OnYellow else Bridge.Muted)
-    }
-}
-
-/** A glass capsule for secondary actions. */
-@Composable
-fun GhostButton(
-    label: String,
-    modifier: Modifier = Modifier,
-    danger: Boolean = false,
-    onClick: () -> Unit,
-) {
-    Box(
-        modifier.glass(ButtonShape).clickable(onClick = onClick).padding(horizontal = 16.dp, vertical = 10.dp),
-        contentAlignment = Alignment.Center,
-    ) {
-        Text(label, style = TextStyle(fontSize = 14.sp, fontWeight = FontWeight.Medium), color = if (danger) Bridge.Danger else Bridge.Text)
-    }
-}
-
-/**
- * A tappable row inside a card: an icon in a tinted circle, a title with a line of detail,
- * and a chevron. For actions that are not the one primary thing on screen.
- */
-@Composable
-fun ActionRow(
-    icon: ImageVector,
-    title: String,
-    detail: String? = null,
-    tint: Color = Bridge.Yellow,
+    color: Color = Bridge.Yellow,
+    textColor: Color = if (color == Bridge.Yellow) Bridge.OnYellow else Color.White,
+    icon: ImageVector? = null,
     onClick: () -> Unit,
 ) {
     Row(
-        Modifier.fillMaxWidth().clickable(onClick = onClick).padding(horizontal = 16.dp, vertical = 13.dp),
+        modifier
+            .heightIn(min = 46.dp)
+            .clip(ButtonShape)
+            .background(if (enabled) color else Bridge.Chip)
+            .then(if (enabled) Modifier.clickable(onClick = onClick) else Modifier)
+            .padding(horizontal = 20.dp, vertical = 12.dp),
+        horizontalArrangement = Arrangement.Center,
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Box(
-            Modifier.size(38.dp).clip(CircleShape).background(tint.copy(alpha = 0.18f)),
-            contentAlignment = Alignment.Center,
-        ) { Icon(icon, null, tint = tint, modifier = Modifier.size(20.dp)) }
-        Spacer(Modifier.width(14.dp))
-        Column(Modifier.weight(1f)) {
-            Text(title, style = TextStyle(fontSize = 15.5.sp, fontWeight = FontWeight.SemiBold), color = Bridge.Text)
-            if (detail != null) Text(detail, style = BodyStyle.copy(fontSize = 13.sp, lineHeight = 17.sp), color = Bridge.Muted)
+        if (icon != null) {
+            Icon(icon, null, tint = if (enabled) textColor else Bridge.Muted, modifier = Modifier.size(19.dp))
+            Spacer(Modifier.width(8.dp))
         }
-        Icon(BlazeIcons.Chevron, null, tint = Bridge.Faint, modifier = Modifier.size(18.dp))
+        Text(label, style = TextStyle(fontSize = 15.sp, fontWeight = FontWeight.SemiBold), color = if (enabled) textColor else Bridge.Muted)
     }
 }
 
-/** A small glass circle with an icon, for quiet actions. */
+/** A quiet capsule on the well colour, for everything that is not the main action. */
 @Composable
-fun IconChip(icon: ImageVector, description: String, tint: Color = Bridge.Text, onClick: () -> Unit) {
-    Box(
-        Modifier.size(36.dp).glass(CircleShape).clickable(onClick = onClick),
-        contentAlignment = Alignment.Center,
-    ) { Icon(icon, description, tint = tint, modifier = Modifier.size(18.dp)) }
-}
-
-/** Small round glyph. */
-@Composable
-fun Glyph(symbol: String, bg: Color = Bridge.Chip, fg: Color = Bridge.Text) {
-    Box(Modifier.size(36.dp).clip(CircleShape).background(bg), contentAlignment = Alignment.Center) {
-        Text(symbol, style = TextStyle(fontSize = 15.sp, fontWeight = FontWeight.SemiBold), color = fg)
-    }
-}
-
-/** A row as its own sheet of glass. `accent` makes it the yellow one that is waiting on you. */
-@Composable
-fun BridgeRow(
-    title: String,
+fun SoftButton(
+    label: String,
     modifier: Modifier = Modifier,
-    glyph: String? = null,
-    meta: String? = null,
-    accent: Boolean = false,
-    trailing: @Composable RowScope.() -> Unit = {},
-    onClick: (() -> Unit)? = null,
-    content: @Composable ColumnScope.() -> Unit = {},
+    icon: ImageVector? = null,
+    tint: Color = Bridge.Text,
+    onClick: () -> Unit,
 ) {
+    Row(
+        modifier
+            .heightIn(min = 38.dp)
+            .clip(ButtonShape)
+            .background(Bridge.Chip)
+            .clickable(onClick = onClick)
+            .padding(horizontal = 14.dp, vertical = 8.dp),
+        horizontalArrangement = Arrangement.Center,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        if (icon != null) {
+            Icon(icon, null, tint = tint, modifier = Modifier.size(17.dp))
+            Spacer(Modifier.width(6.dp))
+        }
+        Text(label, style = TextStyle(fontSize = 14.sp, fontWeight = FontWeight.SemiBold), color = tint)
+    }
+}
+
+/** A round icon button on the well colour. */
+@Composable
+fun IconChip(icon: ImageVector, description: String, tint: Color = Bridge.Text, bg: Color = Bridge.Chip, onClick: () -> Unit) {
+    Box(
+        Modifier.size(38.dp).clip(CircleShape).background(bg).clickable(onClick = onClick),
+        contentAlignment = Alignment.Center,
+    ) { Icon(icon, description, tint = tint, modifier = Modifier.size(19.dp)) }
+}
+
+/**
+ * A home-screen widget: an app icon, a title and a line under it. When [active] the whole
+ * tile takes the icon's colour, so what is switched on is obvious from across the room.
+ */
+@Composable
+fun Tile(
+    icon: ImageVector,
+    color: Color,
+    title: String,
+    detail: String,
+    modifier: Modifier = Modifier,
+    active: Boolean = false,
+    onClick: () -> Unit,
+) {
+    val bg by animateColorAsState(if (active) color else Bridge.Surface, tween(160), label = "tile")
+    val fg = if (active) (if (color == Bridge.Yellow) Bridge.OnYellow else Color.White) else Bridge.Text
     Column(
         modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 5.dp)
-            .then(
-                if (accent) Modifier.clip(CardShape).background(Brush.verticalGradient(listOf(Color(0xFFFFE45C), Color(0xFFFFC400))))
-                    .border(BorderStroke(1.dp, Brush.verticalGradient(listOf(Color(0xB3FFFFFF), Color(0x00FFFFFF)))), CardShape)
-                else Modifier.glass(CardShape)
-            )
-            .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier)
-            .padding(horizontal = 16.dp, vertical = 14.dp)
+            .clip(TileShape)
+            .background(bg)
+            .clickable(onClick = onClick)
+            .padding(16.dp),
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            if (glyph != null) {
-                Glyph(glyph, bg = if (accent) Bridge.OnYellow else Bridge.Chip, fg = if (accent) Bridge.Yellow else Bridge.Text)
-                Spacer(Modifier.width(12.dp))
-            }
-            Text(
-                title, style = TitleStyle, color = if (accent) Bridge.OnYellow else Bridge.Text,
-                maxLines = 2, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f),
-            )
-            if (meta != null) {
-                Spacer(Modifier.width(8.dp))
-                Text(meta, style = BodyStyle, maxLines = 1, color = if (accent) Bridge.OnYellowSoft else Bridge.Muted)
-            }
-            trailing()
-        }
-        content()
+        if (active) {
+            Box(
+                Modifier.size(38.dp).clip(RoundedCornerShape(12.dp)).background(fg.copy(alpha = 0.16f)),
+                contentAlignment = Alignment.Center,
+            ) { Icon(icon, null, tint = fg, modifier = Modifier.size(21.dp)) }
+        } else AppIcon(icon, color)
+        Spacer(Modifier.height(18.dp))
+        Text(title, style = TitleStyle, color = fg, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        Spacer(Modifier.height(2.dp))
+        Text(
+            detail, style = BodyStyle.copy(fontSize = 13.sp, lineHeight = 17.sp),
+            color = if (active) fg.copy(alpha = 0.75f) else Bridge.Muted,
+            maxLines = 2, overflow = TextOverflow.Ellipsis,
+        )
     }
 }
 
-/** Body copy inside a row. */
+/** Body copy inside a card. */
 @Composable
-fun RowNote(text: String, color: Color = Bridge.Muted) {
-    Text(text, style = BodyStyle, color = color, modifier = Modifier.padding(top = 6.dp))
+fun RowNote(text: String, color: Color = Bridge.Muted, modifier: Modifier = Modifier) {
+    Text(text, style = BodyStyle, color = color, modifier = modifier.padding(top = 6.dp))
 }
 
-/** A text field: a recessed well in the glass. */
+/** A text field: a well inside the card. */
 @Composable
 fun BridgeTextField(
     value: String,
@@ -379,15 +354,16 @@ fun BridgeTextField(
         modifier
             .fillMaxWidth()
             .heightIn(min = minHeight)
-            .clip(RoundedCornerShape(18.dp))
-            .background(Color(0x33000000))
-            .border(BorderStroke(1.dp, Brush.verticalGradient(listOf(Color(0x1FFFFFFF), Color(0x40FFFFFF)))), RoundedCornerShape(18.dp))
-            .padding(14.dp)
+            .clip(RoundedCornerShape(16.dp))
+            .background(Bridge.Chip)
+            .padding(horizontal = 14.dp, vertical = 12.dp),
+        contentAlignment = Alignment.CenterStart,
     ) {
-        if (value.isEmpty() && placeholder.isNotEmpty()) Text(placeholder, style = BodyStyle, color = Bridge.Faint)
+        if (value.isEmpty() && placeholder.isNotEmpty()) Text(placeholder, style = BodyStyle.copy(fontSize = 15.sp), color = Bridge.Faint)
         BasicTextField(
             value = value,
             onValueChange = onValueChange,
+            singleLine = mono,
             textStyle = if (mono) MonoStyle.copy(color = text) else BodyStyle.copy(color = text, fontSize = 15.sp),
             cursorBrush = SolidColor(Bridge.Yellow),
             modifier = Modifier.fillMaxWidth(),
@@ -395,19 +371,15 @@ fun BridgeTextField(
     }
 }
 
-/** A thin capsule progress bar with a glowing fill. */
+/** A thin progress bar. */
 @Composable
-fun BlockProgress(fraction: Float, modifier: Modifier = Modifier, height: Dp = 6.dp) {
-    val shape = RoundedCornerShape(height / 2)
-    Box(modifier.fillMaxWidth().height(height).clip(shape).background(Color(0x33000000))) {
-        Box(
-            Modifier.fillMaxWidth(fraction.coerceIn(0f, 1f)).height(height).clip(shape)
-                .background(Brush.horizontalGradient(listOf(Color(0xFFFFC400), Color(0xFFFFE45C))))
-        )
+fun BlockProgress(fraction: Float, modifier: Modifier = Modifier, color: Color = Bridge.Yellow, height: Dp = 6.dp) {
+    Box(modifier.fillMaxWidth().height(height).clip(ButtonShape).background(Bridge.Chip)) {
+        Box(Modifier.fillMaxWidth(fraction.coerceIn(0f, 1f)).fillMaxHeight().clip(ButtonShape).background(color))
     }
 }
 
-/** A segmented control: a glass track with a brighter lens over the choice. */
+/** A segmented control: a well with the chosen segment raised on it. */
 @Composable
 fun SegmentedRow(
     options: List<String>,
@@ -415,71 +387,88 @@ fun SegmentedRow(
     modifier: Modifier = Modifier,
     onSelect: (Int) -> Unit,
 ) {
-    // The track does not clip: the lens stands proud of it.
-    LiquidBar(
-        count = options.size,
-        selected = selectedIndex.coerceAtLeast(0),
-        onSelect = onSelect,
-        modifier = modifier.fillMaxWidth().background(Color(0x38000000), ButtonShape).padding(3.dp),
-        bulge = 3.dp,
-    ) { i, lit ->
-        Text(
-            options[i], style = LabelStyle, color = if (lit) Bridge.Text else Bridge.Muted,
-            modifier = Modifier.padding(vertical = 9.dp),
-        )
+    val sel = selectedIndex.coerceIn(-1, options.lastIndex)
+    BoxWithConstraints(
+        modifier.fillMaxWidth().height(40.dp).clip(ButtonShape).background(Bridge.Chip).padding(3.dp),
+    ) {
+        val w = maxWidth / options.size
+        val x by animateDpAsState(w * sel.coerceAtLeast(0), tween(180), label = "seg")
+        if (sel >= 0) {
+            Box(
+                Modifier.offset(x = x).width(w).fillMaxHeight()
+                    .shadow(if (Bridge.Dark) 0.dp else 2.dp, ButtonShape)
+                    .clip(ButtonShape)
+                    .background(if (Bridge.Dark) Color(0xFF3A3A40) else Color.White)
+            )
+        }
+        Row(Modifier.fillMaxWidth().fillMaxHeight()) {
+            options.forEachIndexed { i, label ->
+                Box(
+                    Modifier.weight(1f).fillMaxHeight().clip(ButtonShape)
+                        .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) { onSelect(i) },
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Text(
+                        label,
+                        style = TextStyle(fontSize = 13.5.sp, fontWeight = if (i == sel) FontWeight.SemiBold else FontWeight.Medium),
+                        color = if (i == sel) Bridge.Text else Bridge.Muted,
+                    )
+                }
+            }
+        }
     }
 }
 
-/** The iOS switch: green when on, a white knob that slides. */
+/** An on/off switch in the accent colour. */
 @Composable
-fun IosSwitch(on: Boolean, modifier: Modifier = Modifier, onChange: (Boolean) -> Unit) {
-    val track by animateColorAsState(if (on) Bridge.Good else Color(0x52787880), label = "track")
-    val x by animateFloatAsState(if (on) 1f else 0f, label = "knob")
+fun Toggle(on: Boolean, modifier: Modifier = Modifier, color: Color = Bridge.Good, onChange: (Boolean) -> Unit) {
+    val track by animateColorAsState(if (on) color else Bridge.Faint.copy(alpha = 0.45f), tween(160), label = "track")
+    val x by animateDpAsState(if (on) 20.dp else 0.dp, tween(160), label = "knob")
     Box(
         modifier
-            .width(51.dp)
-            .height(31.dp)
+            .width(52.dp)
+            .height(32.dp)
             .clip(ButtonShape)
             .background(track)
-            .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) { onChange(!on) }
-            .padding(2.dp),
+            .clickable(interactionSource = remember { MutableInteractionSource() }, indication = ripple(bounded = false, radius = 26.dp)) { onChange(!on) }
+            .padding(3.dp),
     ) {
-        Box(
-            Modifier
-                .padding(start = 20.dp * x)
-                .size(27.dp)
-                .clip(CircleShape)
-                .background(Brush.verticalGradient(listOf(Color.White, Color(0xFFE9E9EE))))
-        )
+        Box(Modifier.offset(x = x).size(26.dp).shadow(2.dp, CircleShape).clip(CircleShape).background(Color.White))
     }
 }
 
-/** Rows of a grouped list sharing one sheet of glass, with hairlines between them. */
+/** Rows sharing one card, with hairlines between them. */
 @Composable
-fun GroupCard(content: @Composable ColumnScope.() -> Unit) {
-    Column(Modifier.fillMaxWidth().panel(), content = content)
+fun GroupCard(modifier: Modifier = Modifier, content: @Composable ColumnScope.() -> Unit) {
+    Column(modifier.fillMaxWidth().panel(), content = content)
 }
 
-/** One setting: title, optional detail underneath, and a control or value on the right. */
+/** One setting: optional icon, title, a line of detail, and a control on the right. */
 @Composable
 fun SettingRow(
     title: String,
     detail: String? = null,
     first: Boolean = false,
     titleColor: Color = Bridge.Text,
+    icon: ImageVector? = null,
+    iconColor: Color = Bridge.Blue,
     onClick: (() -> Unit)? = null,
     trailing: @Composable RowScope.() -> Unit = {},
 ) {
-    if (!first) Box(Modifier.fillMaxWidth().padding(start = 18.dp).height(0.5.dp).background(Bridge.Outline))
+    if (!first) Box(Modifier.fillMaxWidth().padding(start = if (icon != null) 66.dp else 18.dp).height(0.5.dp).background(Bridge.Outline))
     Row(
         Modifier
             .fillMaxWidth()
             .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier)
-            .padding(horizontal = 18.dp, vertical = 14.dp),
+            .padding(horizontal = 16.dp, vertical = 13.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
+        if (icon != null) {
+            AppIcon(icon, iconColor, size = 34.dp)
+            Spacer(Modifier.width(14.dp))
+        }
         Column(Modifier.weight(1f)) {
-            Text(title, style = TextStyle(fontSize = 15.sp), color = titleColor, maxLines = 2, overflow = TextOverflow.Ellipsis)
+            Text(title, style = TextStyle(fontSize = 15.5.sp, fontWeight = FontWeight.Medium), color = titleColor, maxLines = 2, overflow = TextOverflow.Ellipsis)
             if (detail != null) Text(detail, style = BodyStyle.copy(fontSize = 13.sp, lineHeight = 17.sp), color = Bridge.Muted)
         }
         trailing()
@@ -499,32 +488,77 @@ fun SignalBars(level: Int, modifier: Modifier = Modifier) {
 }
 
 /**
- * The floating tab bar: a capsule of real, blurred glass, with a brighter lens under the
- * current tab.
+ * The tab bar: flat, on the surface colour, with a pill behind the current tab's icon.
+ * It sits on the bottom edge like the phone's own navigation, not floating over content.
  */
 @Composable
-fun GlassTabBar(
+fun TabBar(
     items: List<Pair<String, ImageVector>>,
     selected: Int,
+    bottomInset: Dp,
     modifier: Modifier = Modifier,
     onSelect: (Int) -> Unit,
 ) {
-    Row(
-        modifier
-            .padding(horizontal = 22.dp)
-            .fillMaxWidth()
-            .liquidGlass(blur = 6.dp, tint = Color(0x2E08080C))
-            .padding(4.dp),
-    ) {
-        // The current tab sits under a lens that slides between tabs; drag a finger along
-        // the bar and it follows, and the tab under it when you let go opens.
-        LiquidBar(items.size, selected, onSelect, Modifier.fillMaxWidth()) { i, lit ->
-            val (label, icon) = items[i]
-            Column(Modifier.padding(vertical = 6.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                Icon(icon, label, tint = if (lit) Bridge.Yellow else Bridge.Text, modifier = Modifier.size(22.dp))
-                Spacer(Modifier.height(3.dp))
-                Text(label, style = TextStyle(fontSize = 10.5.sp, fontWeight = FontWeight.SemiBold), color = if (lit) Bridge.Yellow else Bridge.Text.copy(alpha = 0.8f))
+    Column(modifier.fillMaxWidth().background(Bridge.Surface)) {
+        Box(Modifier.fillMaxWidth().height(0.5.dp).background(Bridge.Outline))
+        Row(Modifier.fillMaxWidth().padding(top = 8.dp, bottom = 8.dp + bottomInset, start = 8.dp, end = 8.dp)) {
+            items.forEachIndexed { i, (label, icon) ->
+                val lit = i == selected
+                val pill by animateColorAsState(if (lit) Bridge.Yellow.copy(alpha = if (Bridge.Dark) 0.22f else 0.32f) else Color.Transparent, tween(160), label = "pill")
+                Column(
+                    Modifier
+                        .weight(1f)
+                        .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) { onSelect(i) },
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                ) {
+                    Box(
+                        Modifier.width(58.dp).height(32.dp).clip(ButtonShape).background(pill),
+                        contentAlignment = Alignment.Center,
+                    ) { Icon(icon, label, tint = if (lit) Bridge.Text else Bridge.Muted, modifier = Modifier.size(22.dp)) }
+                    Spacer(Modifier.height(4.dp))
+                    Text(
+                        label,
+                        style = TextStyle(fontSize = 11.5.sp, fontWeight = if (lit) FontWeight.SemiBold else FontWeight.Medium),
+                        color = if (lit) Bridge.Text else Bridge.Muted,
+                    )
+                }
             }
         }
+    }
+}
+
+/** A row as its own card: used for transfers and one-off notes. */
+@Composable
+fun BridgeRow(
+    title: String,
+    modifier: Modifier = Modifier,
+    icon: ImageVector? = null,
+    iconColor: Color = Bridge.Blue,
+    meta: String? = null,
+    trailing: @Composable RowScope.() -> Unit = {},
+    onClick: (() -> Unit)? = null,
+    content: @Composable ColumnScope.() -> Unit = {},
+) {
+    Column(
+        modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 4.dp)
+            .card()
+            .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier)
+            .padding(horizontal = 16.dp, vertical = 14.dp)
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            if (icon != null) {
+                AppIcon(icon, iconColor, size = 36.dp)
+                Spacer(Modifier.width(12.dp))
+            }
+            Text(title, style = TitleStyle.copy(fontSize = 15.5.sp), color = Bridge.Text, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
+            if (meta != null) {
+                Spacer(Modifier.width(8.dp))
+                Text(meta, style = LabelStyle, maxLines = 1, color = Bridge.Muted)
+            }
+            trailing()
+        }
+        content()
     }
 }
