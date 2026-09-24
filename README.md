@@ -51,12 +51,19 @@ blocks without ever being held in memory. A 4 GB video crosses in about a minute
 ### 1. Liquid Glass, on both sides
 
 The app and the page share one look: sheets of glass over a softly lit backdrop, a rim
-that catches the light, capsule buttons, and the brand yellow as the only accent. On the
-phone the tab bar and the monitor are real blurred glass floating over the content.
+that catches the light, capsule buttons, one line-icon set, and the brand yellow as the
+only accent.
 
-| Home | Monitor | Phones |
-| --- | --- | --- |
-| <img src="docs/images/phone-home.png" width="190"> | <img src="docs/images/phone-monitor.png" width="190"> | <img src="docs/images/phone-phones.png" width="190"> |
+On the phone, the tab bar and the monitor are **liquid glass, not frosted glass**. The
+screen is recorded every frame and drawn again under them through a lens shader (AGSL,
+Android 13+). The middle stays clear. Near the rounded edge the content bends inwards,
+the way it does through a thick drop of glass, with a faint colour fringe where the bend
+is strongest. A specular rim and a sheen along the top sit on the surface. Older phones
+get a blurred glass instead.
+
+| Home | Monitor | Phones | Control |
+| --- | --- | --- | --- |
+| <img src="docs/images/phone-home.png" width="190"> | <img src="docs/images/phone-monitor.png" width="190"> | <img src="docs/images/phone-phones.png" width="190"> | <img src="docs/images/phone-control.png" width="190"> |
 
 ### 2. Connect a computer (approve on the phone)
 
@@ -125,7 +132,8 @@ keyboard typing straight into the laptop.
 **Keyboard**, **Ctrl**, **Win** and **Esc** sit in a row that rides on top of the phone's
 keyboard when it opens. Ctrl and Win apply to the next key or click, so Ctrl then C
 copies. Clicks happen on the pad itself: tap to click, tap with two fingers to right-click,
-tap then drag to hold. The speed chip in the pad's corner cycles Slow, Normal and Fast.
+tap then drag to hold. The dial in the pad's corner cycles the pointer through Slow, Normal
+and Fast.
 
 
 ### 7. The laptop helper (one file, nothing installed)
