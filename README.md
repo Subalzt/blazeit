@@ -90,7 +90,7 @@ remove any of them.
 Everything you move lives on one screen, on both sides.
 
 - **Clipboard.** Type or paste on either side and send it across. On the phone, **Paste**
-  grabs what you last copied. Through the laptop helper (see 8) the page reads and writes
+  grabs what you last copied. Through the laptop helper (see 10) the page reads and writes
   the laptop's own clipboard directly.
 - **Files to the phone.** Drop files **or whole folders** on the page, or use *Choose
   files* / *Choose a folder*. A folder arrives as the same folder, subfolders included.
@@ -100,7 +100,24 @@ Everything you move lives on one screen, on both sides.
   the computer* on Home. They show up under *On the phone* in the browser. Downloads use
   byte ranges, so they resume and, through the helper, run over several connections.
 
-### 4. A live monitor over every screen
+### 4. Browse the phone from the laptop
+
+The page's **Phone** tab shows the phone's own folders (DCIM, Download, Documents and the
+rest) with thumbnails for photos and videos. Download any file (in parallel ranges, resumable)
+or a whole folder as one zip. Read-only: nothing on the phone can be changed or deleted from
+the laptop. It stays off until you allow it on the phone (*Settings → Laptop access → Browse
+this phone*, which opens Android's "All files access" screen). Over a USB 3 cable a 196 MB
+video came across at 217 MB/s on one connection.
+
+### 5. Clipboard that follows you
+
+With the laptop helper running, whatever you copy on the laptop is ready to paste on the
+phone, and whatever you copy on the phone lands in the laptop's clipboard as soon as you open
+BlazeIt or tap its **Send clipboard** quick-settings tile (Android lets an app read the
+clipboard only while it is on screen). Both directions took about half a second in testing.
+Text only; *Settings → Laptop access → Sync clipboard automatically* turns it off.
+
+### 6. A live monitor over every screen
 
 Tap the pulse button on the phone and a small pill floats over whatever you are
 doing: speed each way, **ping**, and signal strength. Drag it out of the way; tap it for
@@ -129,7 +146,7 @@ its link every 2 s only while someone is watching (every 15 s otherwise), and th
 trackpad channel drops to a keep-alive every 25 s whenever the phone's Control tab is
 closed. The screen-on and low-latency Wi-Fi locks are held only while Control is open.
 
-### 5. The direct link
+### 7. The direct link
 
 *Direct link* on Home starts a private Wi-Fi network hosted by the phone (Android's
 local-only hotspot, started by the app itself). Its card shows the network's name, password
@@ -161,7 +178,7 @@ keeps its internet through the phone. About a third slower than the direct link.
 The helper only ever removes the Wi-Fi profiles it created itself (`AndroidShare_…`); a network
 you saved on the laptop is joined as it is and left alone.
 
-### 6. Phone to phone
+### 8. Phone to phone
 
 The **Phones** tab lists other phones running BlazeIt on the same Wi-Fi (or on one
 phone's hotspot), found automatically. Tap **Connect**, allow it on the other phone
@@ -176,7 +193,7 @@ files go the ordinary way. A link started for a phone says so, and a laptop help
 stays on its own Wi-Fi. Phone to phone over the direct link has not been measured yet; it
 needs two phones.
 
-### 7. The phone as the laptop's trackpad and keyboard
+### 9. The phone as the laptop's trackpad and keyboard
 
 The **Control** tab is one large trackpad with Windows gestures, plus the phone's own
 keyboard typing straight into the laptop.
@@ -195,7 +212,7 @@ tap then drag to hold. The dial in the pad's corner cycles the pointer through S
 and Fast.
 
 
-### 8. The laptop helper (one file, nothing installed)
+### 10. The laptop helper (one file, nothing installed)
 
 A browser tab may not move the cursor, and a page on plain `http://` may not use every
 connection for downloads or touch the clipboard. The helper fixes both. Get
@@ -209,7 +226,8 @@ connection for downloads or touch the clipboard. The helper fixes both. Get
 5. reports the laptop's Wi-Fi link and ping to the monitor;
 6. joins the phone's direct link when you start it (or its hotspot, in hotspot mode), and goes
    back to your Wi-Fi when it stops;
-7. switches to a USB cable whenever one is plugged in with USB tethering on.
+7. switches to a USB cable whenever one is plugged in with USB tethering on;
+8. keeps the clipboard in step with the phone.
 
 Only one helper runs at a time; a second copy says so and stops.
 
@@ -218,13 +236,13 @@ no admin rights are needed. Close its window to stop it.
 
 <img src="docs/images/web-settings.png" width="620" alt="Settings: helper, parallel connections, measure">
 
-### 9. Measure the link
+### 11. Measure the link
 
 **Settings → Measure now** tests the network alone for five seconds each way, with the
 phone generating and discarding the data so storage is out of the picture. Compare it
 with a real transfer: close means the network is the ceiling, far below means storage is.
 
-### 10. Stream your music library
+### 12. Stream your music library
 
 The **Music** tab lists every song on the phone, with search and an album view. Tracks
 stream straight from the phone with range requests: playback starts after the first few
