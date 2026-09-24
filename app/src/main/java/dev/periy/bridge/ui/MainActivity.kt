@@ -549,53 +549,66 @@ private fun ClipboardPanel(shared: String, status: String, vm: MainViewModel) {
     var draft by remember { mutableStateOf(shared) }
     LaunchedEffect(shared) { if (shared != draft) draft = shared }
 
-    // One sheet: the text sits straight on it, and one row of tools underneath. No boxes
-    // inside the box.
+    // Like a compose box: the text sits straight on the sheet with the send button in its
+    // corner, and a toolbar underneath split into three even parts.
     Column(Modifier.fillMaxWidth().panel()) {
-        Box(Modifier.fillMaxWidth().heightIn(min = 104.dp).padding(horizontal = 20.dp, vertical = 16.dp)) {
+        Box(Modifier.fillMaxWidth().heightIn(min = 128.dp).padding(start = 20.dp, end = 14.dp, top = 16.dp, bottom = 14.dp)) {
             if (draft.isEmpty()) {
-                Text("Type here, or tap Paste to grab what you last copied.", style = BodyStyle.copy(fontSize = 15.sp), color = Bridge.Faint)
+                Text(
+                    "Type here, or tap Paste to grab what you last copied.",
+                    style = BodyStyle.copy(fontSize = 15.sp), color = Bridge.Faint,
+                    modifier = Modifier.padding(end = 56.dp),
+                )
             }
             BasicTextField(
                 value = draft,
                 onValueChange = { draft = it },
                 textStyle = BodyStyle.copy(fontSize = 15.sp, lineHeight = 21.sp, color = Bridge.Text),
                 cursorBrush = SolidColor(Bridge.Yellow),
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier.fillMaxWidth().padding(end = 56.dp, bottom = 22.dp),
             )
-        }
-        Box(Modifier.fillMaxWidth().padding(horizontal = 18.dp).height(0.5.dp).background(Bridge.Outline))
-        Row(Modifier.fillMaxWidth().padding(start = 8.dp, end = 10.dp, top = 6.dp, bottom = 6.dp), verticalAlignment = Alignment.CenterVertically) {
-            ClipTool(BlazeIcons.Paste, "Paste") { vm.pasteFromDevice() }
-            ClipTool(BlazeIcons.Copy, "Copy") { vm.copyToDevice() }
-            ClipTool(BlazeIcons.Trash, "Clear", tint = Bridge.Danger) { vm.clearClipboard(); draft = "" }
-            Spacer(Modifier.weight(1f))
-            Row(
-                Modifier
-                    .clip(ButtonShape)
-                    .background(Brush.verticalGradient(listOf(Color(0xFFFFE45C), Color(0xFFFFC400))))
-                    .clickable { vm.sendClipboard(draft) }
-                    .padding(start = 14.dp, end = 16.dp, top = 9.dp, bottom = 9.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Icon(BlazeIcons.Upload, null, tint = Bridge.OnYellow, modifier = Modifier.size(17.dp))
-                Spacer(Modifier.width(6.dp))
-                Text("Send", style = TextStyle(fontSize = 14.5.sp, fontWeight = FontWeight.SemiBold), color = Bridge.OnYellow, maxLines = 1)
+            if (status.isNotEmpty()) {
+                Text(status, style = LabelStyle, color = Bridge.Good, modifier = Modifier.align(Alignment.BottomStart))
             }
+            Box(
+                Modifier
+                    .align(Alignment.BottomEnd)
+                    .size(44.dp)
+                    .clip(CircleShape)
+                    .background(Brush.verticalGradient(listOf(Color(0xFFFFE45C), Color(0xFFFFC400))))
+                    .clickable { vm.sendClipboard(draft) },
+                contentAlignment = Alignment.Center,
+            ) { Icon(BlazeIcons.Send, "Send to computer", tint = Bridge.OnYellow, modifier = Modifier.size(22.dp)) }
         }
-        if (status.isNotEmpty()) {
-            Text(status, style = LabelStyle, color = Bridge.Good, modifier = Modifier.padding(start = 20.dp, bottom = 12.dp))
+        Box(Modifier.fillMaxWidth().height(0.5.dp).background(Bridge.Outline))
+        Row(Modifier.fillMaxWidth().height(50.dp), verticalAlignment = Alignment.CenterVertically) {
+            ClipTool(BlazeIcons.Paste, "Paste", Modifier.weight(1f)) { vm.pasteFromDevice() }
+            Box(Modifier.width(0.5.dp).height(22.dp).background(Bridge.Outline))
+            ClipTool(BlazeIcons.Copy, "Copy", Modifier.weight(1f)) { vm.copyToDevice() }
+            Box(Modifier.width(0.5.dp).height(22.dp).background(Bridge.Outline))
+            ClipTool(BlazeIcons.Trash, "Clear", Modifier.weight(1f), tint = Bridge.Danger) { vm.clearClipboard(); draft = "" }
         }
     }
 }
 
-/** A quiet tool under the clipboard: just its icon, with no chip around it. */
+/** One third of the clipboard toolbar: icon and word, centred. */
 @Composable
-private fun ClipTool(icon: androidx.compose.ui.graphics.vector.ImageVector, label: String, tint: Color = Bridge.Text, onClick: () -> Unit) {
-    Box(
-        Modifier.size(44.dp).clip(CircleShape).clickable(onClick = onClick),
-        contentAlignment = Alignment.Center,
-    ) { Icon(icon, label, tint = tint, modifier = Modifier.size(21.dp)) }
+private fun ClipTool(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    label: String,
+    modifier: Modifier,
+    tint: Color = Bridge.Text,
+    onClick: () -> Unit,
+) {
+    Row(
+        modifier.fillMaxSize().clickable(onClick = onClick),
+        horizontalArrangement = Arrangement.Center,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(icon, null, tint = tint, modifier = Modifier.size(18.dp))
+        Spacer(Modifier.width(7.dp))
+        Text(label, style = TextStyle(fontSize = 14.sp, fontWeight = FontWeight.Medium), color = tint)
+    }
 }
 
 // ---------------------------------------------------------------------- tab: phones

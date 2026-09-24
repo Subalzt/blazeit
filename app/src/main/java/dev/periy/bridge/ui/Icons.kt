@@ -78,6 +78,9 @@ object BlazeIcons {
         "M6.5 7l.8 11.5A1.5 1.5 0 0 0 8.8 20h6.4a1.5 1.5 0 0 0 1.5-1.5L17.5 7",
     )
 
+    /** An arrow going up and away: send. */
+    val Send: ImageVector = stroked("send", "M12 19V5.5", "M6.5 11 12 5.5 17.5 11")
+
     /** A chevron pointing on. */
     val Chevron: ImageVector = stroked("chevron", "M9.5,5.5 L16,12 L9.5,18.5")
 
