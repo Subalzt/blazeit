@@ -722,6 +722,75 @@
   .album-actions .btn { height: 40px; padding: 0 22px; gap: 8px; }
   .album-actions .btn svg { width: 17px; height: 17px; }
   @media (max-width: 700px) { .album-head { flex-direction: column; align-items: flex-start; } }
+
+  /* ================================================================ the liquid lens
+     One glass lens per row of choices, sliding with a little overshoot, following the
+     pointer while dragged. Buttons sit above it and carry no fill of their own. */
+  .liquid { position: relative; isolation: isolate; }
+  .liquid > .lens {
+    position: absolute; left: 0; top: 0; z-index: 0; pointer-events: none; border-radius: 999px;
+    background: linear-gradient(180deg, rgba(255,255,255,.28), rgba(255,255,255,.10));
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.55), inset 0 -1px 0 rgba(255,255,255,.1), 0 6px 18px rgba(0,0,0,.3);
+    transition: transform .5s cubic-bezier(.3, 1.45, .45, 1), width .3s ease, height .3s ease, scale .25s ease, opacity .2s;
+  }
+  .liquid > .lens::before {
+    content: ""; position: absolute; inset: 0; border-radius: inherit; padding: 1px;
+    background: var(--rim); -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor; mask-composite: exclude;
+  }
+  .liquid > .lens.instant { transition: scale .25s ease, opacity .2s; }
+  .liquid.dragging > .lens { scale: 1.08; background: linear-gradient(180deg, rgba(255,255,255,.34), rgba(255,255,255,.12)); }
+  .liquid.dragging { cursor: grabbing; user-select: none; }
+  .liquid > button { position: relative; z-index: 1; background: transparent !important; box-shadow: none !important; }
+  .liquid > button::before { display: none !important; }
+  .liquid > button.lit { color: #fff; }
+
+  /* segmented controls: the lens stands proud of the track, like the phone */
+  .seg.liquid { overflow: visible; }
+  .seg.liquid > .lens { margin-top: -3px; padding: 3px 0; box-sizing: content-box; }
+
+  /* the sidebar's tabs, as the phone's tab bar standing upright */
+  .side .tabs {
+    padding: 6px; border-radius: 24px;
+    background: linear-gradient(180deg, rgba(255,255,255,.12), rgba(255,255,255,.04));
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.22), inset 0 0 0 1px rgba(255,255,255,.08), 0 12px 30px rgba(0,0,0,.25);
+  }
+  .side .tabs.liquid > .lens { border-radius: 18px; }
+  .side .tabs > button { border-radius: 18px; padding: 11px 12px; }
+  .side .tabs > button.on, .side .tabs > button.lit { font-weight: 600; }
+  .side .tabs > button.lit svg { stroke: var(--accent); }
+  body.side-collapsed .side .tabs { padding: 5px; }
+  @media (max-width: 900px) { .side .tabs { border-radius: 999px; } .side .tabs.liquid > .lens { border-radius: 999px; } }
+
+  /* the liquid switch: a capsule with its label, and a glass knob that bulges out of it */
+  .set-label { font-size: 14px; font-weight: 600; margin: 0 0 12px; }
+  #size-seg { margin-bottom: 2px; }
+  .lswitch {
+    position: relative; width: 176px; height: 44px; margin: 8px 0 4px; border-radius: 999px; cursor: pointer; user-select: none;
+    background: rgba(0,0,0,.3); box-shadow: inset 0 1px 3px rgba(0,0,0,.45), inset 0 -1px 0 rgba(255,255,255,.12), inset 0 0 0 1px rgba(255,255,255,.06);
+    outline: none;
+  }
+  .lswitch:focus-visible { box-shadow: 0 0 0 3px rgba(255,214,10,.45), inset 0 1px 3px rgba(0,0,0,.45); }
+  .lswitch-label { position: absolute; top: 0; bottom: 0; right: 22px; display: flex; align-items: center; font-size: 16px; font-weight: 600; transition: right .3s, left .3s; }
+  .lswitch.on .lswitch-label { right: auto; left: 22px; }
+  .lswitch-knob {
+    position: absolute; left: 0; top: -5px; width: 54px; height: 54px; border-radius: 50%; display: grid; place-items: center;
+    transform: translateX(-4px);
+    background: linear-gradient(180deg, rgba(255,255,255,.42), rgba(255,255,255,.14));
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.7), inset 0 -2px 6px rgba(255,255,255,.08), 0 10px 26px rgba(0,0,0,.45);
+    -webkit-backdrop-filter: blur(6px) saturate(160%); backdrop-filter: blur(6px) saturate(160%);
+    transition: transform .5s cubic-bezier(.3, 1.45, .45, 1), scale .2s;
+  }
+  .lswitch-knob::before {
+    content: ""; position: absolute; inset: 0; border-radius: 50%; padding: 1.2px; pointer-events: none;
+    background: var(--rim); -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor; mask-composite: exclude;
+  }
+  .lswitch.on .lswitch-knob { transform: translateX(126px); }
+  .lswitch.dragging .lswitch-knob { transition: scale .2s; scale: 1.06; }
+  .lswitch-knob svg { width: 24px; height: 24px; fill: none; stroke: #fff; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+  .lswitch .moon, .lswitch.on .sun { display: none; }
+  .lswitch.on .moon { display: block; }
 </style>
 </head>
 <body>
@@ -871,11 +940,26 @@
     <div class="block">
     <div class="bar">Appearance</div>
     <div class="pad">
-      <div class="seg" id="theme-seg">
-        <button data-v="aurora">Aurora</button>
-        <button data-v="oled">OLED black</button>
+      <div class="lswitch" id="theme-switch" role="switch" aria-checked="false" aria-label="OLED black background" tabindex="0">
+        <span class="lswitch-label">Aurora</span>
+        <span class="lswitch-knob"><svg class="sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2.5v2M12 19.5v2M2.5 12h2M19.5 12h2M5.3 5.3l1.4 1.4M17.3 17.3l1.4 1.4M5.3 18.7l1.4-1.4M17.3 6.7l1.4-1.4"/></svg><svg class="moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M19.5 14.5A8 8 0 1 1 9.5 4.5a6.5 6.5 0 0 0 10 10Z"/></svg></span>
       </div>
       <p class="note">Liquid glass either way. OLED black turns the pixels off behind it. The phone and every open page follow this.</p>
+    </div>
+    </div>
+
+    <div class="block">
+    <div class="bar">Receiving on the phone</div>
+    <div class="pad">
+      <div class="set-label">Largest file accepted</div>
+      <div class="seg" id="size-seg">
+        <button data-gb="4">4 GB</button>
+        <button data-gb="12">12 GB</button>
+        <button data-gb="32">32 GB</button>
+        <button data-gb="64">64 GB</button>
+        <button data-gb="0">No limit</button>
+      </div>
+      <p class="note" id="size-note">The same setting as on the phone. With no limit, anything that fits in the phone's free space is accepted.</p>
     </div>
     </div>
 
@@ -1317,6 +1401,120 @@ function selectTab(id) {
     p.hidden = p.dataset.panel !== id;
   });
   if (id === "music") musicOpen();
+}
+
+// ------------------------------------------------------------------ liquid lens
+//
+// Every row of choices -- the sidebar's tabs and each segmented control -- has one glass
+// lens that slides to the current choice with a little overshoot. Press and drag along
+// the row and the lens follows the pointer, swelling slightly; whatever it rests on when
+// you let go is chosen. The same as the phone's tab bar.
+
+function liquid(host) {
+  if (!host || host._lens) return;
+  var lens = document.createElement("i");
+  lens.className = "lens";
+  host.classList.add("liquid");
+  var drag = null;
+  function items() { return Array.prototype.filter.call(host.children, function (c) { return c.tagName === "BUTTON"; }); }
+  function vertical() { return getComputedStyle(host).flexDirection === "column"; }
+  function place(el, instant) {
+    if (lens.parentNode !== host) host.insertBefore(lens, host.firstChild);
+    if (!el || !el.offsetWidth) { lens.style.opacity = 0; return; }
+    if (instant) lens.classList.add("instant");
+    lens.style.opacity = 1;
+    lens.style.transform = "translate(" + el.offsetLeft + "px," + el.offsetTop + "px)";
+    lens.style.width = el.offsetWidth + "px";
+    lens.style.height = el.offsetHeight + "px";
+    if (instant) { void lens.offsetWidth; lens.classList.remove("instant"); }
+  }
+  function update() {
+    if (drag) return;
+    place(items().filter(function (b) { return b.classList.contains("on"); })[0], lens.style.opacity === "");
+  }
+  function nearest(its, p, v) {
+    var best = its[0], bd = Infinity;
+    its.forEach(function (b) {
+      var c = v ? b.offsetTop + b.offsetHeight / 2 : b.offsetLeft + b.offsetWidth / 2;
+      if (Math.abs(c - p) < bd) { bd = Math.abs(c - p); best = b; }
+    });
+    return best;
+  }
+  host.addEventListener("pointerdown", function (e) {
+    if (e.button !== 0) return;
+    drag = { x: e.clientX, y: e.clientY, moved: false, id: e.pointerId, near: null };
+  });
+  host.addEventListener("pointermove", function (e) {
+    if (!drag) return;
+    var v = vertical(), its = items();
+    if (!its.length) return;
+    var d = v ? e.clientY - drag.y : e.clientX - drag.x;
+    if (!drag.moved) {
+      if (Math.abs(d) < 6) return;
+      drag.moved = true;
+      try { host.setPointerCapture(drag.id); } catch (err) {}
+      host.classList.add("dragging");
+    }
+    var r = host.getBoundingClientRect();
+    var p = v ? e.clientY - r.top + host.scrollTop : e.clientX - r.left + host.scrollLeft;
+    var near = nearest(its, p, v);
+    var size = v ? near.offsetHeight : near.offsetWidth;
+    var lo = v ? its[0].offsetTop : its[0].offsetLeft;
+    var last = its[its.length - 1];
+    var hi = v ? last.offsetTop + last.offsetHeight - size : last.offsetLeft + last.offsetWidth - size;
+    var at = Math.max(lo, Math.min(hi, p - size / 2));
+    lens.classList.add("instant");
+    lens.style.transform = v ? "translate(" + near.offsetLeft + "px," + at + "px)" : "translate(" + at + "px," + near.offsetTop + "px)";
+    lens.style.width = near.offsetWidth + "px";
+    lens.style.height = near.offsetHeight + "px";
+    its.forEach(function (b) { b.classList.toggle("lit", b === near); });
+    drag.near = near;
+  });
+  function end() {
+    if (!drag) return;
+    var d = drag;
+    drag = null;
+    host.classList.remove("dragging");
+    lens.classList.remove("instant");
+    items().forEach(function (b) { b.classList.remove("lit"); });
+    if (d.moved && d.near) d.near.click();
+    update();
+  }
+  host.addEventListener("pointerup", end);
+  host.addEventListener("pointercancel", end);
+  new MutationObserver(function () { if (!drag) requestAnimationFrame(update); })
+    .observe(host, { childList: true, subtree: true, attributes: true, attributeFilter: ["class"] });
+  window.addEventListener("resize", update);
+  host._lens = { update: update };
+  requestAnimationFrame(update);
+}
+
+/** The liquid switch: tap, Space or Enter flips it; the knob can also be dragged across. */
+function wireSwitch(sw, onChange) {
+  var knob = sw.querySelector(".lswitch-knob"), drag = null;
+  function travel() { return sw.clientWidth - knob.offsetWidth + 8; }
+  function flip() { onChange(!sw.classList.contains("on")); }
+  sw.addEventListener("keydown", function (e) { if (e.key === " " || e.key === "Enter") { e.preventDefault(); flip(); } });
+  sw.addEventListener("pointerdown", function (e) { drag = { x: e.clientX, on: sw.classList.contains("on"), moved: false, id: e.pointerId }; });
+  sw.addEventListener("pointermove", function (e) {
+    if (!drag) return;
+    var d = e.clientX - drag.x;
+    if (!drag.moved) { if (Math.abs(d) < 5) return; drag.moved = true; try { sw.setPointerCapture(drag.id); } catch (err) {} sw.classList.add("dragging"); }
+    var t = travel(), at = Math.max(0, Math.min(t, (drag.on ? t : 0) + d));
+    knob.style.transform = "translateX(" + (at - 4) + "px)";
+    drag.at = at / t;
+  });
+  function end() {
+    if (!drag) return;
+    var d = drag; drag = null;
+    sw.classList.remove("dragging");
+    knob.style.transform = "";
+    if (!d.moved) { flip(); return; }
+    var now = d.at > 0.5;
+    if (now !== d.on) onChange(now);
+  }
+  sw.addEventListener("pointerup", end);
+  sw.addEventListener("pointercancel", end);
 }
 
 // ------------------------------------------------------------------ clipboard
@@ -2335,6 +2533,14 @@ async function refreshState() {
   if (document.activeElement !== $("clip") && !$("clip").value) $("clip").value = s.clipboard || "";
   renderStreams();
   renderFiles();
+  renderSizeSeg();
+}
+
+function renderSizeSeg() {
+  var gb = state.maxUpload > 1e15 ? 0 : Math.round(state.maxUpload / 1073741824);
+  Array.prototype.forEach.call($("size-seg").children, function (b) {
+    if (b.tagName === "BUTTON") b.classList.toggle("on", parseInt(b.dataset.gb, 10) === gb);
+  });
 }
 
 // ------------------------------------------------------------------ theme
@@ -2347,8 +2553,12 @@ async function refreshState() {
 function applyTheme(oled) {
   document.body.classList.add("glass");
   document.body.classList.toggle("oled", !!oled);
-  var seg = $("theme-seg");
-  if (seg) Array.prototype.forEach.call(seg.children, function (b) { b.classList.toggle("on", (b.dataset.v === "oled") === !!oled); });
+  var sw = $("theme-switch");
+  if (sw) {
+    sw.classList.toggle("on", !!oled);
+    sw.setAttribute("aria-checked", oled ? "true" : "false");
+    sw.querySelector(".lswitch-label").textContent = oled ? "OLED" : "Aurora";
+  }
   try { localStorage.setItem("blazeit.oled", oled ? "1" : "0"); } catch (e) {}
 }
 
@@ -3000,9 +3210,20 @@ function showApp() {
     $("side-collapse").addEventListener("click", function () { setRail(!document.body.classList.contains("side-collapsed")); });
     try { setRail(localStorage.getItem("blazeit.rail") === "1"); } catch (e) {}
     $("usb-link").addEventListener("click", function (e) { e.preventDefault(); selectTab("settings"); });
-    Array.prototype.forEach.call($("theme-seg").children, function (b) {
-      b.addEventListener("click", function () { setOled(b.dataset.v === "oled"); });
+    wireSwitch($("theme-switch"), function (on) { setOled(on); });
+    Array.prototype.forEach.call($("size-seg").children, function (b) {
+      b.addEventListener("click", async function () {
+        var gb = parseInt(b.dataset.gb, 10);
+        try {
+          await api("/api/settings/max-upload", {
+            method: "POST", headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(gb ? { gb: gb } : { unlimited: true }),
+          });
+        } catch (e) {}
+        refreshState();
+      });
     });
+    [["tabs"], ["music-view"], ["streams-seg"], ["size-seg"]].forEach(function (x) { liquid($(x[0])); });
     renderPending();
   } else setMonitor(monitorWanted());
   refreshState();

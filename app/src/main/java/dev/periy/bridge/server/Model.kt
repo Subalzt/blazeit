@@ -61,6 +61,8 @@ class ServerConfig(
     val uploadStreams: () -> Int,
     val oled: () -> Boolean,
     val setOled: (Boolean) -> Unit,
+    /** Sets the largest upload accepted; Long.MAX_VALUE means only free space counts. */
+    val setMaxUpload: (Long) -> Unit,
     val sessionTtlMs: Long = 30L * 24 * 60 * 60 * 1000,
     val deviceName: String,
 )
@@ -113,6 +115,9 @@ data class PairStartDto(val id: String, val code: String, val name: String)
 data class PairStatusDto(val state: String)
 
 @Serializable data class ThemeRequest(val oled: Boolean = false)
+
+/** From the page's Settings: a size in GB, or no limit. */
+@Serializable data class MaxUploadRequest(val gb: Int = 0, val unlimited: Boolean = false)
 
 /** A browser reporting the round trip it measured to this phone. */
 @Serializable data class RttReport(val ms: Int = -1)

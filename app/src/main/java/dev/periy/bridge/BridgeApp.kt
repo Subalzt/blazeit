@@ -64,6 +64,7 @@ class Container(ctx: Context) {
             uploadStreams = { prefs.uploadStreams },
             oled = { _oled.value },
             setOled = ::setOled,
+            setMaxUpload = { prefs.tusMaxSize = it },
             deviceName = deviceName(),
         )
         return BridgeServer(app, config, storage, tus, index, clipboard, devices, pairing, music)

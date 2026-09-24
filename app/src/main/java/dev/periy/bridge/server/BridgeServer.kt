@@ -320,6 +320,22 @@ class BridgeServer(
 
     private fun io.ktor.server.routing.Route.themeRoutes() {
         // One shared setting: flipping it here changes the phone and every open page.
+        // The phone's receiving limit, set from a page's Settings; the same choice as on the phone.
+        post("/api/settings/max-upload") {
+            val body = runCatching { call.receive<MaxUploadRequest>() }.getOrNull()
+            val bytes = when {
+                body == null -> null
+                body.unlimited -> Long.MAX_VALUE
+                body.gb in 1..4096 -> body.gb.toLong() shl 30
+                else -> null
+            }
+            if (bytes == null) {
+                call.respond(HttpStatusCode.BadRequest, ApiResult(false, "Pick a size or no limit"))
+            } else {
+                config.setMaxUpload(bytes)
+                call.respond(ApiResult(true))
+            }
+        }
         post("/api/theme") {
             val body = runCatching { call.receive<ThemeRequest>() }.getOrDefault(ThemeRequest())
             config.setOled(body.oled)
