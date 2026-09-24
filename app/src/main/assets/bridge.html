@@ -484,6 +484,97 @@
   }
   #login .pad { background: transparent; box-shadow: none; -webkit-backdrop-filter: none; backdrop-filter: none; padding-top: 14px; }
   #login .pad::before { display: none; }
+
+  /* ================================================================ side panels as instruments
+     The sidebar and the docked monitor are read like a cockpit panel: a dark slab over a
+     faint grid, hairline frame, monospace labels in small caps, thin glowing markers
+     instead of glossy lenses, and meters built from lit cells. */
+  :root { --hud-line: rgba(255,255,255,.08); --hud-label: rgba(235,240,255,.46); }
+  .side, body.mon-dock .mon-sheet {
+    border-radius: 16px;
+    background:
+      linear-gradient(rgba(255,255,255,.022) 1px, transparent 1px) 0 0 / 22px 22px,
+      linear-gradient(90deg, rgba(255,255,255,.022) 1px, transparent 1px) 0 0 / 22px 22px,
+      linear-gradient(180deg, rgba(12,14,24,.74), rgba(6,8,14,.8));
+    box-shadow: 0 0 0 1px var(--hud-line), 0 24px 60px rgba(0,0,0,.45);
+    -webkit-backdrop-filter: blur(28px) saturate(140%); backdrop-filter: blur(28px) saturate(140%);
+  }
+  body.oled .side, body.oled.mon-dock .mon-sheet {
+    background:
+      linear-gradient(rgba(255,255,255,.03) 1px, transparent 1px) 0 0 / 22px 22px,
+      linear-gradient(90deg, rgba(255,255,255,.03) 1px, transparent 1px) 0 0 / 22px 22px,
+      #050507;
+  }
+  /* the frame: a hairline, with a short accent stroke that marks the top edge */
+  .side::before, body.mon-dock .mon-sheet::before {
+    padding: 0; -webkit-mask: none; mask: none; inset: 0;
+    background:
+      linear-gradient(90deg, var(--accent), rgba(255,214,10,0)) 18px 0 / 64px 1px no-repeat;
+    opacity: .9;
+  }
+  .side .logo { padding-bottom: 26px; }
+  .side .logo .wordmark { letter-spacing: .02em; }
+
+  /* labels over the groups */
+  .tabs::before, .side-foot::before {
+    content: "NAVIGATE"; display: block; padding: 0 12px 8px;
+    font: 600 10.5px/1 var(--mono); letter-spacing: .16em; color: var(--hud-label);
+  }
+  .side-foot::before { content: "LINK"; padding-bottom: 4px; }
+
+  /* nav: a lit marker, not a lens */
+  .tabs button, .side-item { border-radius: 8px; padding: 9px 12px; font-size: 14px; color: rgba(255,255,255,.66); }
+  .tabs button:hover, .side-item:hover { background: rgba(255,255,255,.04); color: #fff; }
+  .tabs button.on {
+    color: #fff; background: linear-gradient(90deg, rgba(255,214,10,.16), rgba(255,214,10,0) 80%);
+    box-shadow: inset 2px 0 0 var(--accent), -6px 0 14px -6px rgba(255,214,10,.7);
+  }
+  .tabs button.on::before { display: none; }
+  .tabs svg, .side-item svg { stroke-width: 1.5; }
+
+  /* the monitor switch: an indicator, square-shouldered */
+  .switch { width: 34px; height: 16px; border-radius: 4px; background: transparent; box-shadow: inset 0 0 0 1px rgba(255,255,255,.25); }
+  .switch::after { left: 3px; top: 3px; width: 10px; height: 10px; border-radius: 2px; background: rgba(255,255,255,.45); box-shadow: none; }
+  .mon-toggle.on .switch { background: rgba(255,214,10,.1); box-shadow: inset 0 0 0 1px rgba(255,214,10,.7); }
+  .mon-toggle.on .switch::after { left: 21px; background: var(--accent); box-shadow: 0 0 8px rgba(255,214,10,.9); }
+
+  /* phone status: a readout */
+  .status { border-radius: 8px; background: rgba(255,255,255,.03); box-shadow: inset 0 0 0 1px var(--hud-line); }
+  .status::before { display: none; }
+  .status .dev { font-family: var(--mono); font-size: 12px; letter-spacing: .02em; }
+  .status .lbl { font-family: var(--mono); font-size: 10.5px; letter-spacing: .14em; text-transform: uppercase; }
+  .dot.on { animation: pulse 2.4s ease-in-out infinite; }
+  @keyframes pulse { 50% { box-shadow: 0 0 2px rgba(48,209,88,.4); opacity: .75; } }
+
+  /* monitor readouts */
+  body.mon-dock .mon-head > b { font: 600 11.5px/1 var(--mono); letter-spacing: .2em; text-transform: uppercase; color: #fff; }
+  .mon-live { font-family: var(--mono); font-size: 10px; letter-spacing: .14em; text-transform: uppercase; border-radius: 3px; background: transparent; box-shadow: inset 0 0 0 1px rgba(48,209,88,.45); }
+  .mon-head .x { border-radius: 6px; background: transparent; box-shadow: inset 0 0 0 1px var(--hud-line); }
+  .mon-sub, .mon-rates .k { font: 600 10.5px/1.2 var(--mono); letter-spacing: .16em; text-transform: uppercase; color: var(--hud-label); }
+  .mon-rates .k { gap: 7px; }
+  .mon-rates b { font-weight: 300; letter-spacing: -.02em; }
+  .mon-grid > div { border-bottom: 1px dashed rgba(255,255,255,.07); }
+  .mon-grid span { font-size: 12.5px; }
+  .mon-grid b { font-family: var(--mono); font-size: 12.5px; font-weight: 500; }
+  .ch-head b { font-weight: 300; font-size: 30px; }
+  .ch-head span { font-family: var(--mono); font-size: 11px; letter-spacing: .04em; }
+  .ch-bar { display: grid; grid-template-columns: repeat(32, minmax(0, 1fr)); gap: 3px; height: 14px; background: none; border-radius: 0; box-shadow: none; overflow: visible; }
+  .ch-bar i { width: auto !important; border-radius: 1.5px; background: rgba(255,255,255,.07); }
+  .ch-bar i.files { background: var(--accent); box-shadow: 0 0 6px rgba(255,214,10,.55); }
+  .ch-bar i.music { background: var(--music); box-shadow: 0 0 6px rgba(191,90,242,.6); }
+  .ch-bar i.test { background: var(--blue); box-shadow: 0 0 6px rgba(10,132,255,.6); }
+  .ch-legend { font-family: var(--mono); font-size: 11.5px; }
+  .ch-hint { margin: 10px 0 0; font-size: 12.5px; color: var(--accent); }
+
+  /* the USB card */
+  .usb-head { display: flex; align-items: center; gap: 14px; }
+  .usb-head svg { width: 38px; height: 38px; flex: 0 0 38px; padding: 8px; border-radius: 12px; fill: none; stroke: var(--accent); stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; background: rgba(255,214,10,.1); box-shadow: inset 0 0 0 1px rgba(255,214,10,.3); }
+  .usb-head b { display: block; font-size: 15px; }
+  .usb-head span { color: var(--sub); font-size: 13px; }
+  .steps { margin: 14px 0 0; padding-left: 20px; color: var(--txt); font-size: 13.5px; }
+  .steps li { margin: 6px 0; }
+  .steps li::marker { color: var(--accent); font-weight: 700; }
+  @media (max-width: 900px) { .tabs::before, .side-foot::before { display: none; } .side { background: rgba(8,10,18,.85); } }
 </style>
 </head>
 <body>
@@ -554,7 +645,7 @@
     <div class="pad">
       <div id="drop" class="drop">
         <div class="big">Drop files or folders here</div>
-        <div class="meta" style="margin-top:6px">or click to choose files &middot; up to 64 GB each</div>
+        <div class="meta" style="margin-top:6px">or click to choose files</div>
       </div>
       <div class="actions" style="margin-top:10px">
         <button class="btn sm ghost" id="pick-files">Choose files</button>
@@ -563,6 +654,7 @@
       <input id="file-input" type="file" multiple hidden>
       <input id="folder-input" type="file" webkitdirectory multiple hidden>
       <p class="note">A folder arrives on the phone as the same folder, subfolders included.</p>
+      <p class="note">Moving something big? A USB-C cable is the fastest link: <a href="#" id="usb-link">how to set it up</a>.</p>
       <p class="note" id="limit"></p>
     </div>
     </div>
@@ -648,9 +740,25 @@
         Nothing is installed; close its window to stop it.
       </p>
       <p class="note">
-        For the most speed, join this laptop to the phone's own hotspot. Through a home router every byte
+        Fastest without a cable: join this laptop to the phone's own hotspot. Through a home router every byte
         crosses the air twice and shares the router's time, which roughly halves the rate at best.
       </p>
+    </div>
+    </div>
+
+    <div class="block">
+    <div class="bar">Fastest link: a USB-C cable</div>
+    <div class="pad usb-card">
+      <div class="usb-head">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v14"/><path d="m9 6 3-3 3 3"/><path d="M12 13 7.5 10.5V8"/><path d="M12 15l4.5-2.5V10"/><rect x="6.5" y="6.5" width="2" height="2" rx=".5"/><circle cx="16.5" cy="9" r="1.2"/><circle cx="12" cy="19" r="2"/></svg>
+        <div><b>A cable beats any Wi-Fi.</b><span>No radio to share, no interference, no drops.</span></div>
+      </div>
+      <ol class="steps">
+        <li>Plug the phone into this laptop with a USB-C cable.</li>
+        <li>On the phone: <b>Setup &rarr; Fastest of all: a USB-C cable &rarr; Set up</b>, and turn on <b>USB tethering</b>.</li>
+        <li>BlazeIt's Home on the phone then shows the cable's address. Open that one here.</li>
+      </ol>
+      <p class="note">Everything works the same over the cable. The monitor shows the difference.</p>
     </div>
     </div>
 
@@ -983,10 +1091,13 @@ function renderMonitor(m, rtt) {
  */
 function renderChannel(m, used, cap, pct) {
   var parts = [["Files", m.filesBps || 0, "files"], ["Music", m.musicBps || 0, "music"], ["Speed test", m.testBps || 0, "test"]];
-  var seg = parts.map(function (p) {
-    var w = cap > 0 ? Math.min(100, p[1] / cap * 100) : 0;
-    return w > 0.2 ? '<i class="' + p[2] + '" style="width:' + w.toFixed(2) + '%"></i>' : "";
-  }).join("");
+  var CELLS = 32, lit = 0, seg = "";
+  parts.forEach(function (p) {
+    var n = cap > 0 ? Math.round(p[1] / cap * CELLS) : 0;
+    if (p[1] > 0 && n === 0) n = 1;
+    for (var k = 0; k < n && lit < CELLS; k++, lit++) seg += '<i class="' + p[2] + '"></i>';
+  });
+  for (; lit < CELLS; lit++) seg += "<i></i>";
   var legend = parts.filter(function (p, k) { return k < 2 || p[1] > 0; }).map(function (p) {
     return '<span><i class="sw ' + p[2] + '"></i>' + p[0] + ' <b>' + mbs(p[1]) + '</b></span>';
   }).join("");
@@ -995,7 +1106,8 @@ function renderChannel(m, used, cap, pct) {
       (cap > 0 ? "of about " + mbs(cap) + (m.capacityFrom === "measured" ? " (fastest seen)" : " (from the link rate)") : "waiting for the link") +
     '</span></div>' +
     '<div class="ch-bar">' + seg + '</div>' +
-    '<div class="ch-legend">' + legend + '</div>';
+    '<div class="ch-legend">' + legend + '</div>' +
+    (pct >= 70 ? '<p class="ch-hint">The Wi-Fi is nearly full. For more, a USB-C cable beats any Wi-Fi (Settings &rarr; Fastest link).</p>' : '');
 }
 
 function bars(level) {
@@ -1014,8 +1126,9 @@ function drawMonitor(samples) {
   var g = c.getContext("2d");
   g.scale(dpr, dpr);
   g.clearRect(0, 0, w, h);
-  g.strokeStyle = "rgba(255,255,255,.08)"; g.lineWidth = 1;
+  g.strokeStyle = "rgba(255,255,255,.09)"; g.lineWidth = 1; g.setLineDash([2, 4]);
   for (var k = 1; k < 4; k++) { g.beginPath(); g.moveTo(0, h * k / 4); g.lineTo(w, h * k / 4); g.stroke(); }
+  g.setLineDash([]);
   if (samples.length < 2) return;
   var top = 1;
   samples.forEach(function (s) { top = Math.max(top, s.inBps, s.outBps); });
@@ -1027,7 +1140,9 @@ function drawMonitor(samples) {
       var x = x0 + step * i, y = h - h * pick(s) / top;
       if (i) g.lineTo(x, y); else g.moveTo(x, y);
     });
-    g.strokeStyle = color; g.lineWidth = 2.5; g.lineJoin = "round"; g.stroke();
+    g.save(); g.shadowBlur = 10; g.shadowColor = color;
+    g.strokeStyle = color; g.lineWidth = 2; g.lineJoin = "round"; g.stroke();
+    g.restore();
     g.lineTo(x0 + step * (samples.length - 1), h); g.lineTo(x0, h); g.closePath();
     var gr = g.createLinearGradient(0, 0, 0, h);
     gr.addColorStop(0, fill); gr.addColorStop(1, "rgba(0,0,0,0)");
@@ -1161,7 +1276,7 @@ function addFiles(list) {
     if (state.maxUpload && f.size > state.maxUpload) {
       transfers.unshift({
         id: uid(), dir: "up", name: f.name, size: f.size, transferred: 0, streams: [],
-        state: "error", status: "larger than the phone accepts (" + bytes(state.maxUpload) + " limit)",
+        state: "error", status: "larger than the phone accepts (" + bytes(state.maxUpload) + " limit; raise it in the phone's Setup)",
       });
       return;
     }
@@ -2046,9 +2161,12 @@ async function refreshState() {
   $("hero-sub").textContent =
     "Move text and files between this computer and the phone. The phone is the server; " +
     "nothing is installed here, and nothing leaves your network.";
-  $("limit").textContent = state.maxUpload
-    ? "Up to " + bytes(state.maxUpload) + " per file. Transfers resume by themselves if the connection drops, and survive a reload."
-    : "";
+  // The phone sends Long.MAX_VALUE for "no limit"; only its free space counts then.
+  var unlimited = state.maxUpload > 1e15;
+  $("limit").textContent = !state.maxUpload ? ""
+    : (unlimited ? "No size limit: anything that fits in the phone's free space."
+                 : "Up to " + bytes(state.maxUpload) + " per file.") +
+      " Transfers resume by themselves if the connection drops, and survive a reload.";
   if (document.activeElement !== $("clip") && !$("clip").value) $("clip").value = s.clipboard || "";
   renderStreams();
   renderFiles();
@@ -2676,6 +2794,7 @@ function showApp() {
     wireMonitor();
     $("theme-toggle").onclick = toggleTheme;
     $("measure").addEventListener("click", measure);
+    $("usb-link").addEventListener("click", function (e) { e.preventDefault(); selectTab("settings"); });
     Array.prototype.forEach.call($("theme-seg").children, function (b) {
       b.addEventListener("click", function () { setOled(b.dataset.v === "oled"); });
     });
