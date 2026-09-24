@@ -13,11 +13,9 @@ import android.view.inputmethod.InputConnection
 import android.view.inputmethod.InputMethodManager
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
-import androidx.compose.foundation.gestures.waitForUpOrCancellation
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -135,13 +133,9 @@ fun ControlPane(running: Boolean, onStart: () -> Unit, modifier: Modifier = Modi
         }
         Trackpad(pad, status, laptops.isNotEmpty(), Modifier.weight(1f).fillMaxWidth())
 
-        // With the keyboard up, the keys sit directly on top of it and the mouse buttons
-        // move above them. The key row keeps its place in the tree either way: rebuilding
-        // it would recreate the view the keyboard is typing into, and the keyboard would close.
-        val imeUp = WindowInsets.isImeVisible
-        if (imeUp) MouseButtons(pad)
-        KeyRow(pad, imeUp)
-        if (!imeUp) MouseButtons(pad)
+        // With the keyboard up, the keys sit directly on top of it. Clicks live on the pad
+        // itself: tap to click, two-finger tap to right-click, tap then drag to hold.
+        KeyRow(pad, WindowInsets.isImeVisible)
     }
 }
 
@@ -454,14 +448,6 @@ private suspend fun momentum(pad: PadState, startX: Float, startY: Float) {
 // -------------------------------------------------------------------- keys
 
 @Composable
-private fun MouseButtons(pad: PadState) {
-    Row(Modifier.fillMaxWidth().height(58.dp).padding(horizontal = 12.dp)) {
-        HoldButton("Left", Modifier.weight(1f).fillMaxSize(), pad, "l")
-        HoldButton("Right", Modifier.weight(1f).fillMaxSize(), pad, "r")
-    }
-}
-
-@Composable
 private fun KeyRow(pad: PadState, imeUp: Boolean) {
     val ctx = LocalContext.current
     var catcher by remember { mutableStateOf<KeyCatcher?>(null) }
@@ -516,36 +502,6 @@ private fun KeyChip(label: String, modifier: Modifier = Modifier, on: Boolean = 
         contentAlignment = Alignment.Center,
     ) {
         Text(label, style = LabelStyle, color = if (on) Bridge.OnYellow else Bridge.Text)
-    }
-}
-
-/** A mouse button: pressed while your finger is on it, so it can hold for a drag. */
-@Composable
-private fun HoldButton(label: String, modifier: Modifier, pad: PadState, button: String) {
-    val view = LocalView.current
-    var down by remember { mutableStateOf(false) }
-    Box(
-        modifier
-            .padding(horizontal = 4.dp, vertical = 3.dp)
-            .then(if (down) Modifier.clip(ButtonShape).background(Bridge.Yellow) else Modifier.glass(ButtonShape))
-            .pointerInput(button) {
-                awaitEachGesture {
-                    awaitFirstDown()
-                    down = true
-                    view.performHapticFeedback(HapticFeedbackConstants.CONTEXT_CLICK)
-                    val held = pad.mods.toList()
-                    held.forEach { pad.send("kd $it") }
-                    pad.send("b $button d")
-                    waitForUpOrCancellation()
-                    pad.send("b $button u")
-                    held.asReversed().forEach { pad.send("ku $it") }
-                    pad.mods.clear()
-                    down = false
-                }
-            },
-        contentAlignment = Alignment.Center,
-    ) {
-        Text(label, style = LabelStyle, color = if (down) Bridge.OnYellow else Bridge.Text)
     }
 }
 
