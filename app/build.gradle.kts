@@ -15,8 +15,8 @@ android {
         // that the storage layer would need a second implementation.
         minSdk = 29
         targetSdk = 36
-        versionCode = 5
-        versionName = "0.3.1"
+        versionCode = 6
+        versionName = "0.4.0"
 
         // Default advertised Tus-Max-Size. Overridable at runtime in Settings; this is
         // only the value a fresh install starts with.
