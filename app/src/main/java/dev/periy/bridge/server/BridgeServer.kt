@@ -133,11 +133,13 @@ class BridgeServer(
         server.start(wait = false)
         engine = server
         beacon.start()
+        Monitor.start(ctx)
         Log.i(TAG, "Listening on :${config.port}")
     }
 
     fun stop() {
         beacon.stop()
+        Monitor.stop()
         engine?.stop(GRACE_MS, TIMEOUT_MS)
         engine = null
         Log.i(TAG, "Stopped")
@@ -158,6 +160,15 @@ class BridgeServer(
                 call.response.header("Tus-Resumable", TUS_VERSION)
                 call.respond(HttpStatusCode.InternalServerError, ApiResult(false, cause.message))
             }
+        }
+
+        // Counts requests being served, for the monitor. The two long-lived streams are
+        // left out: they are always open and would only hide what is actually moving.
+        intercept(ApplicationCallPipeline.Monitoring) {
+            val path = call.request.path()
+            if (path == "/events" || path == "/api/control/stream") return@intercept
+            Monitor.requestStarted()
+            try { proceed() } finally { Monitor.requestEnded() }
         }
 
         intercept(ApplicationCallPipeline.Plugins) {
@@ -183,6 +194,7 @@ class BridgeServer(
             musicRoutes()
             themeRoutes()
             controlRoutes()
+            monitorRoutes()
         }
     }
 
@@ -245,6 +257,24 @@ class BridgeServer(
         }
     }
 
+    // ------------------------------------------------------------------ monitor
+
+    private fun io.ktor.server.routing.Route.monitorRoutes() {
+        get("/api/monitor") {
+            call.response.header(HttpHeaders.CacheControl, "no-store")
+            call.respond(Monitor.snapshot.value)
+        }
+        // The laptop helper reports its own side of the Wi-Fi link every couple of seconds.
+        post("/api/monitor/rtt") {
+            runCatching { call.receive<RttReport>() }.getOrNull()?.takeIf { it.ms >= 0 }?.let { Monitor.reportRtt(it.ms) }
+            call.respond(ApiResult(true))
+        }
+        post("/api/monitor/link") {
+            runCatching { call.receive<LaptopLink>() }.getOrNull()?.let(Monitor::reportLaptop)
+            call.respond(ApiResult(true))
+        }
+    }
+
     // ------------------------------------------------------------------ laptop control
 
     private fun io.ktor.server.routing.Route.controlRoutes() {
@@ -300,11 +330,11 @@ class BridgeServer(
         }
         get("/favicon.ico") { call.respond(HttpStatusCode.NoContent) }
         // The laptop helper, offered from the page itself so any paired laptop can get it.
-        get("/xoosh-pc.bat") {
-            val bat = withContext(Dispatchers.IO) { ctx.assets.open("xoosh-pc.bat").use { it.readBytes() } }
+        get("/blazeit-pc.bat") {
+            val bat = withContext(Dispatchers.IO) { ctx.assets.open("blazeit-pc.bat").use { it.readBytes() } }
             call.response.header(
                 HttpHeaders.ContentDisposition,
-                ContentDisposition.Attachment.withParameter(ContentDisposition.Parameters.FileName, "xoosh-pc.bat").toString(),
+                ContentDisposition.Attachment.withParameter(ContentDisposition.Parameters.FileName, "blazeit-pc.bat").toString(),
             )
             call.respondBytes(bat, ContentType.Application.OctetStream)
         }
@@ -542,41 +572,50 @@ class BridgeServer(
             call.respond(HttpStatusCode.OK)
         }
 
-        patch("/tus/{id}") {
-            call.response.header("Tus-Resumable", TUS_VERSION)
+        patch("/tus/{id}") { call.tusPatch() }
 
-            val id = call.parameters["id"].orEmpty()
-            val contentType = call.request.header(HttpHeaders.ContentType)
-            if (contentType?.startsWith("application/offset+octet-stream") != true) {
-                call.respond(HttpStatusCode.UnsupportedMediaType, ApiResult(false, "Wrong Content-Type"))
-                return@patch
-            }
-            val offset = call.request.header("Upload-Offset")?.toLongOrNull()
-            if (offset == null) {
-                call.respond(HttpStatusCode.BadRequest, ApiResult(false, "Upload-Offset is required"))
-                return@patch
-            }
-
-            when (val result = tus.append(id, offset, call.receiveChannel())) {
-                is TusStore.AppendResult.Ok -> {
-                    call.response.header("Upload-Offset", result.offset.toString())
-                    call.respond(HttpStatusCode.NoContent)
-                }
-                is TusStore.AppendResult.Conflict -> {
-                    if (result.offset >= 0) call.response.header("Upload-Offset", result.offset.toString())
-                    call.respond(HttpStatusCode.Conflict, ApiResult(false, "Offset mismatch"))
-                }
-                TusStore.AppendResult.Busy -> call.respond(
-                    HttpStatusCode.Conflict,
-                    ApiResult(false, "Another request is already writing to this upload"),
-                )
-            }
+        // The tus fallback for clients that cannot send PATCH: POST with an override header.
+        post("/tus/{id}") {
+            if (call.request.header("X-HTTP-Method-Override").equals("PATCH", ignoreCase = true)) call.tusPatch()
+            else call.respond(HttpStatusCode.MethodNotAllowed, ApiResult(false, "Use PATCH"))
         }
 
         delete("/tus/{id}") {
             call.response.header("Tus-Resumable", TUS_VERSION)
             tus.terminate(call.parameters["id"].orEmpty())
             call.respond(HttpStatusCode.NoContent)
+        }
+    }
+
+    /** Appends one PATCH body to an upload. Shared by PATCH and its POST fallback. */
+    private suspend fun ApplicationCall.tusPatch() {
+        response.header("Tus-Resumable", TUS_VERSION)
+
+        val id = parameters["id"].orEmpty()
+        val contentType = request.header(HttpHeaders.ContentType)
+        if (contentType?.startsWith("application/offset+octet-stream") != true) {
+            respond(HttpStatusCode.UnsupportedMediaType, ApiResult(false, "Wrong Content-Type"))
+            return
+        }
+        val offset = request.header("Upload-Offset")?.toLongOrNull()
+        if (offset == null) {
+            respond(HttpStatusCode.BadRequest, ApiResult(false, "Upload-Offset is required"))
+            return
+        }
+
+        when (val result = tus.append(id, offset, receiveChannel())) {
+            is TusStore.AppendResult.Ok -> {
+                response.header("Upload-Offset", result.offset.toString())
+                respond(HttpStatusCode.NoContent)
+            }
+            is TusStore.AppendResult.Conflict -> {
+                if (result.offset >= 0) response.header("Upload-Offset", result.offset.toString())
+                respond(HttpStatusCode.Conflict, ApiResult(false, "Offset mismatch"))
+            }
+            TusStore.AppendResult.Busy -> respond(
+                HttpStatusCode.Conflict,
+                ApiResult(false, "Another request is already writing to this upload"),
+            )
         }
     }
 
@@ -633,6 +672,7 @@ class BridgeServer(
                 val n = channel.readAvailable(buf, 0, buf.size)
                 if (n < 0) break
                 total += n
+                Monitor.addIn(n)
             }
             call.respond(ApiResult(true, "$total"))
         }
@@ -654,6 +694,7 @@ class BridgeServer(
                     while (sent < length) {
                         val n = minOf(buf.size.toLong(), length - sent).toInt()
                         channel.writeFully(buf, 0, n)
+                        Monitor.addOut(n)
                         sent += n
                     }
                 } catch (_: Throwable) {
@@ -729,6 +770,7 @@ class BridgeServer(
                         val n = input.read(buf, 0, want)
                         if (n <= 0) break
                         channel.writeFully(buf, 0, n)
+                        Monitor.addOut(n)
                         sent += n
                         val now = System.currentTimeMillis()
                         if (now - lastProgressAt >= 300) {

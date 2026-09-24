@@ -1,14 +1,14 @@
-<# : Xoosh laptop helper. Double-click to run. The batch lines below hand this same file to PowerShell.
+<# : BlazeIt laptop helper. Double-click to run. The batch lines below hand this same file to PowerShell.
 @echo off
-title Xoosh laptop helper
+title BlazeIt laptop helper
 powershell -NoProfile -ExecutionPolicy Bypass -Command "$f='%~f0'; iex ([IO.File]::ReadAllText($f))"
 if errorlevel 1 pause
 exit /b
 #>
 
 # What this does, all on this laptop, nothing installed:
-#  1. Finds the phone running Xoosh on the network (and again whenever its address changes).
-#  2. Serves the Xoosh page at http://localhost:8787. Chrome treats localhost as secure, so
+#  1. Finds the phone running BlazeIt on the network (and again whenever its address changes).
+#  2. Serves the BlazeIt page at http://localhost:8787. Chrome treats localhost as secure, so
 #     downloads use every connection and the clipboard works without extra clicks.
 #  3. Turns the phone's Control tab into this laptop's trackpad and keyboard.
 # Close this window to stop all three.
@@ -27,7 +27,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
 
-public static class XooshPc
+public static class BlazeItPc
 {
     const int PhonePort = 8787;
     const int DiscoveryPort = 8788;
@@ -36,19 +36,27 @@ public static class XooshPc
     static readonly ManualResetEvent relayReady = new ManualResetEvent(false);
 
     static volatile string phone;
+    // The folder keeps the app's earlier name, so a laptop paired before the rename stays paired.
     static readonly string Dir = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Xoosh");
-    static readonly string Ua = "XooshPC/1 (" + Environment.MachineName + ")";
+    static readonly string Ua = "BlazeItPC/1 (" + Environment.MachineName + ")";
 
     public static void Run()
     {
+        // .NET otherwise sends "Expect: 100-continue" with every POST body and waits for a
+        // go-ahead the phone never sends, so the request times out.
+        ServicePointManager.Expect100Continue = false;
         Directory.CreateDirectory(Dir);
-        Say("Xoosh laptop helper. Keep this window open; close it to stop.");
+        Say("BlazeIt laptop helper. Keep this window open; close it to stop.");
         FindPhone(true);
 
         Thread relay = new Thread(RelayLoop);
         relay.IsBackground = true;
         relay.Start();
+
+        Thread link = new Thread(LinkLoop);
+        link.IsBackground = true;
+        link.Start();
 
         ControlLoop();
     }
@@ -147,7 +155,7 @@ public static class XooshPc
             }
             if (firstTime)
             {
-                Console.Write("Could not find the phone. Is Xoosh started? Type the address it shows (or press Enter to search again): ");
+                Console.Write("Could not find the phone. Is BlazeIt started? Type the address it shows (or press Enter to search again): ");
                 string typed = (Console.ReadLine() ?? "").Trim();
                 Match m = Regex.Match(typed, @"(\d{1,3}(\.\d{1,3}){3})");
                 if (m.Success && Ping(m.Groups[1].Value))
@@ -160,7 +168,7 @@ public static class XooshPc
             }
             else if (!told)
             {
-                Say("Waiting for the phone. Start Xoosh on it, or check both are on the same Wi-Fi.");
+                Say("Waiting for the phone. Start BlazeIt on it, or check both are on the same Wi-Fi.");
                 told = true;
             }
             Thread.Sleep(2000);
@@ -234,6 +242,95 @@ public static class XooshPc
         }
     }
 
+    // ------------------------------------------------------------------ link report
+    //
+    // Every two seconds: this laptop's side of the Wi-Fi link (signal, link rates, channel,
+    // band, generation) and the round trip to the phone, for the phone's Monitor tab.
+
+    static volatile string session;
+
+    static void LinkLoop()
+    {
+        while (true)
+        {
+            try
+            {
+                string cookie = session;
+                if (phone != null && cookie != null)
+                {
+                    Dictionary<string, string> kv = Netsh();
+                    Stopwatch sw = Stopwatch.StartNew();
+                    int rtt = Ping(phone) ? (int)sw.ElapsedMilliseconds : -1;
+                    string json = "{\"ssid\":" + Q(Get(kv, "SSID")) +
+                        ",\"signalPercent\":" + Num(Get(kv, "Signal")) +
+                        ",\"rxMbps\":" + Num(Get(kv, "Receive rate (Mbps)")) +
+                        ",\"txMbps\":" + Num(Get(kv, "Transmit rate (Mbps)")) +
+                        ",\"channel\":" + Q(Get(kv, "Channel")) +
+                        ",\"band\":" + Q(Get(kv, "Band")) +
+                        ",\"radio\":" + Q(Radio(Get(kv, "Radio type"))) +
+                        ",\"rttMs\":" + rtt + "}";
+                    HttpWebRequest r = (HttpWebRequest)WebRequest.Create("http://" + phone + ":" + PhonePort + "/api/monitor/link");
+                    r.Method = "POST";
+                    r.Proxy = null;
+                    r.UserAgent = Ua;
+                    r.Timeout = 3000;
+                    r.KeepAlive = false;
+                    r.ContentType = "application/json";
+                    r.Headers["Cookie"] = cookie;
+                    byte[] body = Encoding.UTF8.GetBytes(json);
+                    r.ContentLength = body.Length;
+                    using (Stream o = r.GetRequestStream()) o.Write(body, 0, body.Length);
+                    r.GetResponse().Close();
+                }
+            }
+            catch { }
+            Thread.Sleep(2000);
+        }
+    }
+
+    /** The "Name : value" lines of netsh's description of this Wi-Fi connection. */
+    static Dictionary<string, string> Netsh()
+    {
+        Dictionary<string, string> kv = new Dictionary<string, string>();
+        ProcessStartInfo psi = new ProcessStartInfo("netsh", "wlan show interfaces");
+        psi.UseShellExecute = false;
+        psi.RedirectStandardOutput = true;
+        psi.CreateNoWindow = true;
+        using (Process pr = Process.Start(psi))
+        {
+            string text = pr.StandardOutput.ReadToEnd();
+            pr.WaitForExit(2000);
+            foreach (string raw in text.Split('\n'))
+            {
+                int colon = raw.IndexOf(" : ");
+                if (colon < 0) continue;
+                string key = raw.Substring(0, colon).Trim();
+                if (!kv.ContainsKey(key)) kv[key] = raw.Substring(colon + 3).Trim();
+            }
+        }
+        return kv;
+    }
+
+    static string Get(Dictionary<string, string> kv, string k) { string v; return kv.TryGetValue(k, out v) ? v : ""; }
+
+    static string Num(string v)
+    {
+        StringBuilder b = new StringBuilder();
+        foreach (char c in v) { if (char.IsDigit(c)) b.Append(c); else if (b.Length > 0) break; }
+        return b.Length > 0 ? b.ToString() : "0";
+    }
+
+    static string Q(string v) { return "\"" + v.Replace("\\", "\\\\").Replace("\"", "\\\"") + "\""; }
+
+    static string Radio(string r)
+    {
+        if (r.EndsWith("be")) return "Wi-Fi 7";
+        if (r.EndsWith("ax")) return "Wi-Fi 6";
+        if (r.EndsWith("ac")) return "Wi-Fi 5";
+        if (r.EndsWith("n")) return "Wi-Fi 4";
+        return r;
+    }
+
     // ------------------------------------------------------------------ trackpad and keyboard
 
     static void ControlLoop()
@@ -246,6 +343,7 @@ public static class XooshPc
             try
             {
                 if (cookie == null) cookie = Pair();
+                session = cookie;
                 HttpWebRequest r = (HttpWebRequest)WebRequest.Create("http://" + phone + ":" + PhonePort + "/api/control/stream");
                 r.Proxy = null;
                 r.UserAgent = Ua;
@@ -277,7 +375,7 @@ public static class XooshPc
                         relayReady.WaitOne(3000);
                         if (localPort > 0)
                         {
-                            Say("Opening the Xoosh page at http://localhost:" + localPort + "/ for full-speed transfers.");
+                            Say("Opening the BlazeIt page at http://localhost:" + localPort + "/ for full-speed transfers.");
                             try { Process.Start("http://localhost:" + localPort + "/"); } catch { }
                         }
                         announced = true;
@@ -490,4 +588,4 @@ public static class XooshPc
 '@
 
 Add-Type -TypeDefinition $source -Language CSharp
-[XooshPc]::Run()
+[BlazeItPc]::Run()

@@ -226,6 +226,7 @@ class UriRangeContent(
                     val n = input.read(buf, 0, want)
                     if (n <= 0) break
                     channel.writeFully(buf, 0, n)
+                    Monitor.addOut(n)
                     if (sent == 0L) channel.flush()
                     sent += n
                     chunk = DOWNLOAD_BUFFER

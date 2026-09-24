@@ -113,3 +113,6 @@ data class PairStartDto(val id: String, val code: String, val name: String)
 data class PairStatusDto(val state: String)
 
 @Serializable data class ThemeRequest(val glass: Boolean = false)
+
+/** A browser reporting the round trip it measured to this phone. */
+@Serializable data class RttReport(val ms: Int = -1)

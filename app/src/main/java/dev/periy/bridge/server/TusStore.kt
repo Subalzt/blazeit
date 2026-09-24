@@ -311,15 +311,25 @@ class TusStore(
                     try {
                         val buf = ByteArray(UPLOAD_BUFFER)
                         var position = offset
-                        while (true) {
+                        var ended = false
+                        while (!ended) {
                             val room = info.uploadLength - position
                             if (room <= 0) break
                             val want = minOf(buf.size.toLong(), room).toInt()
-                            val n = body.readAvailable(buf, 0, want)
-                            if (n < 0) break
+                            // Fill the whole buffer before writing. The network hands data
+                            // over a few kilobytes at a time, and writing each piece as it
+                            // came meant hundreds of thousands of small writes per file;
+                            // one write per half-megabyte costs a fraction of that.
+                            var n = 0
+                            while (n < want) {
+                                val got = body.readAvailable(buf, n, want - n)
+                                if (got < 0) { ended = true; break }
+                                n += got
+                            }
                             if (n == 0) continue
 
                             writer.write(buf, 0, n)
+                            Monitor.addIn(n)
                             position += n
                             written.set(position)
                             runtime.positions[streamId] = position
