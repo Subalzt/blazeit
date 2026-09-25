@@ -582,6 +582,7 @@
     <div class="status-line">
       <span class="dot" id="hero-dot"></span>
       <div class="who"><b id="hero-title">Phone</b><span id="hero-state">Connecting</span><span id="hero-sub"></span></div>
+      <button class="btn sm ghost" id="display-btn" hidden title="Show this laptop's screen on the phone, as a second monitor">Second screen</button>
       <button class="btn sm" id="mirror-btn" hidden title="Open the phone's screen in a window on this laptop, to use with the mouse and keyboard">Phone screen</button>
       <div class="rate"><b id="hero-rate">Idle</b><span id="hero-rate-sub"></span></div>
     </div>
@@ -1559,6 +1560,14 @@ function setupNotifs() {
 // USB debugging on the phone, set up once; the helper says so in its window if it is missing.
 
 function setupMirror() {
+  var d = $("display-btn");
+  d.hidden = !viaHelper;
+  d.onclick = async function () {
+    d.disabled = true;
+    var r = await (await api("/api/display", { method: "POST" })).json();
+    d.textContent = r.ok ? "On the phone" : "Run the helper";
+    setTimeout(function () { d.disabled = false; d.textContent = "Second screen"; }, 4000);
+  };
   var b = $("mirror-btn");
   b.hidden = !viaHelper;
   b.onclick = async function () {

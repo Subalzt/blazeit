@@ -532,6 +532,25 @@ class BridgeServer(
     private fun io.ktor.server.routing.Route.controlRoutes() {
         // "Phone screen" on the page: the laptop helper opens a window with this phone's screen,
         // to watch and use with the laptop's mouse and keyboard (scrcpy, over adb).
+        // "Use this phone as a second screen": opens the phone's second-screen view, which tells
+        // the helper to start streaming once it is listening. Opening it from the background is
+        // allowed because BlazeIt may draw over other apps (see ClipWatch).
+        post("/api/display") {
+            if (Control.connected.value.isEmpty()) {
+                call.respond(ApiResult(false, "The laptop helper is not running"))
+                return@post
+            }
+            runCatching {
+                ctx.startActivity(
+                    android.content.Intent().setClassName(ctx, "dev.periy.bridge.ui.SecondScreenActivity")
+                        .addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
+                )
+            }.onFailure {
+                call.respond(ApiResult(false, "Open it on the phone: Control, Second screen"))
+                return@post
+            }
+            call.respond(ApiResult(true))
+        }
         post("/api/mirror") {
             val mode = call.request.queryParameters["mode"] ?: "start"
             if (Control.connected.value.isEmpty()) {

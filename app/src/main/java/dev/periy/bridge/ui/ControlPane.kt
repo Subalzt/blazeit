@@ -146,6 +146,23 @@ fun ControlPane(running: Boolean, onStart: () -> Unit, modifier: Modifier = Modi
             laptops.isEmpty() -> "No laptop"
             else -> laptops.first().removePrefix("Laptop control on ")
         }
+        // The laptop's screen here instead of a trackpad: this phone as its second monitor.
+        if (running && laptops.isNotEmpty()) {
+            Row(
+                Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 4.dp)
+                    .clip(ButtonShape).background(Bridge.Surface)
+                    .clickable {
+                        ctx.startActivity(android.content.Intent(ctx, SecondScreenActivity::class.java))
+                    }
+                    .padding(horizontal = 14.dp, vertical = 11.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Icon(BlazeIcons.Laptop, null, tint = Bridge.Text, modifier = Modifier.size(20.dp))
+                Spacer(Modifier.width(10.dp))
+                Text("Use as a second screen", style = LabelStyle, color = Bridge.Text, modifier = Modifier.weight(1f))
+                Icon(BlazeIcons.Chevron, null, tint = Bridge.Muted, modifier = Modifier.size(18.dp))
+            }
+        }
         Trackpad(pad, status, laptops.isNotEmpty(), Modifier.weight(1f).fillMaxWidth())
 
         // With the keyboard up, the keys sit directly on top of it. Clicks live on the pad

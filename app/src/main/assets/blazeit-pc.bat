@@ -978,6 +978,22 @@ public static class BlazeItPc
                         {
                             string d = data.ToString();
                             if (ev == "clipsync") clipSync = d == "on";
+                            else if (ev == "display")
+                            {
+                                string[] p = d.Split(' ');
+                                if (p[0] == "start" && p.Length >= 4)
+                                {
+                                    int port = int.Parse(p[1]), w = int.Parse(p[2]), h = int.Parse(p[3]);
+                                    // Newer phones add their refresh rate and decoder throughput.
+                                    phoneHz = p.Length >= 5 ? Math.Max(30, int.Parse(p[4])) : 60;
+                                    long budget = p.Length >= 6 ? long.Parse(p[5]) : 0;
+                                    phoneBlocks = budget > 0 ? budget : 2073600;
+                                    Thread s = new Thread(delegate () { StartSecondScreen(at, port, w, h); });
+                                    s.IsBackground = true;
+                                    s.Start();
+                                }
+                                else StopSecondScreen();
+                            }
                             else if (ev == "mirror" && !snapshot)
                             {
                                 Thread m = new Thread(delegate () { OpenPhoneScreen(); });
@@ -1110,6 +1126,10 @@ public static class BlazeItPc
             case "v":
                 MasterVolume.Set(float.Parse(a[1], System.Globalization.CultureInfo.InvariantCulture));
                 volumeDirty = true;
+                break;
+            case "da":
+                PointAt(float.Parse(a[1], System.Globalization.CultureInfo.InvariantCulture),
+                        float.Parse(a[2], System.Globalization.CultureInfo.InvariantCulture));
                 break;
             case "vm":
                 MasterVolume.SetMute(!MasterVolume.Muted());
@@ -1267,6 +1287,473 @@ public static class BlazeItPc
         catch (Exception e) { Say("Could not get scrcpy (" + e.Message + ")."); return null; }
     }
 
+    // ------------------------------------------------------------------ the phone as a second screen
+    //
+    // The phone asks for it, listening on a port; this captures a monitor with ffmpeg (on the
+    // GPU: Desktop Duplication, and NVENC when there is an NVIDIA card) and streams it there as
+    // H.264. The monitor is the extra one a virtual-display driver adds, which makes the phone a
+    // real second screen; with none, the laptop's own screen is mirrored. Touches on the phone
+    // come back as "da x y" (where on that monitor, as fractions) and ordinary clicks.
+    //
+    // The virtual display is the phone's: this puts it on the desktop (extended, right of the
+    // laptop's screens) when the phone asks and takes it off when the phone closes, so windows
+    // left on it come back instead of sitting on a screen nobody can see. The laptop's own screen
+    // stays the main one, with the taskbar and new windows. The monitor list is read from Windows
+    // every time: WinForms' Screen keeps the list it saw first and, in this window-less process,
+    // never hears of a change, so a display extended after the helper started was never found.
+
+    static Process secondScreen;
+    /** Bumped by every start and stop, so a stream started earlier knows it is no longer wanted. */
+    static int screenGen;
+    /** The monitor on the phone, and the whole desktop, in real pixels, for "da". */
+    static volatile Displays.Mon shown, desk;
+    /** Set when the monitors change under a running stream, so it restarts on the right one. */
+    static volatile bool relayout;
+    /** The virtual display this helper put on the desktop, to take off again when the phone closes. */
+    static volatile string attachedHere;
+    /** The same, for a helper closed mid-stream: the next one takes it off. */
+    static string AttachedFile { get { return Path.Combine(Dir, "second-screen.txt"); } }
+    /**
+     * The virtual display whose HDR this helper turned off, to turn back on. With HDR on, Windows
+     * draws ordinary white at the "SDR content brightness" level (about 2.5 times the white of an
+     * 8-bit picture), so the 8-bit capture came out 2.5 times too bright with a fifth of it pure
+     * white. The phone shows an ordinary picture, so the display it shows needs none.
+     */
+    static volatile string hdrOffHere;
+    static string HdrFile { get { return Path.Combine(Dir, "second-screen-hdr.txt"); } }
+    /**
+     * The phone's refresh rate, and its H.264 decoder's throughput in 16x16 blocks a second
+     * (2,073,600 is 4K at 60): together they decide the virtual display's mode and the frame
+     * rate. Older phones send neither, and get 60 and 4K60.
+     */
+    static volatile int phoneHz = 60;
+    static long phoneBlocks = 2073600;
+    /** The virtual display's mode before this helper changed it, "device|w|h|hz", to put back. */
+    static volatile string modeBefore;
+    static string ModeFile { get { return Path.Combine(Dir, "second-screen-mode.txt"); } }
+
+    static long Blocks(int w, int h) { return (long)((w + 15) / 16) * ((h + 15) / 16); }
+
+    /** The frame rate a monitor can be sent at: its own rate, the phone's, and what the decoder takes at its size. */
+    static int StreamRate(Displays.Mon m)
+    {
+        int rate = Math.Min(phoneHz, m.Hz > 1 ? m.Hz : 60);
+        rate = (int)Math.Min(rate, phoneBlocks / Math.Max(1, Blocks(m.W, m.H)));
+        return Math.Max(30, rate);
+    }
+
+    /**
+     * Puts the virtual display in the mode that suits the phone: the fastest refresh rate the
+     * phone shows (120 on a 120 Hz phone), then the sharpest size its decoder takes at that rate
+     * (2560x1440 for a decoder rated 4K at 60), nearest the phone's shape.
+     */
+    static Displays.Mon FitMode(Displays.Mon t, int w, int h)
+    {
+        double want = h > 0 ? (double)w / h : 16.0 / 9;
+        int[] best = null;
+        foreach (int[] m in Displays.Modes(t.Device))
+        {
+            if (m[2] > phoneHz + 1 || m[0] < 1280 || m[0] < m[1] || Blocks(m[0], m[1]) * m[2] > phoneBlocks) continue;
+            if (best == null || m[2] > best[2] ||
+                (m[2] == best[2] && (long)m[0] * m[1] > (long)best[0] * best[1]) ||
+                (m[2] == best[2] && (long)m[0] * m[1] == (long)best[0] * best[1] &&
+                    Math.Abs(Math.Log((double)m[0] / m[1] / want)) < Math.Abs(Math.Log((double)best[0] / best[1] / want))))
+                best = m;
+        }
+        if (best == null || (best[0] == t.W && best[1] == t.H && best[2] == t.Hz)) return t;
+        if (modeBefore == null)
+        {
+            modeBefore = t.Device + "|" + t.W + "|" + t.H + "|" + t.Hz;
+            try { File.WriteAllText(ModeFile, modeBefore); } catch { }
+        }
+        if (!Displays.SetMode(t.Device, best[0], best[1], best[2])) return t;
+        Say("The phone's screen is now " + best[0] + "x" + best[1] + " at " + best[2] + " Hz, the sharpest the phone takes at its full " + best[2] + " frames a second.");
+        Thread.Sleep(300);
+        var now = Displays.Attached().Find(m => m.Device == t.Device);
+        return now ?? t;
+    }
+
+    static string FindFfmpeg()
+    {
+        string local = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+        foreach (string c in new string[] {
+            Path.Combine(HelperDir, "ffmpeg", "ffmpeg.exe"),
+            Path.Combine(local, "Microsoft", "WinGet", "Links", "ffmpeg.exe") })
+            if (File.Exists(c)) return c;
+        try
+        {
+            string w = RunOut("where.exe", "ffmpeg").Split('\n')[0].Trim();
+            if (File.Exists(w)) return w;
+            string pk = Path.Combine(local, "Microsoft", "WinGet", "Packages");
+            if (Directory.Exists(pk))
+                foreach (string f in Directory.GetFiles(pk, "ffmpeg.exe", SearchOption.AllDirectories)) return f;
+        }
+        catch { }
+        return null;
+    }
+
+    static void StartSecondScreen(string at, int port, int w, int h)
+    {
+        int gen = Interlocked.Increment(ref screenGen);
+        try
+        {
+            KillStream();
+            string ff = FindFfmpeg();
+            if (ff == null)
+            {
+                Say("The second screen needs ffmpeg on this laptop: in a terminal, run  winget install Gyan.FFmpeg  then try again.");
+                return;
+            }
+            Displays.Mon target = PrepareScreen(w, h, true);
+            string said = null;
+            int failures = 0;
+            while (target != null && gen == screenGen)
+            {
+                if (said != target.Device) { said = target.Device; SayShowing(target); }
+                string end = Capture(ff, target, at, port, gen);
+                if (gen != screenGen) return;
+                // The phone closed it, or went (unplugged, out of reach) without saying so: put
+                // the laptop's screens back rather than leave a display nobody sees.
+                if (end == "phone") { StopSecondScreen(); return; }
+                if (end == "relayout") failures = 0;
+                else if (++failures >= 3) { Say("Could not stream this screen to the phone."); StopSecondScreen(); return; }
+                // The monitors changed, or the capture broke on a change: look again.
+                Thread.Sleep(300);
+                if (gen != screenGen) return;
+                target = PrepareScreen(w, h, false);
+            }
+        }
+        catch (Exception e) { Say("Second screen: " + e.Message); }
+    }
+
+    /**
+     * The monitor for the phone: the virtual display (extended first when it is off or only
+     * duplicating the laptop's screen, if "attach"), else any other extra monitor, else the
+     * laptop's own screen to mirror. When the virtual display has become the main one, the
+     * laptop's own screen is made the main one again.
+     */
+    static Displays.Mon PrepareScreen(int w, int h, bool attach)
+    {
+        var mons = Displays.Attached();
+        if (attach && !mons.Exists(m => m.Virtual) && Displays.VirtualInstalled())
+        {
+            bool cloned = mons.Exists(m => m.Cloned);
+            // As Windows+P's Extend does; failing that, the virtual display added by itself.
+            if (Displays.Extend()) mons = WaitForVirtual();
+            if (!mons.Exists(m => m.Virtual))
+            {
+                string dev = Displays.DetachedVirtual();
+                if (dev != null && Displays.Attach(dev, mons, w, h)) mons = WaitForVirtual();
+            }
+            var added = mons.Find(m => m.Virtual);
+            if (added != null)
+            {
+                // Put back as it was when the phone closes: duplicating again, or off.
+                attachedHere = added.Device + (cloned ? "|clone" : "");
+                try { File.WriteAllText(AttachedFile, attachedHere); } catch { }
+                if (cloned) Say("Windows was duplicating the laptop's screen onto the virtual display; it is extended now, so the phone is a screen of its own.");
+            }
+            else Say("Could not extend the desktop onto the virtual display. In Windows' display settings choose \"Extend these displays\", then try again.");
+        }
+        var virt = mons.Find(m => m.Virtual);
+        var own = mons.Find(m => !m.Virtual);
+        if (virt != null && virt.Primary && own != null && Displays.MakePrimary(own.Device, mons))
+        {
+            Say("The phone's screen had become the main display, with the taskbar and new windows on it. The laptop's screen is the main one again.");
+            Thread.Sleep(300);
+            mons = Displays.Attached();
+        }
+        var target = Pick(mons);
+        if (target != null && target.Virtual)
+        {
+            target = FitMode(target, w, h);
+            mons = Displays.Attached();
+        }
+        desk = Displays.Desktop(mons);
+        if (target != null && target.Virtual && hdrOffHere == null && Displays.HdrOn(target.Device))
+        {
+            if (Displays.SetHdr(target.Device, false))
+            {
+                hdrOffHere = target.Device;
+                try { File.WriteAllText(HdrFile, target.Device); } catch { }
+                Say("HDR is off on the phone's screen while the phone shows it, so its colours come out right; it goes back on after.");
+            }
+            else Say("The virtual display has HDR on, which makes the phone's picture too bright; turn \"Use HDR\" off for it in Windows' display settings.");
+        }
+        return target;
+    }
+
+    /** Windows takes a moment to bring a display up. */
+    static List<Displays.Mon> WaitForVirtual()
+    {
+        var mons = Displays.Attached();
+        for (int i = 0; i < 20 && !mons.Exists(m => m.Virtual); i++) { Thread.Sleep(150); mons = Displays.Attached(); }
+        return mons;
+    }
+
+    static Displays.Mon Pick(List<Displays.Mon> mons)
+    {
+        return mons.Find(m => m.Virtual) ?? mons.Find(m => !m.Primary) ?? mons.Find(m => m.Primary) ?? (mons.Count > 0 ? mons[0] : null);
+    }
+
+    static void SayShowing(Displays.Mon m)
+    {
+        string size = " (" + m.W + "x" + m.H + ", " + StreamRate(m) + " frames a second)";
+        if (m.Virtual) Say("The phone is a second screen" + size + ", extended from the laptop's. Drag windows onto it as onto any screen.");
+        else if (!m.Primary) Say("Showing monitor " + m.Device.Replace("\\\\.\\", "") + size + " on the phone.");
+        else Say("No extra monitor on this laptop, so the phone mirrors this screen. Install a virtual display driver to make it a real second screen.");
+    }
+
+    /**
+     * How a monitor in HDR has to be captured, as the brightness Windows gives SDR white there
+     * (see SdrWhiteNits); 0 when the ordinary 8-bit capture is right. Windows draws the desktop
+     * of an HDR monitor at that brightness and hands an 8-bit capture everything above 80 nits
+     * clipped to white: at the slider's lowest (80) that loses only HDR highlights, above it
+     * the whole picture comes out too bright. (The virtual display has its HDR turned off.)
+     */
+    static double HdrWhite(Displays.Mon target)
+    {
+        if (target.Virtual || !Displays.HdrOn(target.Device)) return 0;
+        double white = Displays.SdrWhiteNits(target.Device);
+        return white > 85 ? white : 0;
+    }
+
+    /**
+     * The shader that turns a 16-bit capture of an HDR desktop back into the SDR picture: the
+     * capture is linear light, 1.0 = 80 nits, with SDR content at (sRGB-decoded) x white/80.
+     * Dividing by that and encoding sRGB again gives the picture Windows started from, within
+     * 2 of 255; brighter HDR parts roll off towards white instead of clipping.
+     */
+    static string HdrShader(double white)
+    {
+        string gain = (80.0 / white).ToString("0.0#####", System.Globalization.CultureInfo.InvariantCulture);
+        return
+            "//!HOOK MAIN\n//!BIND HOOKED\n//!DESC BlazeIt: HDR desktop to SDR\n" +
+            "vec4 hook() {\n" +
+            "    vec3 l = max(HOOKED_texOff(0).rgb * " + gain + ", 0.0);\n" +
+            "    vec3 k = 0.9 + 0.1 * (1.0 - exp(-(l - 0.9) / 0.1));\n" +
+            "    l = mix(l, k, step(0.9, l));\n" +
+            "    vec3 s = mix(12.92 * l, 1.055 * pow(l, vec3(1.0 / 2.4)) - 0.055, step(0.0031308, l));\n" +
+            "    return vec4(s, 1.0);\n" +
+            "}\n";
+    }
+
+    /** The ffmpeg command lines that stream a monitor to "dest", best first; the shader goes in Dir. */
+    static List<string> CaptureTries(Displays.Mon target, double hdrWhite, string dest)
+    {
+        int adapter, output; string adapterName;
+        if (!Dxgi.Find(target.Device, out adapter, out output, out adapterName)) { adapter = -1; output = -1; adapterName = ""; }
+
+        // NVENC and ffmpeg's own converter both turn the screen into video with the BT.601 sums.
+        // Labelled in full (on the frames: this ffmpeg takes the label from them, not from the
+        // encoder's options), the phone decodes with the same sums; half-labelled, as NVENC
+        // leaves it, the phone assumed BT.709 for a picture this size and the colours shifted.
+        string label = "setparams=color_primaries=bt470bg:color_trc=smpte170m";
+        // As many frames as the monitor, the phone's panel and its decoder all manage (120 on a
+        // 120 Hz phone), with the bit rate going up with them: 40 Mbit/s at 60, 80 at 120.
+        int fps = StreamRate(target);
+        int mbit = Math.Min(80, Math.Max(40, 40 * fps / 60));
+        string enc = " -c:v h264_nvenc -preset p1 -tune ull -zerolatency 1 -rc cbr -b:v " + mbit + "M -maxrate " + mbit + "M -bufsize " + Math.Max(3, mbit / 13) + "M -g " + (fps * 2) + " -bf 0";
+        // Frames captured on the NVIDIA card go straight to its encoder; from any other
+        // adapter they are copied across first.
+        bool nvidia = adapterName.IndexOf("NVIDIA", StringComparison.OrdinalIgnoreCase) >= 0;
+        string grab = "ddagrab=output_idx=" + output + ":framerate=" + fps + ":draw_mouse=1";
+        var tries = new List<string>();
+        if (adapter >= 0 && hdrWhite > 0)
+        {
+            // An HDR monitor: the 16-bit capture, turned back into SDR on the GPU (libplacebo,
+            // Vulkan) by HdrShader. About 50 frames a second at 2560x1600: the 16-bit frames go
+            // through memory, as ffmpeg cannot hand them from Direct3D to Vulkan here.
+            try { File.WriteAllText(Path.Combine(Dir, "hdr-to-sdr.hook"), HdrShader(hdrWhite)); } catch { }
+            tries.Add("-hide_banner -loglevel error -init_hw_device d3d11va=cap:" + adapter + " -init_hw_device vulkan=vk -filter_hw_device cap" +
+                " -filter_complex \"" + grab + ":output_fmt=16bit,hwdownload,format=rgbaf16le," +
+                "setparams=color_primaries=bt709:color_trc=iec61966-2-1:colorspace=gbr:range=pc," +
+                "libplacebo=format=nv12:colorspace=bt470bg:color_primaries=bt709:color_trc=iec61966-2-1:range=tv:peak_detect=0:custom_shader_path=hdr-to-sdr.hook," +
+                label + "[v]\" -map \"[v]\"" + enc + dest);
+        }
+        if (adapter >= 0)
+            tries.Add("-hide_banner -loglevel error -init_hw_device d3d11va=cap:" + adapter + " -filter_hw_device cap" +
+                " -filter_complex \"" + grab + (nvidia ? "" : ",hwdownload,format=bgra") + "," + label + "[v]\" -map \"[v]\"" + enc + dest);
+        // Plain GDI capture of that part of the desktop reaches any monitor.
+        string gdi = "-hide_banner -loglevel error -f gdigrab -framerate " + Math.Min(fps, 60) + " -offset_x " + target.X + " -offset_y " + target.Y +
+            " -video_size " + target.W + "x" + target.H + " -draw_mouse 1 -i desktop";
+        tries.Add(gdi + " -vf " + label + enc + dest);
+        tries.Add(gdi + " -vf format=yuv420p," + label + ":colorspace=bt470bg:range=tv -c:v libx264 -preset ultrafast -tune zerolatency -b:v 20M -g 120 -bf 0" + dest);
+        return tries;
+    }
+
+    /** One go at streaming a monitor: "phone" (the phone closed it), "relayout", "ended", "failed" or "stopped". */
+    static string Capture(string ff, Displays.Mon target, string at, int port, int gen)
+    {
+        shown = target;
+        double hdrWhite = HdrWhite(target);
+        if (hdrWhite > 0) Say("This screen is in HDR, with ordinary white at " + Math.Round(hdrWhite) + " nits; the phone gets it turned back into an ordinary picture, so it is not too bright.");
+        string dest = " -f h264 \"tcp://" + at + ":" + port + "?tcp_nodelay=1\"";
+        foreach (string args in CaptureTries(target, hdrWhite, dest))
+        {
+            relayout = false;
+            var psi = new ProcessStartInfo(ff, args);
+            psi.UseShellExecute = false; psi.CreateNoWindow = true; psi.RedirectStandardError = true;
+            psi.WorkingDirectory = Dir; // where the HDR shader is
+            var p = Process.Start(psi);
+            secondScreen = p;
+            if (gen != screenGen) { KillStream(); return "stopped"; } // stopped while this one started
+            string err = "";
+            var reader = new Thread(delegate () { try { err = p.StandardError.ReadToEnd(); } catch { } });
+            reader.IsBackground = true; reader.Start();
+            var watch = new Thread(delegate () { WatchScreens(gen, target, hdrWhite, p); });
+            watch.IsBackground = true; watch.Start();
+            // Still going after a few seconds: it works. Stopped at once: try the next way.
+            bool quick = p.WaitForExit(4000);
+            if (!quick) p.WaitForExit();
+            reader.Join(500);
+            if (gen != screenGen || secondScreen != p) return "stopped";
+            if (relayout) return "relayout";
+            if (err.Contains("Connection refused") || err.Contains("Connection reset") || err.Contains("Broken pipe")) return "phone";
+            if (!quick) return "ended";
+        }
+        return "failed";
+    }
+
+    /**
+     * While a stream runs: if the monitors change (the display extended, moved, resized, made the
+     * main one, or taken off), or HDR or its SDR brightness is changed on the monitor shown, end
+     * it so it starts again on the right monitor, at its new place, captured the right way.
+     */
+    static void WatchScreens(int gen, Displays.Mon target, double hdrWhite, Process p)
+    {
+        while (gen == screenGen && !p.HasExited)
+        {
+            Thread.Sleep(1500);
+            try
+            {
+                var mons = Displays.Attached();
+                if (mons.Count == 0) continue;
+                desk = Displays.Desktop(mons);
+                var now = mons.Find(m => m.Device == target.Device);
+                var best = Pick(mons);
+                bool moved = now == null || now.X != target.X || now.Y != target.Y || now.W != target.W || now.H != target.H;
+                bool better = best != null && best.Device != target.Device;
+                bool main = now != null && now.Virtual && now.Primary;
+                bool light = !moved && Math.Abs(HdrWhite(now) - hdrWhite) > 1;
+                if (moved || better || main || light)
+                {
+                    relayout = true;
+                    try { p.Kill(); } catch { }
+                    return;
+                }
+            }
+            catch { }
+        }
+    }
+
+    static void KillStream()
+    {
+        Process p = secondScreen;
+        secondScreen = null;
+        try { if (p != null && !p.HasExited) p.Kill(); } catch { }
+    }
+
+    static void StopSecondScreen()
+    {
+        Interlocked.Increment(ref screenGen);
+        KillStream();
+        ReleaseScreen();
+    }
+
+    /**
+     * Puts the virtual display this helper extended back as it found it: duplicating the laptop's
+     * screen again, or off the desktop. Either way Windows moves its windows to the laptop's screen.
+     */
+    static void ReleaseScreen()
+    {
+        lock (releaseLock)
+        {
+            // Each part is forgotten (and its file deleted) only once it is really put back:
+            // Windows refuses display changes while it is locked or showing the screen saver,
+            // and then RetryRelease tries again until it can.
+            // HDR and its mode first: once the display is off the desktop there is nothing to set.
+            // HDR before the mode, as a request made while the mode is still changing gets lost.
+            string hdr = hdrOffHere;
+            if (!string.IsNullOrEmpty(hdr) && (Displays.SetHdr(hdr, true) || !OnDesktop(hdr))) hdr = null;
+            hdrOffHere = hdr;
+            if (hdr == null) try { File.Delete(HdrFile); } catch { }
+
+            string mode = modeBefore;
+            if (!string.IsNullOrEmpty(mode))
+            {
+                string[] m = mode.Split('|');
+                if (m.Length != 4 || !OnDesktop(m[0]) || Displays.SetMode(m[0], int.Parse(m[1]), int.Parse(m[2]), int.Parse(m[3]))) mode = null;
+            }
+            modeBefore = mode;
+            if (mode == null) try { File.Delete(ModeFile); } catch { }
+
+            string was = attachedHere;
+            if (!string.IsNullOrEmpty(was) && hdr == null && mode == null)
+            {
+                string[] p = was.Split('|');
+                bool clone = p.Length > 1 && p[1] == "clone";
+                if (clone ? Displays.Duplicate() : (Displays.Detach(p[0]) || !OnDesktop(p[0])))
+                {
+                    Say(clone
+                        ? "The phone's screen is closed; Windows duplicates the laptop's screen again, as before, and the windows on it are back on the laptop's."
+                        : "Took the phone's screen off the desktop; its windows are back on the laptop's.");
+                    was = null;
+                }
+            }
+            attachedHere = was;
+            if (was == null) try { File.Delete(AttachedFile); } catch { }
+
+            if (hdrOffHere != null || modeBefore != null || attachedHere != null) RetryRelease();
+        }
+    }
+
+    static readonly object releaseLock = new object();
+    static volatile bool retrying;
+
+    static bool OnDesktop(string dev) { return Displays.Attached().Exists(m => m.Device == dev); }
+
+    /** Tries ReleaseScreen again every 15 seconds until Windows lets it, unless the phone takes the screen again. */
+    static void RetryRelease()
+    {
+        if (retrying) return;
+        retrying = true;
+        Say("Windows is not taking display changes right now (locked, or the screen saver is on); the laptop's screens go back as they were as soon as it does.");
+        var t = new Thread(delegate ()
+        {
+            try
+            {
+                while (hdrOffHere != null || modeBefore != null || attachedHere != null)
+                {
+                    Thread.Sleep(15000);
+                    if (secondScreen != null) break; // in use again: it is released when that ends
+                    ReleaseScreen(); // "retrying" stays set, so a failure here starts no second loop
+                }
+            }
+            finally { retrying = false; }
+        });
+        t.IsBackground = true;
+        t.Start();
+    }
+
+    /** The mouse to a point on the captured monitor, given as fractions of its width and height. */
+    static void PointAt(float fx, float fy)
+    {
+        Displays.Mon s = shown, d = desk;
+        if (s == null || d == null) return;
+        // Everything here is in real pixels, so the input goes out as from a DPI-aware program:
+        // scaled coordinates differ per monitor once the two screens have different scaling.
+        double x = s.X + fx * (s.W - 1), y = s.Y + fy * (s.H - 1);
+        INPUT i = new INPUT();
+        i.type = 0;
+        i.u.mi.dx = (int)Math.Round((x - d.X) * 65535.0 / Math.Max(1, d.W - 1));
+        i.u.mi.dy = (int)Math.Round((y - d.Y) * 65535.0 / Math.Max(1, d.H - 1));
+        i.u.mi.dwFlags = MOVE | ABSOLUTE | VIRTUALDESK;
+        IntPtr was = Displays.RealPixels();
+        Send(i);
+        Displays.RestoreDpi(was);
+    }
+
     // ------------------------------------------------------------------ volume
     //
     // The phone's volume bar sets the laptop's master volume directly, and shows where it is:
@@ -1321,7 +1808,7 @@ public static class BlazeItPc
     static extern uint SendInput(uint count, INPUT[] inputs, int size);
 
     const uint MOVE = 0x0001, LEFTDOWN = 0x0002, LEFTUP = 0x0004, RIGHTDOWN = 0x0008, RIGHTUP = 0x0010,
-        MIDDLEDOWN = 0x0020, MIDDLEUP = 0x0040, WHEEL = 0x0800, HWHEEL = 0x1000;
+        MIDDLEDOWN = 0x0020, MIDDLEUP = 0x0040, WHEEL = 0x0800, HWHEEL = 0x1000, ABSOLUTE = 0x8000, VIRTUALDESK = 0x4000;
     const uint KEY_EXTENDED = 0x0001, KEY_UP = 0x0002, KEY_UNICODE = 0x0004;
 
     static void Send(INPUT i)
@@ -1527,6 +2014,484 @@ public static class BlazeItPc
         }
         catch { }
         try { toSocket.Shutdown(SocketShutdown.Send); } catch { }
+    }
+}
+
+/**
+ * The monitors on the desktop, read from Windows each time (never kept), in real pixels; and the
+ * calls that put a virtual display on the desktop, take it off, and choose the main monitor.
+ */
+public static class Displays
+{
+    public class Mon
+    {
+        public string Device;
+        /** Virtual: the virtual display on its own. Cloned: a real screen the virtual one duplicates. */
+        public bool Primary, Virtual, Cloned;
+        public int X, Y, W, H, Hz;
+    }
+
+    [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
+    struct DISPLAY_DEVICE
+    {
+        public int cb;
+        [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 32)] public string DeviceName;
+        [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 128)] public string DeviceString;
+        public int StateFlags;
+        [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 128)] public string DeviceID;
+        [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 128)] public string DeviceKey;
+    }
+
+    [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
+    struct DEVMODE
+    {
+        [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 32)] public string dmDeviceName;
+        public short dmSpecVersion, dmDriverVersion, dmSize, dmDriverExtra;
+        public int dmFields, dmPositionX, dmPositionY, dmDisplayOrientation, dmDisplayFixedOutput;
+        public short dmColor, dmDuplex, dmYResolution, dmTTOption, dmCollate;
+        [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 32)] public string dmFormName;
+        public short dmLogPixels;
+        public int dmBitsPerPel, dmPelsWidth, dmPelsHeight, dmDisplayFlags, dmDisplayFrequency;
+        public int dmICMMethod, dmICMIntent, dmMediaType, dmDitherType, dmReserved1, dmReserved2, dmPanningWidth, dmPanningHeight;
+    }
+
+    [DllImport("user32.dll", CharSet = CharSet.Unicode)] static extern bool EnumDisplayDevices(string device, uint index, ref DISPLAY_DEVICE dd, uint flags);
+    [DllImport("user32.dll", CharSet = CharSet.Unicode)] static extern bool EnumDisplaySettings(string device, int mode, ref DEVMODE dm);
+    [DllImport("user32.dll", CharSet = CharSet.Unicode)] static extern int ChangeDisplaySettingsEx(string device, ref DEVMODE dm, IntPtr hwnd, uint flags, IntPtr param);
+    [DllImport("user32.dll", CharSet = CharSet.Unicode)] static extern int ChangeDisplaySettingsEx(string device, IntPtr dm, IntPtr hwnd, uint flags, IntPtr param);
+    [DllImport("user32.dll")] static extern IntPtr SetThreadDpiAwarenessContext(IntPtr context);
+    [DllImport("user32.dll")] static extern int SetDisplayConfig(uint paths, IntPtr pathArray, uint modes, IntPtr modeArray, uint flags);
+
+    const int ATTACHED = 0x1, PRIMARY = 0x4, MIRRORING = 0x8, MONITOR_ACTIVE = 0x1;
+    const uint SDC_TOPOLOGY_CLONE = 0x2, SDC_TOPOLOGY_EXTEND = 0x4, SDC_APPLY = 0x80;
+    const int CURRENT = -1, REGISTRY = -2;
+    const int DM_POSITION = 0x20, DM_PELSWIDTH = 0x80000, DM_PELSHEIGHT = 0x100000;
+    const uint CDS_UPDATEREGISTRY = 0x1, CDS_NORESET = 0x10000000;
+
+    /** What virtual-display drivers call themselves: IddSample and its forks (MTT's Virtual Display Driver), Parsec's, spacedesk's, Amyuni's. */
+    static readonly string[] VirtualNames = { "virtual", "indirect", "iddsample", "mtt1337", "parsec", "spacedesk", "usbmmidd" };
+
+    static bool IsVirtual(string s)
+    {
+        if (string.IsNullOrEmpty(s)) return false;
+        s = s.ToLowerInvariant();
+        foreach (string v in VirtualNames) if (s.Contains(v)) return true;
+        return false;
+    }
+
+    static DISPLAY_DEVICE NewDevice() { var d = new DISPLAY_DEVICE(); d.cb = Marshal.SizeOf(typeof(DISPLAY_DEVICE)); return d; }
+    static DEVMODE NewMode() { var m = new DEVMODE(); m.dmSize = (short)Marshal.SizeOf(typeof(DEVMODE)); return m; }
+
+    /**
+     * The monitors on an output (only those showing a picture, if "active"): whether any is
+     * virtual, and whether any is real. Duplicated screens are one output with two monitors.
+     */
+    static void MonitorsOf(string output, bool active, out bool virt, out bool real)
+    {
+        virt = false; real = false;
+        for (uint j = 0; j < 8; j++)
+        {
+            var m = NewDevice();
+            if (!EnumDisplayDevices(output, j, ref m, 0)) break;
+            if (active && (m.StateFlags & MONITOR_ACTIVE) == 0) continue;
+            if (IsVirtual(m.DeviceID) || IsVirtual(m.DeviceString)) virt = true; else real = true;
+        }
+    }
+
+    /** Every monitor that is part of the desktop now. */
+    public static List<Mon> Attached()
+    {
+        var list = new List<Mon>();
+        for (uint i = 0; i < 64; i++)
+        {
+            var a = NewDevice();
+            if (!EnumDisplayDevices(null, i, ref a, 0)) break;
+            if ((a.StateFlags & ATTACHED) == 0 || (a.StateFlags & MIRRORING) != 0) continue;
+            var dm = NewMode();
+            if (!EnumDisplaySettings(a.DeviceName, CURRENT, ref dm) || dm.dmPelsWidth <= 0) continue;
+            bool virt, real; MonitorsOf(a.DeviceName, true, out virt, out real);
+            var m = new Mon();
+            m.Device = a.DeviceName;
+            m.Primary = (a.StateFlags & PRIMARY) != 0;
+            // An output showing a real screen and the virtual one is Windows' "Duplicate": not a second screen.
+            m.Virtual = IsVirtual(a.DeviceString) || (virt && !real);
+            m.Cloned = virt && real;
+            m.X = dm.dmPositionX; m.Y = dm.dmPositionY; m.W = dm.dmPelsWidth; m.H = dm.dmPelsHeight; m.Hz = dm.dmDisplayFrequency;
+            list.Add(m);
+        }
+        return list;
+    }
+
+    /** Whether a virtual-display driver is installed, on the desktop or not. */
+    public static bool VirtualInstalled()
+    {
+        for (uint i = 0; i < 64; i++)
+        {
+            var a = NewDevice();
+            if (!EnumDisplayDevices(null, i, ref a, 0)) break;
+            bool virt, real; MonitorsOf(a.DeviceName, false, out virt, out real);
+            if (IsVirtual(a.DeviceString) || virt) return true;
+        }
+        return false;
+    }
+
+    /** A virtual display that is installed, with its monitor, but not on the desktop. */
+    public static string DetachedVirtual()
+    {
+        for (uint i = 0; i < 64; i++)
+        {
+            var a = NewDevice();
+            if (!EnumDisplayDevices(null, i, ref a, 0)) break;
+            if ((a.StateFlags & (ATTACHED | MIRRORING)) != 0) continue;
+            bool virt, real; MonitorsOf(a.DeviceName, false, out virt, out real);
+            if (virt || (IsVirtual(a.DeviceString) && real)) return a.DeviceName;
+        }
+        return null;
+    }
+
+    /** Windows+P's "Extend": every connected screen, the virtual one included, becomes part of one desktop. */
+    public static bool Extend()
+    {
+        return SetDisplayConfig(0, IntPtr.Zero, 0, IntPtr.Zero, SDC_TOPOLOGY_EXTEND | SDC_APPLY) == 0;
+    }
+
+    /** Windows+P's "Duplicate". */
+    public static bool Duplicate()
+    {
+        return SetDisplayConfig(0, IntPtr.Zero, 0, IntPtr.Zero, SDC_TOPOLOGY_CLONE | SDC_APPLY) == 0;
+    }
+
+    /** The whole desktop, all monitors together. */
+    public static Mon Desktop(List<Mon> mons)
+    {
+        var d = new Mon();
+        if (mons.Count == 0) return d;
+        int l = int.MaxValue, t = int.MaxValue, r = int.MinValue, b = int.MinValue;
+        foreach (var m in mons) { l = Math.Min(l, m.X); t = Math.Min(t, m.Y); r = Math.Max(r, m.X + m.W); b = Math.Max(b, m.Y + m.H); }
+        d.X = l; d.Y = t; d.W = r - l; d.H = b - t;
+        return d;
+    }
+
+    /**
+     * Of the display's own sizes, the one that suits the phone (w x h, landscape): the nearest
+     * shape first, so the phone is filled, then the nearest height, so it is sharp but not tiny.
+     */
+    static bool BestSize(string dev, int w, int h, out int bw, out int bh)
+    {
+        bw = 0; bh = 0;
+        double want = h > 0 ? (double)w / h : 16.0 / 9, best = double.MaxValue;
+        for (int i = 0; i < 1000; i++)
+        {
+            var dm = NewMode();
+            if (!EnumDisplaySettings(dev, i, ref dm)) break;
+            int mw = dm.dmPelsWidth, mh = dm.dmPelsHeight;
+            if (mw < 640 || mh < 360 || mw > 3840 || mh > 2160 || mw < mh) continue; // the phone decodes up to 4K
+            double score = Math.Abs(Math.Log((double)mw / mh / want)) * 4 + Math.Abs(Math.Log((double)mh / Math.Max(360, h)));
+            if (score < best) { best = score; bw = mw; bh = mh; }
+        }
+        if (bw > 0) return true;
+        var reg = NewMode();
+        if (EnumDisplaySettings(dev, REGISTRY, ref reg) && reg.dmPelsWidth > 0) { bw = reg.dmPelsWidth; bh = reg.dmPelsHeight; return true; }
+        bw = 1920; bh = 1080;
+        return true;
+    }
+
+    static bool Apply() { return ChangeDisplaySettingsEx(null, IntPtr.Zero, IntPtr.Zero, 0, IntPtr.Zero) == 0; }
+
+    const int DM_DISPLAYFREQUENCY = 0x400000;
+
+    /** A monitor's modes, each {width, height, refresh rate}, once each. */
+    public static List<int[]> Modes(string dev)
+    {
+        var list = new List<int[]>();
+        var seen = new HashSet<long>();
+        for (int i = 0; i < 5000; i++)
+        {
+            var dm = NewMode();
+            if (!EnumDisplaySettings(dev, i, ref dm)) break;
+            long key = ((long)dm.dmPelsWidth << 32) | ((long)dm.dmPelsHeight << 12) | (uint)dm.dmDisplayFrequency;
+            if (dm.dmBitsPerPel >= 24 && seen.Add(key)) list.Add(new int[] { dm.dmPelsWidth, dm.dmPelsHeight, dm.dmDisplayFrequency });
+        }
+        return list;
+    }
+
+    /** Sets a monitor's size and refresh rate, keeping its place. */
+    public static bool SetMode(string dev, int w, int h, int hz)
+    {
+        var dm = NewMode();
+        if (!EnumDisplaySettings(dev, CURRENT, ref dm)) return false;
+        dm.dmFields = DM_PELSWIDTH | DM_PELSHEIGHT | DM_DISPLAYFREQUENCY;
+        dm.dmPelsWidth = w; dm.dmPelsHeight = h; dm.dmDisplayFrequency = hz;
+        if (ChangeDisplaySettingsEx(dev, ref dm, IntPtr.Zero, CDS_UPDATEREGISTRY | CDS_NORESET, IntPtr.Zero) != 0) return false;
+        return Apply();
+    }
+
+    /** Puts a display on the desktop, extended to the right of the others, at a size suiting the phone. */
+    public static bool Attach(string dev, List<Mon> mons, int w, int h)
+    {
+        int bw, bh;
+        BestSize(dev, w, h, out bw, out bh);
+        int right = 0, top = 0;
+        foreach (var m in mons) { right = Math.Max(right, m.X + m.W); if (m.Primary) top = m.Y; }
+        var dm = NewMode();
+        dm.dmFields = DM_POSITION | DM_PELSWIDTH | DM_PELSHEIGHT;
+        dm.dmPositionX = right; dm.dmPositionY = top;
+        dm.dmPelsWidth = bw; dm.dmPelsHeight = bh;
+        if (ChangeDisplaySettingsEx(dev, ref dm, IntPtr.Zero, CDS_UPDATEREGISTRY | CDS_NORESET, IntPtr.Zero) != 0) return false;
+        return Apply();
+    }
+
+    /** Takes a display off the desktop; Windows moves its windows onto the others. */
+    public static bool Detach(string dev)
+    {
+        var mons = Attached();
+        var m = mons.Find(x => x.Device == dev);
+        if (m == null) return false;
+        if (m.Primary)
+        {
+            var other = mons.Find(x => x.Device != dev);
+            if (other == null || !MakePrimary(other.Device, mons)) return false;
+        }
+        var dm = NewMode();
+        dm.dmFields = DM_POSITION | DM_PELSWIDTH | DM_PELSHEIGHT; // all zero: off the desktop
+        if (ChangeDisplaySettingsEx(dev, ref dm, IntPtr.Zero, CDS_UPDATEREGISTRY | CDS_NORESET, IntPtr.Zero) != 0) return false;
+        return Apply();
+    }
+
+    [DllImport("user32.dll")] static extern int GetDisplayConfigBufferSizes(uint flags, out uint paths, out uint modes);
+    [DllImport("user32.dll")] static extern int QueryDisplayConfig(uint flags, ref uint paths, [In, Out] byte[] pathArray, ref uint modes, [In, Out] byte[] modeArray, IntPtr topology);
+    [DllImport("user32.dll")] static extern int SetDisplayConfig(uint paths, [In] byte[] pathArray, uint modes, [In] byte[] modeArray, uint flags);
+
+    /**
+     * Makes a monitor the main one (the taskbar, new windows). The main monitor is the one at 0,0,
+     * so every monitor moves by the same amount. Windows' current layout is changed as it stands
+     * (DISPLAYCONFIG_PATH_INFO is 72 bytes, DISPLAYCONFIG_MODE_INFO 64; a source mode, type 1,
+     * holds width, height and position at 16, 20, 28 and 32) and saved as this layout's own.
+     * The older ChangeDisplaySettingsEx refuses to move the main monitor here.
+     */
+    public static bool MakePrimary(string dev, List<Mon> mons)
+    {
+        var np = mons.Find(x => x.Device == dev);
+        if (np == null) return false;
+        if (np.X == 0 && np.Y == 0) return true;
+        const uint ACTIVE_ONLY = 2;
+        uint np2, nm;
+        if (GetDisplayConfigBufferSizes(ACTIVE_ONLY, out np2, out nm) != 0) return false;
+        byte[] paths = new byte[np2 * 72], modes = new byte[nm * 64];
+        if (QueryDisplayConfig(ACTIVE_ONLY, ref np2, paths, ref nm, modes, IntPtr.Zero) != 0) return false;
+        bool found = false;
+        for (int i = 0; i < nm; i++)
+        {
+            int o = i * 64;
+            if (BitConverter.ToUInt32(modes, o) != 1) continue; // source modes only
+            int x = BitConverter.ToInt32(modes, o + 28), y = BitConverter.ToInt32(modes, o + 32);
+            if (x == np.X && y == np.Y && BitConverter.ToInt32(modes, o + 16) == np.W) found = true;
+            Buffer.BlockCopy(BitConverter.GetBytes(x - np.X), 0, modes, o + 28, 4);
+            Buffer.BlockCopy(BitConverter.GetBytes(y - np.Y), 0, modes, o + 32, 4);
+        }
+        if (!found) return false;
+        const uint USE_SUPPLIED = 0x20, SAVE = 0x200, ALLOW_CHANGES = 0x400;
+        return SetDisplayConfig(np2, paths, nm, modes, SDC_APPLY | USE_SUPPLIED | SAVE | ALLOW_CHANGES) == 0;
+    }
+
+    [DllImport("user32.dll")] static extern int DisplayConfigGetDeviceInfo([In, Out] byte[] packet);
+    [DllImport("user32.dll")] static extern int DisplayConfigSetDeviceInfo([In] byte[] packet);
+
+    /**
+     * The target (adapter LUID and id, 12 bytes) of the path showing a monitor, for the HDR
+     * calls. Each packet starts with a 20-byte header: type, size, adapter LUID, id.
+     */
+    static byte[] TargetOf(string dev)
+    {
+        const uint ACTIVE_ONLY = 2;
+        uint np, nm;
+        if (GetDisplayConfigBufferSizes(ACTIVE_ONLY, out np, out nm) != 0) return null;
+        byte[] paths = new byte[np * 72], modes = new byte[nm * 64];
+        if (QueryDisplayConfig(ACTIVE_ONLY, ref np, paths, ref nm, modes, IntPtr.Zero) != 0) return null;
+        for (int i = 0; i < np; i++)
+        {
+            int o = i * 72;
+            byte[] name = Packet(1, 84, paths, o); // the source's GDI name
+            if (DisplayConfigGetDeviceInfo(name) != 0) continue;
+            if (!string.Equals(Encoding.Unicode.GetString(name, 20, 64).TrimEnd('\0'), dev, StringComparison.OrdinalIgnoreCase)) continue;
+            byte[] t = new byte[12];
+            Array.Copy(paths, o + 20, t, 0, 12);
+            return t;
+        }
+        return null;
+    }
+
+    /** A packet for DisplayConfig*DeviceInfo: type and size, then an adapter LUID and id from "from". */
+    static byte[] Packet(int type, int size, byte[] from, int at)
+    {
+        byte[] p = new byte[size];
+        BitConverter.GetBytes(type).CopyTo(p, 0);
+        BitConverter.GetBytes(size).CopyTo(p, 4);
+        Array.Copy(from, at, p, 8, 12);
+        return p;
+    }
+
+    /** Whether Windows' HDR ("Use HDR") is on for a monitor. */
+    public static bool HdrOn(string dev)
+    {
+        byte[] t = TargetOf(dev);
+        if (t == null) return false;
+        byte[] info = Packet(9, 32, t, 0); // DISPLAYCONFIG_DEVICE_INFO_GET_ADVANCED_COLOR_INFO
+        return DisplayConfigGetDeviceInfo(info) == 0 && (BitConverter.ToUInt32(info, 20) & 2) != 0;
+    }
+
+    /**
+     * The brightness Windows gives ordinary (SDR) white on a monitor in HDR, in nits: the
+     * "SDR content brightness" slider. 80 when it cannot be read (the slider's lowest).
+     */
+    public static double SdrWhiteNits(string dev)
+    {
+        byte[] t = TargetOf(dev);
+        if (t == null) return 80;
+        byte[] w = Packet(11, 24, t, 0); // DISPLAYCONFIG_DEVICE_INFO_GET_SDR_WHITE_LEVEL, in thousandths of 80 nits
+        if (DisplayConfigGetDeviceInfo(w) != 0) return 80;
+        uint level = BitConverter.ToUInt32(w, 20);
+        return level > 0 ? level * 80.0 / 1000 : 80;
+    }
+
+    /** Turns Windows' HDR on or off for a monitor, as its switch in Settings does. */
+    public static bool SetHdr(string dev, bool on)
+    {
+        // Tried again for a couple of seconds: just after a change of mode or layout, Windows
+        // can refuse or quietly drop the request.
+        for (int attempt = 0; attempt < 4; attempt++)
+        {
+            if (attempt > 0) Thread.Sleep(500);
+            byte[] t = TargetOf(dev);
+            if (t == null) continue;
+            byte[] set = Packet(10, 24, t, 0); // DISPLAYCONFIG_DEVICE_INFO_SET_ADVANCED_COLOR_STATE
+            BitConverter.GetBytes(on ? 1 : 0).CopyTo(set, 20);
+            if (DisplayConfigSetDeviceInfo(set) != 0) continue;
+            for (int i = 0; i < 20 && HdrOn(dev) != on; i++) Thread.Sleep(100);
+            if (HdrOn(dev) == on) return true;
+        }
+        return false;
+    }
+
+    /** This thread works in real pixels until RestoreDpi; returns what it was. */
+    public static IntPtr RealPixels()
+    {
+        try { return SetThreadDpiAwarenessContext(new IntPtr(-4)); } catch { return IntPtr.Zero; } // per-monitor v2
+    }
+
+    public static void RestoreDpi(IntPtr was)
+    {
+        if (was == IntPtr.Zero) return;
+        try { SetThreadDpiAwarenessContext(was); } catch { }
+    }
+}
+
+/**
+ * Which graphics adapter, and which output on it, shows a monitor ("\\.\DISPLAY2"): what the
+ * GPU screen capture (Desktop Duplication, ffmpeg's ddagrab) needs to capture exactly it. The
+ * order of Windows' monitor list is not the adapters' order, so it is looked up by name.
+ */
+public static class Dxgi
+{
+    [DllImport("dxgi.dll")] static extern int CreateDXGIFactory1(ref Guid riid, [MarshalAs(UnmanagedType.Interface)] out IDXGIFactory1 factory);
+
+    [ComImport, Guid("770aae78-f26f-4dba-a829-253c83d1b387"), InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
+    interface IDXGIFactory1
+    {
+        void SetPrivateData(); void SetPrivateDataInterface(); void GetPrivateData(); void GetParent();
+        void EnumAdapters(); void MakeWindowAssociation(); void GetWindowAssociation(); void CreateSwapChain(); void CreateSoftwareAdapter();
+        [PreserveSig] int EnumAdapters1(uint index, [MarshalAs(UnmanagedType.Interface)] out IDXGIAdapter1 adapter);
+    }
+
+    [ComImport, Guid("29038f61-3839-4626-91fd-086879011a05"), InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
+    interface IDXGIAdapter1
+    {
+        void SetPrivateData(); void SetPrivateDataInterface(); void GetPrivateData(); void GetParent();
+        [PreserveSig] int EnumOutputs(uint index, [MarshalAs(UnmanagedType.Interface)] out IDXGIOutput output);
+        [PreserveSig] int GetDesc(out ADAPTER_DESC desc);
+    }
+
+    [ComImport, Guid("ae02eedb-c735-4690-8d52-5a8dc20213aa"), InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
+    interface IDXGIOutput
+    {
+        void SetPrivateData(); void SetPrivateDataInterface(); void GetPrivateData(); void GetParent();
+        [PreserveSig] int GetDesc(out OUTPUT_DESC desc);
+    }
+
+    [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
+    struct ADAPTER_DESC
+    {
+        [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 128)] public string Description;
+        public uint VendorId, DeviceId, SubSysId, Revision;
+        public UIntPtr DedicatedVideoMemory, DedicatedSystemMemory, SharedSystemMemory;
+        public uint LuidLow; public int LuidHigh;
+    }
+
+    [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
+    struct OUTPUT_DESC
+    {
+        [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 32)] public string DeviceName;
+        public int Left, Top, Right, Bottom;
+        public int AttachedToDesktop, Rotation;
+        public IntPtr Monitor;
+    }
+
+    public static bool Find(string deviceName, out int adapter, out int output, out string adapterName)
+    {
+        adapter = -1; output = -1; adapterName = "";
+        try
+        {
+            Guid g = typeof(IDXGIFactory1).GUID;
+            IDXGIFactory1 f;
+            if (CreateDXGIFactory1(ref g, out f) != 0) return false;
+            for (uint a = 0; a < 16; a++)
+            {
+                IDXGIAdapter1 ad;
+                if (f.EnumAdapters1(a, out ad) != 0) break;
+                ADAPTER_DESC ades; ad.GetDesc(out ades);
+                for (uint o = 0; o < 16; o++)
+                {
+                    IDXGIOutput op;
+                    if (ad.EnumOutputs(o, out op) != 0) break;
+                    OUTPUT_DESC od; op.GetDesc(out od);
+                    if (string.Equals(od.DeviceName, deviceName, StringComparison.OrdinalIgnoreCase))
+                    {
+                        adapter = (int)a; output = (int)o; adapterName = ades.Description ?? "";
+                        return true;
+                    }
+                }
+            }
+        }
+        catch { }
+        return false;
+    }
+
+    /** Every monitor DXGI knows, for diagnosis: "adapter/output name device". */
+    public static string List()
+    {
+        var sb = new System.Text.StringBuilder();
+        try
+        {
+            Guid g = typeof(IDXGIFactory1).GUID;
+            IDXGIFactory1 f;
+            if (CreateDXGIFactory1(ref g, out f) != 0) return "";
+            for (uint a = 0; a < 16; a++)
+            {
+                IDXGIAdapter1 ad;
+                if (f.EnumAdapters1(a, out ad) != 0) break;
+                ADAPTER_DESC ades; ad.GetDesc(out ades);
+                sb.Append(a + " " + ades.Description + "\n");
+                for (uint o = 0; o < 16; o++)
+                {
+                    IDXGIOutput op;
+                    if (ad.EnumOutputs(o, out op) != 0) break;
+                    OUTPUT_DESC od; op.GetDesc(out od);
+                    sb.Append("   " + o + " " + od.DeviceName + " " + (od.Right - od.Left) + "x" + (od.Bottom - od.Top) + " at " + od.Left + "," + od.Top + "\n");
+                }
+            }
+        }
+        catch (Exception e) { sb.Append(e.Message); }
+        return sb.ToString();
     }
 }
 

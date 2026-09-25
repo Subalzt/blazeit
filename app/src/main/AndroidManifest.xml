@@ -139,6 +139,15 @@
             </intent-filter>
         </service>
 
+        <!-- This phone as a second screen for the laptop: the stream from the helper, full screen.
+             Turning the phone must not restart it, or the stream would drop. -->
+        <activity
+            android:name=".ui.SecondScreenActivity"
+            android:exported="false"
+            android:label="Second screen"
+            android:configChanges="orientation|screenSize|screenLayout|keyboardHidden|smallestScreenSize"
+            android:theme="@android:style/Theme.Black.NoTitleBar.Fullscreen" />
+
         <!-- "Send to laptop" in the menu that appears on selecting text in any app: the words
              go on the shared clipboard at once, without opening BlazeIt. -->
         <activity
