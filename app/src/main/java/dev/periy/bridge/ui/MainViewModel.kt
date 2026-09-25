@@ -61,6 +61,8 @@ data class UiState(
     /** Copies in any app reach the laptop at once: the log permission and the overlay (see ClipWatch). */
     val watchLogs: Boolean = false,
     val watchOverlay: Boolean = false,
+    /** Android's "Notification access" is on for BlazeIt, so the laptop page shows the phone's notifications. */
+    val notifAccess: Boolean = false,
     /** Music permission granted, and how many tracks the library holds. */
     val musicGranted: Boolean = false,
     val musicTracks: Int = 0,
@@ -159,6 +161,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                 canReadPhotos = dev.periy.bridge.server.canReadPhotos(app),
                 watchLogs = dev.periy.bridge.server.ClipWatch.canReadLogs(app),
                 watchOverlay = dev.periy.bridge.server.ClipWatch.canOverlay(app),
+                notifAccess = androidx.core.app.NotificationManagerCompat.getEnabledListenerPackages(app).contains(app.packageName),
                 musicTracks = withContext(Dispatchers.IO) { app.container.music.tracks(refresh = true).size },
             )
         }
@@ -290,6 +293,8 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         refresh()
     }
 
+    /** Android's "Notification access" screen, where BlazeIt is allowed to see notifications. */
+    fun notifAccessIntent(): Intent = Intent(android.provider.Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS)
 
     /** Android's "Display over other apps" screen for BlazeIt, which the copy watch needs. */
     fun overlayIntent(): Intent =

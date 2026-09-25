@@ -117,6 +117,17 @@ class BridgeService : Service() {
                         stopEverything()
                     }
                 _running.value = container.server?.isRunning == true
+                if (_running.value) {
+                    watchScreenshots()
+                    // After an update Android does not always reconnect the notification
+                    // listener by itself; asking costs nothing when it already is.
+                    if (!dev.periy.bridge.server.Notifs.connected) runCatching {
+                        android.service.notification.NotificationListenerService.requestRebind(
+                            android.content.ComponentName(applicationContext, dev.periy.bridge.server.NotifyListener::class.java)
+                        )
+                    }
+                    dev.periy.bridge.server.ClipWatch.ensure(applicationContext, container.prefs.clipSync)
+                }
                 refreshNotification()
             }
         }

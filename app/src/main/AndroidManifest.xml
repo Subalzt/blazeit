@@ -41,6 +41,9 @@
     <uses-permission android:name="android.permission.READ_LOGS"
         tools:ignore="ProtectedPermissions" />
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
+    <!-- The page shows each notification's app by name and icon. -->
+    <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES"
+        tools:ignore="QueryAllPackagesPermission" />
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"
         android:maxSdkVersion="32" />
 
@@ -124,6 +127,17 @@
             android:taskAffinity=""
             android:theme="@android:style/Theme.Translucent.NoTitleBar" />
 
+        <!-- The phone's notifications on the laptop page, answerable from there. Runs once
+             "Notification access" is allowed for BlazeIt, whether BlazeIt is open or not. -->
+        <service
+            android:name=".server.NotifyListener"
+            android:exported="true"
+            android:label="BlazeIt: notifications on the laptop"
+            android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE">
+            <intent-filter>
+                <action android:name="android.service.notification.NotificationListenerService" />
+            </intent-filter>
+        </service>
 
         <!-- "Send to laptop" in the menu that appears on selecting text in any app: the words
              go on the shared clipboard at once, without opening BlazeIt. -->

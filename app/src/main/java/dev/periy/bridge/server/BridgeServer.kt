@@ -202,6 +202,7 @@ class BridgeServer(
             directRoutes()
             p2pTrial()
             phoneFileRoutes()
+            notificationRoutes()
         }
     }
 
@@ -462,6 +463,39 @@ class BridgeServer(
     }
 
     // ------------------------------------------------------------------ laptop control
+
+    // ------------------------------------------------------------------ notifications
+
+    private fun io.ktor.server.routing.Route.notificationRoutes() {
+        get("/api/notifications") {
+            call.response.header(HttpHeaders.CacheControl, "no-store")
+            call.respond(NotifList(Notifs.connected, Notifs.list()))
+        }
+        get("/api/notifications/icon") {
+            val bytes = Notifs.icon(ctx, call.request.queryParameters["pkg"].orEmpty())
+            if (bytes == null) { call.respond(HttpStatusCode.NotFound); return@get }
+            call.response.header(HttpHeaders.CacheControl, "private, max-age=86400")
+            call.respondBytes(bytes, ContentType.Image.PNG)
+        }
+        post("/api/notifications/dismiss") {
+            Notifs.dismiss(runCatching { call.receive<NotifKey>() }.getOrDefault(NotifKey()).key)
+            call.respond(ApiResult(true))
+        }
+        post("/api/notifications/clear") {
+            Notifs.dismissAll()
+            call.respond(ApiResult(true))
+        }
+        post("/api/notifications/reply") {
+            val r = runCatching { call.receive<NotifReply>() }.getOrDefault(NotifReply())
+            val ok = r.text.isNotBlank() && Notifs.reply(ctx, r.key, r.text)
+            call.respond(ApiResult(ok, if (ok) null else "This notification no longer takes a reply"))
+        }
+        post("/api/notifications/action") {
+            val a = runCatching { call.receive<NotifAction>() }.getOrDefault(NotifAction())
+            val ok = Notifs.press(a.key, a.index)
+            call.respond(ApiResult(ok, if (ok) null else "That button is gone"))
+        }
+    }
 
     private fun io.ktor.server.routing.Route.controlRoutes() {
         // The laptop helper holds this open and turns each line into real input. Lines

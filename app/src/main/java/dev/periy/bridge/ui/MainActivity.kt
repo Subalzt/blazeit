@@ -1214,6 +1214,12 @@ private fun LazyListScope.settingsTab(
                 icon = BlazeIcons.Paste, iconColor = Bridge.Yellow,
             ) { Toggle(state.clipSync) { vm.setClipSync(it) } }
             SettingRow(
+                "Notifications on the laptop",
+                if (state.notifAccess) null else "Needs notification access",
+                icon = BlazeIcons.Message, iconColor = Bridge.Danger,
+                onClick = { openSettings(vm.notifAccessIntent()) },
+            ) { if (state.notifAccess) Check(true) else Text("Allow", style = LabelStyle, color = Bridge.Blue) }
+            SettingRow(
                 "Copies from any app, at once",
                 when {
                     !state.watchLogs -> "One-time, over USB: adb shell pm grant ${LocalContext.current.packageName} android.permission.READ_LOGS"

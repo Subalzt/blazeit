@@ -122,6 +122,10 @@ data class PairStatusDto(val state: String)
 @Serializable data class ThemeRequest(val theme: String = "system")
 
 
+
+/** The phone's notifications, and whether BlazeIt may see them at all. */
+@Serializable data class NotifList(val allowed: Boolean, val items: List<NotifDto>)
+
 /** A browser reporting the round trip it measured to this phone. */
 @Serializable data class RttReport(val ms: Int = -1)
 
