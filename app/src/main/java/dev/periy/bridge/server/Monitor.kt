@@ -49,6 +49,15 @@ data class LaptopLink(
     val band: String = "",
     val radio: String = "",
     val rttMs: Int = -1,
+    /** The speed the laptop's USB tethering adapter reports while the helper uses the cable; 0 otherwise. */
+    val usbMbps: Int = 0,
+    /**
+     * The laptop's network adapter that reaches the phone, and its byte counters so far: all of
+     * its traffic, BlazeIt's and everything else's (the laptop's internet through the phone, say).
+     */
+    val iface: String = "",
+    val rxBytes: Long = 0,
+    val txBytes: Long = 0,
     val at: Long = 0,
 )
 
@@ -134,6 +143,10 @@ object Monitor {
         laptop = link.copy(at = System.currentTimeMillis())
         if (link.rttMs >= 0) reportRtt(link.rttMs)
     }
+
+    /** The cable speed from the helper's latest report; 0 when it is not on a cable or has gone quiet. */
+    fun laptopUsbMbps(now: Long = System.currentTimeMillis()): Int =
+        laptop?.takeIf { now - it.at < 30_000 }?.usbMbps ?: 0
 
     @Volatile private var rtt = -1
     @Volatile private var rttAt = 0L

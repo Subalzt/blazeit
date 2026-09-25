@@ -127,30 +127,25 @@
   .actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; align-items: center; }
 
   /* ---------------------------------------------------------------- home: the widgets across the top */
-  .home-top { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr) minmax(0, 1fr); gap: 16px; margin-bottom: 16px; }
-  .hero { background: var(--accent); color: var(--on-accent); border-radius: var(--r-card); padding: 22px 24px; min-width: 0; display: flex; flex-direction: column; }
-  .hero .kicker { display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 650; opacity: .72; }
-  .hero .kicker .dot { background: rgba(0,0,0,.25); }
-  .hero .kicker .dot.on { background: #0E7A32; }
-  .hero h2 { margin: 6px 0 0; font-size: 30px; font-weight: 800; letter-spacing: -.8px; line-height: 1.1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .hero p { margin: 6px 0 0; font-size: 14px; opacity: .72; }
-  .hero .rate { margin-top: auto; padding-top: 18px; display: flex; align-items: baseline; gap: 10px; }
-  .hero .rate b { font-size: 26px; font-weight: 800; letter-spacing: -.5px; font-variant-numeric: tabular-nums; }
-  .hero .rate span { font-size: 13.5px; font-weight: 600; opacity: .7; }
-  .tile { display: flex; flex-direction: column; align-items: flex-start; text-align: left; border: 0; cursor: pointer; min-width: 0;
-    background: var(--surface); color: var(--txt); border-radius: var(--r-card); padding: 20px; box-shadow: var(--shadow); transition: background .15s, transform .08s; }
-  .tile:hover { background: var(--surface-2); }
-  .tile:active { transform: scale(.985); }
-  .tile .t { margin-top: 22px; font-size: 17px; font-weight: 700; letter-spacing: -.2px; }
-  .tile .d { margin-top: 2px; font-size: 13.5px; color: var(--sub); overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
-  .tile.on { background: var(--tint); color: #fff; }
-  .tile.on .d { color: rgba(255,255,255,.8); }
-  .tile.on .appicon { background: rgba(255,255,255,.18); }
-  .tile.busy .appicon { animation: pulse 1s ease-in-out infinite alternate; }
+  /* Home: one line saying which phone, over what, and what is moving; then the two things
+     the page is for, the clipboard and sending files, side by side. */
+  .status-line { display: flex; align-items: center; gap: 14px; padding: 14px 20px; margin-bottom: 16px; border-radius: var(--r-card);
+    background: var(--surface); box-shadow: var(--shadow); min-width: 0; }
+  .status-line .dot { flex: 0 0 auto; width: 10px; height: 10px; }
+  .status-line .who { min-width: 0; flex: 1 1 auto; display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+  .status-line .who b { font-size: 16px; font-weight: 750; letter-spacing: -.2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+  .status-line .who span { font-size: 13.5px; color: var(--sub); }
+  .status-line .rate { flex: 0 0 auto; text-align: right; line-height: 1.2; }
+  .status-line .rate b { display: block; font-size: 18px; font-weight: 800; letter-spacing: -.3px; font-variant-numeric: tabular-nums; }
+  .status-line .rate span { font-size: 12.5px; color: var(--sub); }
+  .route-hint { margin: -6px 0 16px; padding: 10px 14px; border-radius: 14px; font-size: 13.5px; font-weight: 600;
+    background: color-mix(in srgb, var(--orange) 14%, var(--surface)); color: var(--txt); }
+  .route-hint a { color: var(--blue); }
+  .home-main { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 360px), 1fr)); gap: 16px; align-items: stretch; }
+  .send-card { display: flex; flex-direction: column; }
+  .send-card .drop { flex: 1; min-height: 190px; }
   @keyframes pulse { to { opacity: .45; } }
-  @media (max-width: 1100px) { .home-top { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } .hero { grid-column: 1 / -1; } }
 
-  .direct-card { margin-bottom: 16px; }
   .fields { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px; }
   .field { display: flex; flex-direction: column; gap: 2px; padding: 12px 14px; border-radius: var(--r); background: var(--surface-2); cursor: pointer; border: 0; text-align: left; min-width: 0; }
   .field:hover { background: var(--surface-3); }
@@ -430,7 +425,10 @@
     .side-item .switch { display: none; }
     .main { margin-left: 0; padding: 22px 16px calc(var(--player-h, 0px) + 96px); }
     .page-head h1 { font-size: 30px; }
-    .home-top { grid-template-columns: minmax(0, 1fr); }
+    .status-line { padding: 12px 16px; align-items: flex-start; }
+    .status-line .dot { margin-top: 6px; }
+    .status-line .who { flex-direction: column; gap: 1px; }
+    .status-line #hero-state { display: none; }
     .dock { right: 12px; left: 12px; width: auto; bottom: calc(var(--player-h, 0px) + 76px); }
     .player { grid-template-columns: minmax(0, 1fr) auto; gap: 12px; padding: 8px 12px; }
     .pl-right, .pl-bar, #pl-shuffle, #pl-repeat { display: none; }
@@ -482,34 +480,14 @@
 
   <!-- ---------------------------------------------------------- home -->
   <section data-panel="home" hidden>
-    <div class="home-top">
-      <div class="hero">
-        <div class="kicker"><span class="dot" id="hero-dot"></span><span id="hero-state">Connecting</span></div>
-        <h2 id="hero-title">Phone</h2>
-        <p id="hero-sub"></p>
-        <div class="rate"><b id="hero-rate">Idle</b><span id="hero-rate-sub">Nothing moving</span></div>
-      </div>
-      <button class="tile blue" id="direct-tile" title="The phone's own offline network: the fastest wireless link">
-        <span class="appicon blue" id="direct-icon"><svg viewBox="0 0 24 24"><path d="M13.5 2.5 5 13.5h6.5l-1 8 8.5-11h-6.5l1-8Z"/></svg></span>
-        <span class="t" id="direct-name">Direct link</span><span class="d" id="direct-detail">Fastest. Works offline</span>
-      </button>
-      <button class="tile green" id="send-tile" title="Choose files to send to the phone">
-        <span class="appicon green"><svg viewBox="0 0 24 24"><path d="M12 15V4"/><path d="M7.5 8.5 12 4l4.5 4.5"/><path d="M4 14v4a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-4"/></svg></span>
-        <span class="t">Send files</span><span class="d">To the phone, or drop them anywhere</span>
-      </button>
+    <div class="status-line">
+      <span class="dot" id="hero-dot"></span>
+      <div class="who"><b id="hero-title">Phone</b><span id="hero-state">Connecting</span><span id="hero-sub"></span></div>
+      <div class="rate"><b id="hero-rate">Idle</b><span id="hero-rate-sub"></span></div>
     </div>
+    <p class="route-hint" id="route-hint" hidden></p>
 
-    <div class="card direct-card" id="direct-card" hidden>
-      <div class="card-title">
-        <span class="appicon blue"><svg viewBox="0 0 24 24"><path d="M13.5 2.5 5 13.5h6.5l-1 8 8.5-11h-6.5l1-8Z"/></svg></span>
-        <div class="grow"><h3 id="direct-title">Direct link is on</h3><p id="direct-sub">The phone's own offline network, one hop, nobody else on it.</p></div>
-        <button class="btn sm ghost" id="direct-stop">Stop</button>
-      </div>
-      <div class="fields" id="direct-fields"></div>
-      <p class="note" id="direct-note"></p>
-    </div>
-
-    <div class="grid2">
+    <div class="home-main">
       <div class="card clip-card">
         <div class="card-title">
           <span class="appicon yellow"><svg viewBox="0 0 24 24"><path d="M9 5.5H7.5A1.5 1.5 0 0 0 6 7v12a1.5 1.5 0 0 0 1.5 1.5h9A1.5 1.5 0 0 0 18 19V7a1.5 1.5 0 0 0-1.5-1.5H15"/><path d="M10 3.5h4a1 1 0 0 1 1 1v1.5a1 1 0 0 1-1 1h-4a1 1 0 0 1-1-1V4.5a1 1 0 0 1 1-1Z"/></svg></span>
@@ -529,11 +507,13 @@
         <p class="note" id="clip-note"></p>
       </div>
 
-      <div class="card" style="display:flex;flex-direction:column">
-        <div id="drop" class="drop">
+      <div class="card send-card">
+        <div class="card-title">
           <span class="appicon green"><svg viewBox="0 0 24 24"><path d="M12 15V4"/><path d="M7.5 8.5 12 4l4.5 4.5"/><path d="M4 14v4a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-4"/></svg></span>
+          <div class="grow"><h3>Send files</h3></div>
+        </div>
+        <div id="drop" class="drop">
           <div class="big">Drop files or folders here</div>
-          <div class="meta">They land in the phone's folder, subfolders and all.</div>
           <div class="drop-actions">
             <button class="btn sm" id="pick-files">Choose files</button>
             <button class="btn sm ghost" id="pick-folder">Choose a folder</button>
@@ -554,7 +534,6 @@
     <div class="card">
       <div class="fs-head">
         <div class="crumbs" id="fs-crumbs"></div>
-        <span class="grow"></span>
         <button class="btn sm ghost" id="fs-up">Up</button>
         <button class="btn sm ghost" id="fs-zip" title="The whole folder, subfolders included, as one zip">Download folder</button>
       </div>
@@ -640,19 +619,6 @@
         <button data-gb="0">No limit</button>
       </div>
       <p class="note" id="size-note">The same setting as on the phone. With no limit, anything that fits in the phone's free space is accepted.</p>
-    </div>
-
-    <div class="card">
-      <div class="card-title">
-        <span class="appicon blue"><svg viewBox="0 0 24 24"><path d="M13.5 2.5 5 13.5h6.5l-1 8 8.5-11h-6.5l1-8Z"/></svg></span>
-        <div class="grow"><h3>Direct link</h3><p>The fastest wireless way</p></div>
-      </div>
-      <p class="note" style="margin-top:0">
-        The phone starts its own offline Wi-Fi network, just for this laptop. One hop, no router taking turns, nobody else on the
-        channel: measured about <b>60 MB/s</b> each way, against 3 MB/s through the home router. Start it from <b>Home</b>
-        here or on the phone. With the laptop helper running, this laptop joins it by itself and returns to your Wi-Fi when
-        it stops. While on it, the laptop has no internet.
-      </p>
     </div>
 
     <div class="card">
@@ -2250,92 +2216,53 @@ async function setTheme(theme) {
   } catch (e) {}
 }
 
-// ------------------------------------------------------------------ direct link
-//
-// The phone's own offline network. Started here or on the phone; the laptop helper then
-// joins it by itself, and this page (served by the helper on localhost) carries on over
-// it without a reload. Without the helper, the card shows the name and password to join
-// by hand and the address to open afterwards.
-
-var direct = { state: "off", info: null, message: null, kind: "direct" };
-var BOLT = '<svg viewBox="0 0 24 24"><path d="M13.5 2.5 5 13.5h6.5l-1 8 8.5-11h-6.5l1-8Z"/></svg>';
-var WAVES = '<svg viewBox="0 0 24 24"><path d="M12 13.2a1.3 1.3 0 1 1 0 2.6a1.3 1.3 0 1 1 0-2.6Z"/><path d="M8.2 11.6a5.4 5.4 0 0 1 7.6 0"/><path d="M5.2 8.6a9.6 9.6 0 0 1 13.6 0"/><path d="M12 16v4.5"/></svg>';
+// The direct link and the phone's hotspot are started and shown on the phone; the laptop
+// helper joins them by itself. This page only says which link it is on (below).
 var viaHelper = location.hostname === "localhost" || location.hostname === "127.0.0.1";
 
-async function refreshDirect() {
-  try { direct = await (await api("/api/direct")).json(); } catch (e) { return; }
-  renderDirect();
-}
+// Which of the phone's links this page's requests actually arrive on. Through the laptop
+// helper the page only sees localhost, so it asks the phone; that is also how it notices a
+// USB cable sitting unused (an old helper that never learned about cables, say).
+var route = null, usbMissed = 0;
+var ROUTE_NAMES = { usb: "Over the USB cable", direct: "On the direct link", hotspot: "On the phone's hotspot", wifi: "Over your Wi-Fi" };
 
-function renderDirect() {
-  var tile = $("direct-tile"), d = direct, on = d.state === "on" && d.info;
-  var hotspot = d.kind === "hotspot";
-  // In hotspot mode the tile is the phone's hotspot, which keeps this laptop online.
-  tile.classList.toggle("blue", !hotspot); tile.classList.toggle("purple", hotspot);
-  $("direct-icon").className = "appicon " + (hotspot ? "purple" : "blue");
-  if (tile._kind !== d.kind) { $("direct-icon").innerHTML = hotspot ? WAVES : BOLT; tile._kind = d.kind; }
-  $("direct-name").textContent = hotspot ? "Hotspot" : "Direct link";
-  tile.title = hotspot ? "The phone's hotspot: fast, and this laptop keeps its internet" : "The phone's own offline network: the fastest wireless link";
-  tile.classList.toggle("on", !!on || d.state === "starting");
-  tile.classList.toggle("busy", d.state === "starting");
-  $("direct-detail").textContent = hotspot
-    ? (on ? "On · internet stays on" : (d.message || "Turn it on on the phone"))
-    : d.state === "on" ? "On · tap to stop" :
-      d.state === "starting" ? "Starting..." :
-      d.state === "failed" ? (d.message || "Could not start") : "Fastest. Works offline";
-  $("direct-stop").hidden = hotspot;
-  $("direct-card").hidden = !on;
+async function refreshRoute() {
+  try {
+    var res = await api("/api/route");
+    if (!res.ok) return;
+    route = await res.json();
+  } catch (e) { return; }
+  // The helper moves to a cable within a few seconds; only a cable left unused for longer is worth a word.
+  usbMissed = route.usb ? usbMissed + 1 : 0;
   renderRoute();
-  if (!on) return;
-  var f = $("direct-fields");
-  f.innerHTML = "";
-  // The password is Android's own and cannot be shorter; groups of four make it easy to type.
-  var pw = (d.info.passphrase || "").replace(/(.{4})(?=.)/g, "$1 ");
-  [["Network", d.info.ssid, d.info.ssid], ["Password", d.info.passphrase, pw], ["Then open", "http://" + d.info.host + ":" + d.info.port]].forEach(function (kv) {
-    var b = document.createElement("button");
-    b.className = "field"; b.type = "button"; b.title = "Copy";
-    b.innerHTML = "<span></span><b></b>";
-    b.firstChild.textContent = kv[0]; b.lastChild.textContent = kv[2] || kv[1];
-    b.onclick = function () { copyText(kv[1]).then(function () { b.firstChild.textContent = kv[0] + " · copied"; setTimeout(function () { b.firstChild.textContent = kv[0]; }, 1500); }); };
-    f.appendChild(b);
-  });
-  var here = location.hostname === d.info.host;
-  if (hotspot) {
-    $("direct-title").textContent = "The phone's hotspot is on";
-    $("direct-sub").textContent = "Fast, and this laptop keeps its internet through the phone.";
-    $("direct-note").textContent = viaHelper
-      ? "The laptop helper moves this laptop onto it by itself, and back to your Wi-Fi when the hotspot goes off."
-      : "Join the Wi-Fi network above, then open the address. Or run the laptop helper (Settings) and it joins by itself.";
-    return;
-  }
-  $("direct-sub").textContent = "The phone's own offline network, one hop, nobody else on it.";
-  $("direct-title").textContent = here ? "You are on the direct link" : "Direct link is on";
-  $("direct-note").textContent =
-    here ? "This laptop is talking to the phone directly. It has no internet while it is on this network." :
-    !d.laptop ? "Started for a phone-to-phone send, so this laptop stays on its own Wi-Fi." :
-    viaHelper ? "The laptop helper is moving this laptop onto it now. The page carries on by itself; there is no internet on it." :
-    "Join the Wi-Fi network above with its password, then open the address. Or run the laptop helper (Settings) and it joins by itself.";
 }
 
 /** How this page reaches the phone, for the card at the top of Home. */
 function renderRoute() {
-  var host = location.hostname, d = direct;
-  $("hero-sub").textContent =
-    viaHelper ? "Through the laptop helper" + (d.state === "on" && d.laptop ? (d.kind === "hotspot" ? ", on the phone's hotspot" : ", on the direct link") : "") :
-    d.info && host === d.info.host ? "On the direct link, " + host :
-    "Over your network, " + host;
-}
-
-async function toggleDirect() {
-  // Only the phone can switch its own hotspot; the tile says so and looks again shortly.
-  if (direct.kind === "hotspot") { refreshDirect(); return; }
-  var on = direct.state === "on" || direct.state === "starting";
-  direct = { state: on ? "off" : "starting", info: null };
-  renderDirect();
-  try {
-    direct = await (await api(on ? "/api/direct/stop" : "/api/direct/start", { method: "POST" })).json();
-  } catch (e) {}
-  renderDirect();
+  var host = location.hostname, r = route;
+  var how = r ? (ROUTE_NAMES[r.via] || "Over your network") : "";
+  $("hero-sub").textContent = viaHelper
+    ? (how ? how + ", through the laptop helper" : "Through the laptop helper")
+    : (how || "Over your network") + ", " + host;
+  var hint = $("route-hint");
+  // Over a cable that came up at USB 2 (the helper reports ~426 Mbps): only a better cable helps.
+  if (r && r.via === "usb" && r.usbMbps > 0 && r.usbMbps < 600) {
+    hint.hidden = false;
+    hint.textContent = "The cable is running at USB 2 speed, about 40 MB/s. A USB 3 cable in a USB-C port " +
+      "on this laptop gives about 250 MB/s; charging cables are usually USB 2.";
+    return;
+  }
+  hint.hidden = !(r && r.usb && usbMissed >= 2);
+  if (hint.hidden) return;
+  if (viaHelper) {
+    hint.textContent = "A USB cable is plugged in, but the laptop helper is not using it. " +
+      "Close every BlazeIt helper window and run the latest one (Settings); it moves to the cable by itself.";
+  } else {
+    var url = "http://" + r.usb + ":" + (location.port || "8787") + "/";
+    hint.innerHTML = "A USB cable is plugged in and several times faster. Open <a></a> to use it (it asks to pair once), or run the laptop helper (Settings).";
+    hint.querySelector("a").href = url;
+    hint.querySelector("a").textContent = url.replace("http://", "").replace(/\/$/, "");
+  }
 }
 
 // ------------------------------------------------------------------ music
@@ -2967,9 +2894,6 @@ function showApp() {
     Array.prototype.forEach.call(document.querySelectorAll("[data-theme-choice]"), function (b) {
       b.addEventListener("click", function () { setTheme(b.dataset.themeChoice); });
     });
-    $("direct-tile").addEventListener("click", toggleDirect);
-    $("direct-stop").addEventListener("click", toggleDirect);
-    $("send-tile").addEventListener("click", function () { $("file-input").click(); });
     Array.prototype.forEach.call($("size-seg").children, function (b) {
       b.addEventListener("click", async function () {
         var gb = parseInt(b.dataset.gb, 10);
@@ -2985,11 +2909,12 @@ function showApp() {
     renderPending();
   } else setMonitor(monitorWanted());
   refreshState();
-  refreshDirect();
+  refreshRoute();
   connectEvents();
-  // The phone's hotspot going on or off raises no event, so in hotspot mode look now and then.
+  // The helper can move the page onto a cable or a link at any time, so look now and then.
   if (!showApp._poll) showApp._poll = setInterval(function () {
-    if (direct.kind === "hotspot" && document.visibilityState === "visible") refreshDirect();
+    if (document.visibilityState !== "visible") return;
+    refreshRoute();
   }, 5000);
 }
 

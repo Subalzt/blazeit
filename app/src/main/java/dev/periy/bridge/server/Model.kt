@@ -128,6 +128,26 @@ data class PairStatusDto(val state: String)
 /** A browser reporting the round trip it measured to this phone. */
 @Serializable data class RttReport(val ms: Int = -1)
 
+/**
+ * Which of the phone's links a request arrived on, so the page can say how it is really
+ * connected (through the laptop helper it only sees localhost), and whether a faster one
+ * is sitting unused.
+ */
+@Serializable
+data class RouteDto(
+    /** usb, direct, hotspot, wifi, cellular or other. */
+    val via: String,
+    /** The phone's address that answered. */
+    val host: String,
+    /** The phone's address on a USB cable, when there is one and this request did not use it. */
+    val usb: String? = null,
+    /**
+     * Over the cable, the speed the laptop helper's USB adapter reports: under 600 means the
+     * cable came up at USB 2 (about 40 MB/s instead of 250). 0 when unknown.
+     */
+    val usbMbps: Int = 0,
+)
+
 /** The phone's own offline network, for a laptop helper or another phone to join. */
 @Serializable
 data class DirectDto(

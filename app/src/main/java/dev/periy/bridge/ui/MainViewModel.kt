@@ -1,7 +1,10 @@
 package dev.periy.bridge.ui
 
 import android.app.Application
+import android.content.BroadcastReceiver
+import android.content.Context
 import android.content.Intent
+import android.content.IntentFilter
 import android.content.pm.PackageManager
 import android.net.ConnectivityManager
 import android.net.Network
@@ -19,10 +22,14 @@ import dev.periy.bridge.server.PairedDevice
 import dev.periy.bridge.server.Storage
 import dev.periy.bridge.server.SystemClipboard
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+
+/** UsbManager.ACTION_USB_STATE, which the SDK hides: sticky, with a "connected" extra. */
+private const val USB_STATE = "android.hardware.usb.action.USB_STATE"
 
 data class UiState(
     val addresses: List<Address> = emptyList(),
@@ -39,6 +46,8 @@ data class UiState(
     val estimate: LinkEstimate? = null,
     /** A USB link is present but is not the address being advertised. */
     val fasterLink: Address? = null,
+    /** A computer is on the USB cable, but USB tethering is off, so there is no link over it yet. */
+    val cableNoTether: Boolean = false,
     /** The phone is running its own access point, so a computer can join it directly. */
     val hotspotActive: Boolean = false,
     /** Mobile data is the only route out, so nothing can reach this phone. */
@@ -66,15 +75,47 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         override fun onLost(network: Network) = refreshAddresses()
     }
 
+    /** Whether a computer (not just a charger) is on the USB port, from the sticky USB_STATE broadcast. */
+    @Volatile
+    private var usbHostConnected = false
+
+    /**
+     * USB tethering coming up does not change the default network, so the network callback
+     * never hears of it. The USB state broadcast does: it fires when the cable goes in or out
+     * and when the port's functions change (tethering on or off). The tethering interface gets
+     * its address a moment after, so the addresses are read again a few times.
+     */
+    private val usbReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context, intent: Intent) {
+            usbHostConnected = intent.getBooleanExtra("connected", false)
+            viewModelScope.launch {
+                for (wait in longArrayOf(0, 1_500, 4_000)) {
+                    delay(wait)
+                    refreshAddresses()
+                }
+            }
+        }
+    }
+
     init {
         runCatching { connectivity?.registerDefaultNetworkCallback(networkCallback) }
+        // A protected system broadcast: only Android can send it, so exporting is harmless.
+        runCatching {
+            ContextCompat.registerReceiver(
+                app, usbReceiver, IntentFilter(USB_STATE), ContextCompat.RECEIVER_EXPORTED,
+            )
+        }
         refresh()
     }
 
     override fun onCleared() {
         runCatching { connectivity?.unregisterNetworkCallback(networkCallback) }
+        runCatching { getApplication<Application>().unregisterReceiver(usbReceiver) }
         super.onCleared()
     }
+
+    private fun cableNoTether(addrs: List<Address>): Boolean =
+        usbHostConnected && addrs.none { it.kind == dev.periy.bridge.net.LinkKind.USB }
 
     /** Full refresh. Called on resume, because permissions can change while we are away. */
     fun refresh() {
@@ -104,6 +145,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                 uploadStreams = prefs.uploadStreams,
                 estimate = withContext(Dispatchers.IO) { NetInfo.estimate(app) },
                 fasterLink = NetInfo.fasterLinkAvailable(addrs.firstOrNull()),
+                cableNoTether = cableNoTether(addrs),
                 onlyCellular = NetInfo.onlyCellular(),
                 hotspotActive = NetInfo.hotspotActive(),
                 musicGranted = app.container.music.granted(),
@@ -122,6 +164,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                 addresses = addrs,
                 estimate = withContext(Dispatchers.IO) { NetInfo.estimate(app) },
                 fasterLink = NetInfo.fasterLinkAvailable(addrs.firstOrNull()),
+                cableNoTether = cableNoTether(addrs),
                 onlyCellular = NetInfo.onlyCellular(),
                 hotspotActive = NetInfo.hotspotActive(),
             )

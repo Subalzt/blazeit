@@ -18,6 +18,29 @@ exit /b
 # Close this window to stop all of it.
 
 $ErrorActionPreference = 'Stop'
+
+# A helper started earlier, often an older version, would keep the page's address
+# (localhost:8787) and its own idea of the fastest link, while this one was left on a side
+# port nobody opens. So the newest copy takes over: it closes the others and their windows.
+$me = Get-CimInstance Win32_Process -Filter "ProcessId=$PID"
+$closed = 0
+Get-CimInstance Win32_Process -Filter "Name='powershell.exe'" |
+    Where-Object { $_.ProcessId -ne $PID -and $_.CommandLine -match '(blazeit|xoosh)-pc[^\\/'']*\.bat' -and $_.CommandLine -match 'ReadAllText' } |
+    ForEach-Object {
+        try {
+            $window = Get-CimInstance Win32_Process -Filter "ProcessId=$($_.ParentProcessId)"
+            # Its screen stream to the phone would outlive it and hold the phone's screen.
+            Get-CimInstance Win32_Process -Filter "ParentProcessId=$($_.ProcessId) AND Name='ffmpeg.exe'" |
+                ForEach-Object { Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue }
+            Stop-Process -Id $_.ProcessId -Force
+            $closed++
+            Write-Host ("Closed the BlazeIt helper started at " + $_.CreationDate.ToString('HH:mm') + "; this one takes over.")
+            # Its window would otherwise sit at a prompt, or at "Press any key".
+            if ($window -and $window.Name -eq 'cmd.exe' -and $window.ProcessId -ne $me.ParentProcessId) { Stop-Process -Id $window.ProcessId -Force }
+        } catch { }
+    }
+if ($closed -gt 0) { Start-Sleep -Milliseconds 500 }
+
 $source = @'
 using System;
 using System.Collections.Generic;
@@ -40,6 +63,10 @@ public static class BlazeItPc
     static readonly ManualResetEvent relayReady = new ManualResetEvent(false);
 
     static volatile string phone;
+    /** The phone's address on the USB cable while that is the link in use; null otherwise. */
+    static volatile string usbHost;
+    /** The streams held open to the phone, dropped when it moves so they reconnect on the new link. */
+    static volatile HttpWebRequest controlReq, eventsReq;
     /** Held for as long as this helper runs, so a second copy knows to stop. */
     static Mutex single;
     // The folder keeps the app's earlier name, so a laptop paired before the rename stays paired.
@@ -60,8 +87,8 @@ public static class BlazeItPc
         single = new Mutex(true, "Local\\BlazeItLaptopHelper", out first);
         if (!first)
         {
-            Say("The BlazeIt helper is already running in another window. Close that one first; this one will stop.");
-            Thread.Sleep(6000);
+            Say("Another BlazeIt helper is running and could not be closed (it may be running as administrator). Close it, then start this one again.");
+            Thread.Sleep(8000);
             return;
         }
         Say("BlazeIt laptop helper. Keep this window open; close it to stop.");
@@ -138,6 +165,80 @@ public static class BlazeItPc
         return list;
     }
 
+    /** Points everything at the phone's address on another link: a cable, a direct link, back to Wi-Fi. */
+    static void MoveTo(string host)
+    {
+        usbHost = UsbGateways().Contains(host) ? host : null;
+        if (usbHost != null) CheckCable(host);
+        if (phone == host) return;
+        phone = host;
+        // The trackpad and event streams would otherwise stay on the old link until it times out.
+        foreach (HttpWebRequest r in new HttpWebRequest[] { controlReq, eventsReq })
+        {
+            if (r != null) try { r.Abort(); } catch { }
+        }
+    }
+
+    static string LinkName(string host)
+    {
+        if (host == usbHost) return "over the USB cable";
+        if (directSsid != null) return "on the phone's " + (directSsid.StartsWith("AndroidShare") ? "direct link" : "hotspot");
+        return "over Wi-Fi";
+    }
+
+    /**
+     * The speed the phone's USB tethering adapter reports, in Mbps; 0 when it is not a cable.
+     * Android's tethering reports a figure tied to how the USB port connected: about 426 for
+     * USB 2 (which moves about 40 MB/s) and about 852 or more for USB 3 (225-270 MB/s).
+     */
+    static int UsbLinkMbps(string host)
+    {
+        foreach (NetworkInterface ni in NetworkInterface.GetAllNetworkInterfaces())
+        {
+            if (ni.OperationalStatus != OperationalStatus.Up) continue;
+            foreach (GatewayIPAddressInformation g in ni.GetIPProperties().GatewayAddresses)
+                if (g.Address.ToString() == host) return (int)(ni.Speed / 1000000);
+        }
+        return 0;
+    }
+
+    /**
+     * This laptop's network adapter that reaches the phone: the one with an address on the
+     * phone's subnet (the cable, the phone's hotspot or direct link, or the Wi-Fi the router
+     * shares with it). Its byte counters include everything on that link, not only BlazeIt.
+     */
+    static NetworkInterface LinkAdapter(string host)
+    {
+        IPAddress target;
+        if (host == null || !IPAddress.TryParse(host, out target)) return null;
+        byte[] t = target.GetAddressBytes();
+        foreach (NetworkInterface ni in NetworkInterface.GetAllNetworkInterfaces())
+        {
+            if (ni.OperationalStatus != OperationalStatus.Up) continue;
+            foreach (UnicastIPAddressInformation a in ni.GetIPProperties().UnicastAddresses)
+            {
+                if (a.Address.AddressFamily != AddressFamily.InterNetwork || a.IPv4Mask == null) continue;
+                byte[] ip = a.Address.GetAddressBytes(), mask = a.IPv4Mask.GetAddressBytes();
+                bool same = true;
+                for (int i = 0; i < 4; i++) if ((ip[i] & mask[i]) != (t[i] & mask[i])) same = false;
+                if (same) return ni;
+            }
+        }
+        return null;
+    }
+
+    /** Says once per cable when it has come up at USB 2 speed, which no software can fix. */
+    static string warnedSlowCable;
+
+    static void CheckCable(string host)
+    {
+        int mbps = UsbLinkMbps(host);
+        if (mbps <= 0 || mbps >= 600 || warnedSlowCable == host) return;
+        warnedSlowCable = host;
+        Say("The cable is running at USB 2 speed (about 40 MB/s). A USB 3 cable, in a USB-C port on " +
+            "this laptop, gives about 250 MB/s. Charging cables are usually USB 2.");
+    }
+
     static List<string> Candidates()
     {
         List<string> list = UsbGateways();
@@ -199,8 +300,9 @@ public static class BlazeItPc
             {
                 if (c.Length > 0 && Ping(c))
                 {
-                    if (phone != c) Say("Found the phone at " + c + ".");
-                    phone = c;
+                    bool moved = phone != c;
+                    MoveTo(c);
+                    if (moved) Say("Found the phone at " + c + ", " + LinkName(c) + ".");
                     // The direct link's address is not where to look next time.
                     if (directSsid == null && !UsbGateways().Contains(c)) File.WriteAllText(Path.Combine(Dir, "phone.txt"), c);
                     return;
@@ -227,7 +329,7 @@ public static class BlazeItPc
                 Match m = Regex.Match(typed, @"(\d{1,3}(\.\d{1,3}){3})");
                 if (m.Success && Ping(m.Groups[1].Value))
                 {
-                    phone = m.Groups[1].Value;
+                    MoveTo(m.Groups[1].Value);
                     File.WriteAllText(Path.Combine(Dir, "phone.txt"), phone);
                     Say("Connected to " + phone + ".");
                     return;
@@ -438,7 +540,7 @@ public static class BlazeItPc
             // wrote one line, and a profile of unknown origin is always kept.
             addedProfile = rec.Length >= 2 && rec[1].Trim() == "added";
         }
-        int misses = 0;
+        int misses = 0, usbMisses = 0;
         while (true)
         {
             Thread.Sleep(2500);
@@ -452,12 +554,24 @@ public static class BlazeItPc
                 foreach (string g in UsbGateways()) { if (Ping(g)) { usb = g; break; } }
                 if (usb != null)
                 {
+                    usbMisses = 0;
                     if (directSsid != null) LeaveDirect();
                     if (phone != usb)
                     {
-                        phone = usb;
+                        MoveTo(usb);
                         Say("USB cable to the phone found: using it. It is several times faster than any Wi-Fi link.");
                     }
+                    continue;
+                }
+                // Unplugged, or USB tethering switched off: find the phone over the air again. A
+                // cable still listed gets one more look, in case the phone was only slow to answer.
+                if (usbHost != null && phone == usbHost &&
+                    (!UsbGateways().Contains(usbHost) || ++usbMisses >= 2))
+                {
+                    usbMisses = 0;
+                    Say("The USB cable is gone; looking for the phone over Wi-Fi.");
+                    usbHost = null;
+                    FindPhone(false);
                     continue;
                 }
                 string body = null;
@@ -551,7 +665,7 @@ public static class BlazeItPc
             Thread.Sleep(500);
             if (Ping(host))
             {
-                phone = host;
+                MoveTo(host);
                 Say(hotspot ? "On the phone's hotspot. The page carries on over it, and the internet works."
                             : "On the direct link. The page carries on over it at full speed.");
                 return;
@@ -683,6 +797,7 @@ public static class BlazeItPc
                 req.Timeout = 5000;
                 req.ReadWriteTimeout = 40000; // the phone sends a heartbeat every 15 s
                 req.Headers["Cookie"] = cookie;
+                eventsReq = req;
                 using (WebResponse resp = req.GetResponse())
                 using (StreamReader rd = new StreamReader(resp.GetResponseStream(), Encoding.UTF8))
                 {
@@ -734,11 +849,14 @@ public static class BlazeItPc
         bool announced = false;
         while (true)
         {
+            string at = phone;
             try
             {
                 if (cookie == null) cookie = Pair();
                 session = cookie;
-                HttpWebRequest r = (HttpWebRequest)WebRequest.Create("http://" + phone + ":" + PhonePort + "/api/control/stream");
+                at = phone;
+                HttpWebRequest r = (HttpWebRequest)WebRequest.Create("http://" + at + ":" + PhonePort + "/api/control/stream");
+                controlReq = r;
                 r.Proxy = null;
                 r.UserAgent = Ua;
                 r.Timeout = 5000;
@@ -777,19 +895,21 @@ public static class BlazeItPc
                         }
                         announced = true;
                     }
-                    else Say("Reconnected.");
+                    else Say("Reconnected, " + LinkName(at) + ".");
                     string line;
                     while ((line = rd.ReadLine()) != null)
                     {
                         try { Handle(line); } catch { }
                     }
                 }
-                Say("The phone closed the connection.");
+                if (phone == at) Say("The phone closed the connection.");
             }
             catch (Exception e)
             {
-                Say("Lost the phone (" + e.Message + ").");
+                // Moving to another link drops this stream on purpose; it reconnects there.
+                if (phone == at) Say("Lost the phone (" + e.Message + ").");
             }
+            controlReq = null;
             Thread.Sleep(800);
             if (phone == null || !Ping(phone)) FindPhone(false);
         }
@@ -915,6 +1035,18 @@ public static class BlazeItPc
 
     // ------------------------------------------------------------------ localhost relay
 
+    [DllImport("kernel32.dll")] static extern bool SetHandleInformation(IntPtr handle, int mask, int flags);
+
+    /**
+     * Stops programs this helper starts (scrcpy, ffmpeg, and the adb server scrcpy starts, which
+     * lives on) from inheriting this socket. Without it, a replaced helper's page port stays held
+     * by them, and the next helper cannot serve the page on it.
+     */
+    static void KeepToSelf(Socket s)
+    {
+        try { SetHandleInformation(s.Handle, 1, 0); } catch { } // HANDLE_FLAG_INHERIT off
+    }
+
     static void RelayLoop()
     {
         TcpListener l = null;
@@ -924,6 +1056,7 @@ public static class BlazeItPc
             {
                 l = new TcpListener(IPAddress.Loopback, port);
                 l.Start();
+                KeepToSelf(l.Server);
                 localPort = port;
                 break;
             }
@@ -936,47 +1069,98 @@ public static class BlazeItPc
         }
         relayReady.Set();
         if (l == null) return;
+        Thread sweep = new Thread(SweepLoop);
+        sweep.IsBackground = true;
+        sweep.Start();
         while (true)
         {
             TcpClient c = l.AcceptTcpClient();
-            Thread t = new Thread(delegate () { Bridge(c); });
+            KeepToSelf(c.Client);
+            Thread t = new Thread(delegate ()
+            {
+                Bridge(c);
+            });
             t.IsBackground = true;
             t.Start();
         }
     }
 
+    /** One browser connection relayed to the phone: which address it went to, and when bytes last moved. */
+    class Relayed
+    {
+        public TcpClient browser, toPhone;
+        public string host;
+        public volatile int last = Environment.TickCount;
+    }
+
+    static readonly List<Relayed> relayed = new List<Relayed>();
+
+    /**
+     * The browser keeps its connections to localhost open and reuses them, and each one stays
+     * tied to the link it was opened over. After a move to the cable, downloads would carry on
+     * over the old Wi-Fi. So once such a connection goes quiet (between requests, or because
+     * the old link is gone) it is closed, and the browser opens a new one over the new link.
+     * A transfer still running over the old link is left to finish.
+     */
+    static void SweepLoop()
+    {
+        while (true)
+        {
+            Thread.Sleep(1000);
+            string now = phone;
+            Relayed[] all;
+            lock (relayed) all = relayed.ToArray();
+            foreach (Relayed r in all)
+            {
+                if (r.host == now || unchecked(Environment.TickCount - r.last) < 1500) continue;
+                try { r.browser.Close(); } catch { }
+                try { r.toPhone.Close(); } catch { }
+            }
+        }
+    }
+
     static void Bridge(TcpClient browser)
     {
-        TcpClient toPhone = new TcpClient();
+        Relayed r = new Relayed();
+        r.browser = browser;
+        r.toPhone = new TcpClient();
+        r.host = phone;
+        lock (relayed) relayed.Add(r);
         try
         {
             browser.NoDelay = true;
-            toPhone.NoDelay = true;
+            r.toPhone.NoDelay = true;
             browser.ReceiveBufferSize = browser.SendBufferSize = 4 << 20;
-            toPhone.ReceiveBufferSize = toPhone.SendBufferSize = 4 << 20;
-            toPhone.Connect(phone, PhonePort);
-            NetworkStream a = browser.GetStream(), b = toPhone.GetStream();
-            Thread up = new Thread(delegate () { Pump(a, b, toPhone.Client); });
+            r.toPhone.ReceiveBufferSize = r.toPhone.SendBufferSize = 4 << 20;
+            r.toPhone.Connect(r.host, PhonePort);
+            KeepToSelf(r.toPhone.Client);
+            NetworkStream a = browser.GetStream(), b = r.toPhone.GetStream();
+            Thread up = new Thread(delegate () { Pump(a, b, r.toPhone.Client, r); });
             up.IsBackground = true;
             up.Start();
-            Pump(b, a, browser.Client);
+            Pump(b, a, browser.Client, r);
             up.Join();
         }
         catch { }
         finally
         {
+            lock (relayed) relayed.Remove(r);
             browser.Close();
-            toPhone.Close();
+            r.toPhone.Close();
         }
     }
 
-    static void Pump(NetworkStream from, NetworkStream to, Socket toSocket)
+    static void Pump(NetworkStream from, NetworkStream to, Socket toSocket, Relayed r)
     {
         byte[] buf = new byte[1 << 20];
         try
         {
             int n;
-            while ((n = from.Read(buf, 0, buf.Length)) > 0) to.Write(buf, 0, n);
+            while ((n = from.Read(buf, 0, buf.Length)) > 0)
+            {
+                r.last = Environment.TickCount;
+                to.Write(buf, 0, n);
+            }
         }
         catch { }
         try { toSocket.Shutdown(SocketShutdown.Send); } catch { }

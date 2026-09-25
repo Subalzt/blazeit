@@ -296,6 +296,7 @@ private fun BlazeItUi(vm: MainViewModel) {
                                 transfers, files, sendStatus,
                                 toggleDirect = toggleDirect,
                                 pickFiles = { pickFiles.launch(arrayOf("*/*")) },
+                                openTether = openHotspot,
                             ) {
                                 if (running) BridgeService.stop(ctx) else BridgeService.start(ctx)
                             }
@@ -383,12 +384,13 @@ private fun LazyListScope.homeTab(
     sendStatus: String,
     toggleDirect: () -> Unit,
     pickFiles: () -> Unit,
+    openTether: () -> Unit,
     onToggle: () -> Unit,
 ) {
     // Someone is asking to connect. It goes first: it is the one thing waiting on you.
     items(requests, key = { it.id }) { req -> RequestCard(req, vm) }
 
-    item { ServerCard(state, running, onToggle) }
+    item { ServerCard(state, running, onToggle, openTether) }
 
     item {
         Row(
@@ -514,7 +516,7 @@ private fun RequestCard(req: PairRequest, vm: MainViewModel) {
  * the address to open in large type, and the switch right there.
  */
 @Composable
-private fun ServerCard(state: UiState, running: Boolean, onToggle: () -> Unit) {
+private fun ServerCard(state: UiState, running: Boolean, onToggle: () -> Unit, openTether: () -> Unit) {
     val ctx = LocalContext.current
     var showQr by remember { mutableStateOf(false) }
     val url = state.primaryUrl
@@ -558,10 +560,12 @@ private fun ServerCard(state: UiState, running: Boolean, onToggle: () -> Unit) {
             Text("Turn it on to connect a computer or a phone.", style = BodyStyle, color = soft)
             return@Column
         }
-        when {
-            state.storageMode == Storage.Mode.NO_DESTINATION -> RowNote("Pick where received files go, in Settings.", soft)
-            url == null -> RowNote("Join Wi-Fi, or start the direct link below.", soft)
-            state.onlyCellular -> RowNote("Mobile data cannot be reached. Use the direct link or USB.", soft)
+        // The cable is in, but it carries nothing until USB tethering is on; Android lets only
+        // the phone's own settings switch that.
+        if (state.cableNoTether) {
+            RowNote("Cable connected. Turn on USB tethering for full speed.", fg)
+            Spacer(Modifier.height(10.dp))
+            OnYellowPill("USB tethering", BlazeIcons.Bolt, openTether)
         }
         if (url == null) return@Column
 

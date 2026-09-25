@@ -295,6 +295,20 @@ class BridgeServer(
             call.response.header(HttpHeaders.CacheControl, "no-store")
             call.respond(directDto())
         }
+        get("/api/route") {
+            call.response.header(HttpHeaders.CacheControl, "no-store")
+            val all = dev.periy.bridge.net.NetInfo.addresses()
+            val (here, via) = call.arrivedOn(all)
+            val usb = all.firstOrNull { it.kind == dev.periy.bridge.net.LinkKind.USB && !it.isIpv6 }
+            call.respond(
+                RouteDto(
+                    via = via.name.lowercase(),
+                    host = here,
+                    usb = usb?.host?.takeIf { via != dev.periy.bridge.net.LinkKind.USB },
+                    usbMbps = if (via == dev.periy.bridge.net.LinkKind.USB) Monitor.laptopUsbMbps() else 0,
+                )
+            )
+        }
         post("/api/direct/start") {
             // In hotspot mode only the phone can turn its hotspot on; say so.
             if (config.laptopLink() == "hotspot" && call.request.queryParameters["for"] != "phone") {
@@ -393,6 +407,14 @@ class BridgeServer(
         }
     }
 
+
+    /** The phone's address a request came in on, and the kind of link that is: the socket's own end says. */
+    private fun ApplicationCall.arrivedOn(
+        all: List<dev.periy.bridge.net.Address> = dev.periy.bridge.net.NetInfo.addresses(),
+    ): Pair<String, dev.periy.bridge.net.LinkKind> {
+        val here = request.local.localAddress.removePrefix("::ffff:").substringBefore('%')
+        return here to (all.firstOrNull { it.host == here }?.kind ?: dev.periy.bridge.net.LinkKind.OTHER)
+    }
     private fun directDto(): DirectDto {
         if (config.laptopLink() == "hotspot" && direct.state.value !is dev.periy.bridge.net.DirectLink.State.On) return hotspotDto()
         return directLinkDto()
