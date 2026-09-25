@@ -1209,10 +1209,13 @@ private fun LazyListScope.settingsTab(
                 first = true, icon = BlazeIcons.File, iconColor = Bridge.Orange,
                 onClick = { vm.allFilesIntent()?.let(openSettings) },
             ) { if (state.browsable) Check(true) else Text("Allow", style = LabelStyle, color = Bridge.Blue) }
+            SettingRow("Sync clipboard", icon = BlazeIcons.Paste, iconColor = Bridge.Yellow) {
+                Toggle(state.clipSync) { vm.setClipSync(it) }
+            }
             SettingRow(
-                "Sync clipboard",
-                icon = BlazeIcons.Paste, iconColor = Bridge.Yellow,
-            ) { Toggle(state.clipSync) { vm.setClipSync(it) } }
+                "Laptop videos here", "From the Play on phone bookmark",
+                icon = BlazeIcons.PlayPause, iconColor = Bridge.Danger,
+            ) { Toggle(state.videoPip) { vm.setVideoPip(it) } }
             SettingRow(
                 "Notifications on the laptop",
                 if (state.notifAccess) null else "Needs notification access",
