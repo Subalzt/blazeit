@@ -277,15 +277,27 @@
 
   /* ---------------------------------------------------------------- phone storage */
   .fs-head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
-  .crumbs { display: flex; align-items: center; flex-wrap: wrap; gap: 2px; min-width: 0; font-size: 15px; }
-  .crumbs button { border: 0; background: none; color: var(--blue); font-weight: 600; cursor: pointer; padding: 5px 8px; border-radius: 10px; }
+  .fs-head { flex-wrap: nowrap; }
+  .crumbs { display: flex; align-items: center; gap: 2px; min-width: 0; flex: 1 1 auto; font-size: 15px; overflow: hidden; }
+  .crumbs button { border: 0; background: none; color: var(--blue); font-weight: 600; cursor: pointer; padding: 5px 8px; border-radius: 10px;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 220px; flex: 0 0 auto; }
+  /* The folder you are in gives way first; the ones above keep their names. */
+  .crumbs button:last-child { max-width: none; flex: 0 1 auto; min-width: 0; }
+  .crumbs i { flex: 0 0 auto; }
+  .fs-head .btn { flex: 0 0 auto; }
   .crumbs button:hover { background: var(--surface-2); }
   .crumbs button:last-child { color: var(--txt); cursor: default; background: none; }
   .crumbs i { color: var(--faint); font-style: normal; }
   #fs-list .row.dir { cursor: pointer; border-radius: 14px; }
   #fs-list .row.dir:hover { background: var(--surface-2); }
-  #fs-list .row + .row { border-top: 1px solid var(--line); }
+  /* A straight divider drawn inside the row: a border would follow the rounded hover corners. */
+  #fs-list .row { position: relative; }
+  #fs-list .row + .row::before { content: ""; position: absolute; left: 12px; right: 12px; top: 0; height: 1px; background: var(--line); }
   #fs-list .cover { width: 40px; height: 40px; flex-basis: 40px; border-radius: 10px; }
+  #fs-list .row.file { cursor: pointer; border-radius: 14px; }
+  #fs-list .row.file:hover { background: var(--surface-2); }
+
+  /* The preview: a file from the phone, full size, before it is downloaded. */
   /* Notifications: the list on its tab, and the cards that pop up as new ones arrive. */
   .notif { display: flex; gap: 12px; padding: 14px 4px; min-width: 0; }
   .notif + .notif { border-top: 1px solid var(--line); }
@@ -306,6 +318,33 @@
     animation: toast-in .18s ease-out; }
   .toasts .notif + .notif { border-top: 0; }
   @keyframes toast-in { from { opacity: 0; transform: translateY(-8px); } }
+  .viewer { position: fixed; inset: 0; z-index: 60; background: rgba(8,8,10,.97); backdrop-filter: blur(6px); color: #fff; display: flex; flex-direction: column; }
+  .viewer[hidden] { display: none; }
+  .viewer-bar { display: flex; align-items: center; gap: 10px; padding: 12px 16px; min-width: 0; }
+  .viewer-bar .grow { min-width: 0; }
+  .viewer-bar b { display: block; font-size: 15px; font-weight: 650; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .viewer-bar span { font-size: 12.5px; opacity: .65; }
+  .viewer-bar .btn.ghost { background: rgba(255,255,255,.12); color: #fff; }
+  .viewer-main { flex: 1; min-height: 0; display: flex; align-items: center; gap: 8px; padding: 0 8px 16px; }
+  .viewer-stage { flex: 1; min-width: 0; height: 100%; display: flex; align-items: center; justify-content: center; }
+  .viewer-stage img, .viewer-stage video { max-width: 100%; max-height: 100%; object-fit: contain; border-radius: 6px; }
+  .viewer-stage audio { width: min(560px, 100%); }
+  .viewer-stage iframe { width: 100%; height: 100%; border: 0; border-radius: 8px; background: #fff; }
+  .viewer-stage pre { width: min(1000px, 100%); height: 100%; margin: 0; overflow: auto; padding: 18px 20px; border-radius: 10px;
+    background: var(--surface); color: var(--txt); font: 13px/1.55 ui-monospace, SFMono-Regular, Consolas, monospace; white-space: pre-wrap; word-break: break-word; }
+  .viewer-stage .doc { font-family: inherit; font-size: 14.5px; line-height: 1.6; }
+  .viewer-stage .none { text-align: center; opacity: .85; font-size: 14px; }
+  .viewer-stage .none .appicon { margin: 0 auto 12px; transform: scale(1.6); }
+  .viewer-stage .big { max-width: 440px; opacity: 1; }
+  .viewer-stage .big h3 { margin: 18px 0 6px; font-size: 20px; font-weight: 750; }
+  .viewer-stage .big p { margin: 0 0 18px; opacity: .75; line-height: 1.5; }
+  .viewer-stage .big .btn { margin: 0 4px; }
+  .viewer-stage .big .btn.ghost { background: rgba(255,255,255,.12); color: #fff; }
+  .viewer-nav { flex: 0 0 44px; height: 64px; border: 0; border-radius: 12px; background: rgba(255,255,255,.1); color: #fff; font-size: 28px; cursor: pointer; }
+  .viewer-nav:hover { background: rgba(255,255,255,.2); }
+  .viewer-nav:disabled { opacity: .25; cursor: default; }
+  .viewer-note { font-size: 12.5px; opacity: .65; text-align: center; padding: 0 16px 10px; }
+  @media (max-width: 640px) { .viewer-nav { flex-basis: 34px; } }
 
   /* ---------------------------------------------------------------- music */
   .music-tools { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin: 0 0 12px; }
@@ -483,6 +522,9 @@
     .main { margin-left: 0; padding: 22px 16px calc(var(--player-h, 0px) + 96px); }
     .page-head h1 { font-size: 30px; }
     .status-line { padding: 12px 16px; align-items: flex-start; }
+    /* The Phone tab's path gets a line of its own; Up and Download folder go under it. */
+    .fs-head { flex-wrap: wrap; }
+    .crumbs { flex: 1 1 100%; }
     .status-line .dot { margin-top: 6px; }
     .status-line .who { flex-direction: column; gap: 1px; }
     .status-line #hero-state { display: none; }
@@ -805,6 +847,19 @@
 </div>
 <audio id="audio" preload="auto"></audio>
 <div class="toasts" id="toasts" aria-live="polite"></div>
+<div class="viewer" id="viewer" hidden role="dialog" aria-modal="true" aria-label="Preview">
+  <div class="viewer-bar">
+    <div class="grow"><b id="viewer-name"></b><span id="viewer-meta"></span></div>
+    <button class="btn sm" id="viewer-dl">Download</button>
+    <button class="btn sm ghost" id="viewer-close" title="Close (Esc)">Close</button>
+  </div>
+  <div class="viewer-main">
+    <button class="viewer-nav" id="viewer-prev" title="Previous (&larr;)" aria-label="Previous">&lsaquo;</button>
+    <div class="viewer-stage" id="viewer-stage"></div>
+    <button class="viewer-nav" id="viewer-next" title="Next (&rarr;)" aria-label="Next">&rsaquo;</button>
+  </div>
+  <p class="viewer-note" id="viewer-note" hidden></p>
+</div>
 
 <script>
 "use strict";
@@ -2326,7 +2381,8 @@ function renderFs(d) {
   crumb("Phone", "", !parts.length);
   parts.forEach(function (p, i) { crumb(p, parts.slice(0, i + 1).join("/"), i === parts.length - 1); });
   $("fs-up").hidden = !parts.length;
-  $("fs-zip").hidden = !d.granted || !d.entries.length;
+  // The whole phone as one zip is never what anyone wants; a folder inside it is.
+  $("fs-zip").hidden = !d.granted || !d.entries.length || !parts.length;
   host.innerHTML = "";
   if (!d.granted) {
     host.innerHTML = '<div class="banner bad">Browsing is off. On the phone: Settings &rarr; Laptop access &rarr; Browse this phone, then allow it.</div>';
@@ -2334,10 +2390,11 @@ function renderFs(d) {
   }
   if (d.message && !d.entries.length) { host.innerHTML = '<p class="empty"></p>'; host.firstChild.textContent = d.message; return; }
   if (!d.entries.length) { host.innerHTML = '<p class="empty">This folder is empty.</p>'; return; }
+  var files = [];
   d.entries.forEach(function (e) {
     var path = fsJoin(d.path, e.name);
     var row = document.createElement("div");
-    row.className = "row" + (e.dir ? " dir" : "");
+    row.className = "row" + (e.dir ? " dir" : " file");
     var media = !e.dir && (e.mime.indexOf("image/") === 0 || e.mime.indexOf("video/") === 0);
     if (media) {
       var box = document.createElement("div");
@@ -2346,7 +2403,7 @@ function renderFs(d) {
       var img = document.createElement("img");
       img.loading = "lazy"; img.alt = "";
       img.onerror = function () { img.remove(); };
-      img.src = "/api/fs/thumb?path=" + encodeURIComponent(path);
+      img.src = "/api/fs/thumb?path=" + encodeURIComponent(path) + "&v=2"; // v: bumped when thumbnails change, past the day-long cache
       box.appendChild(img);
       row.appendChild(box);
     } else {
@@ -2363,10 +2420,162 @@ function renderFs(d) {
     if (e.dir) {
       row.onclick = function () { fsOpen(path); };
     } else {
-      var entry = { id: null, url: "/api/fs/file?path=" + encodeURIComponent(path), name: e.name, size: e.size, mime: e.mime };
-      row.appendChild(btn("Download", function () { startDownload(entry); }, ""));
+      var entry = fsEntry(d.path, e);
+      files.push(entry);
+      var at = files.length - 1;
+      row.title = e.preview ? "Click to preview" : "Click for details";
+      row.onclick = function () { openViewer(files, at); };
+      row.appendChild(btn("Download", function (ev) { ev.stopPropagation(); startDownload(entry); }, ""));
     }
     host.appendChild(row);
+  });
+}
+
+/** A phone file as the downloader and the preview know it. */
+function fsEntry(dir, e) {
+  var q = "?path=" + encodeURIComponent(fsJoin(dir, e.name));
+  return { id: null, url: "/api/fs/file" + q, q: q, name: e.name, size: e.size, mime: e.mime, modified: e.modified, preview: e.preview || "" };
+}
+
+// ------------------------------------------------------------------ preview
+//
+// Look before downloading: photos, videos and music straight from the phone (videos seek,
+// since the phone serves byte ranges), PDFs in the browser's viewer, text files, and the words
+// of Word, PowerPoint and Excel files, which browsers cannot open. Photos in formats browsers
+// cannot decode (HEIC, DNG) are converted on the phone. Arrow keys step through the folder.
+
+var viewer = { items: [], i: 0 };
+var TEXT_PREVIEW = 256 * 1024;
+var MB = 1024 * 1024;
+/**
+ * Past these, a preview would stream most of a film (or a huge scan) through the page just to
+ * look at it, tying up the link and the phone: the viewer says so and offers the download, and
+ * previewing anyway stays one click away. Text has no limit: only its start is ever fetched.
+ */
+var PREVIEW_LIMIT = { video: 500 * MB, audio: 200 * MB, image: 200 * MB, photo: 200 * MB, pdf: 100 * MB, doc: 50 * MB };
+
+function openViewer(items, i) {
+  viewer.items = items; viewer.i = i;
+  $("viewer").hidden = false;
+  document.body.style.overflow = "hidden";
+  showViewerItem();
+}
+
+function closeViewer() {
+  $("viewer").hidden = true;
+  $("viewer-stage").innerHTML = ""; // stops a playing video or song
+  document.body.style.overflow = "";
+}
+
+function stepViewer(d) {
+  var n = viewer.i + d;
+  if (n < 0 || n >= viewer.items.length) return;
+  viewer.i = n;
+  showViewerItem();
+}
+
+function showViewerItem(anyway) {
+  var it = viewer.items[viewer.i], stage = $("viewer-stage"), note = $("viewer-note");
+  stage.innerHTML = ""; note.hidden = true;
+  $("viewer-name").textContent = it.name;
+  $("viewer-meta").textContent = bytes(it.size) + " · " +
+    new Date(it.modified).toLocaleString(undefined, { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" }) +
+    " · " + (viewer.i + 1) + " of " + viewer.items.length;
+  $("viewer-prev").disabled = viewer.i === 0;
+  $("viewer-next").disabled = viewer.i === viewer.items.length - 1;
+  $("viewer-dl").onclick = function () { startDownload(it); };
+  var inline = "/api/fs/file" + it.q + "&inline=1";
+
+  function nothing(msg) {
+    var box = document.createElement("div");
+    box.className = "none";
+    box.appendChild(appIcon("file", "grey"));
+    var p = document.createElement("p"); p.textContent = msg; box.appendChild(p);
+    stage.appendChild(box);
+  }
+  function tell(msg) { note.textContent = msg; note.hidden = false; }
+
+  var limit = PREVIEW_LIMIT[it.preview];
+  if (limit && it.size > limit && !anyway) {
+    var kind = it.preview === "video" ? ["video", "red", "watch"] : it.preview === "audio" ? ["music", "red", "play"]
+      : it.preview === "image" || it.preview === "photo" ? ["image", "purple", "view"] : ["file", "grey", "open"];
+    var box = document.createElement("div");
+    box.className = "none big";
+    box.appendChild(appIcon(kind[0], kind[1]));
+    var h = document.createElement("h3"); h.textContent = "Too big to preview"; box.appendChild(h);
+    var msg = document.createElement("p");
+    msg.textContent = "This file is " + bytes(it.size) + ". Download it to this laptop, then " + kind[2] +
+      " it there. It comes across at full speed over several connections.";
+    box.appendChild(msg);
+    var dl = btn("Download", function () {
+      startDownload(it);
+      dl.disabled = true; dl.textContent = "Downloading";
+      msg.textContent = "Downloading. Close this to follow it in the panel at the bottom right, then " + kind[2] + " it from the laptop's Downloads folder.";
+    }, "blue");
+    dl.className = "btn sm";
+    box.appendChild(dl);
+    box.appendChild(btn("Preview anyway", function () { showViewerItem(true); }, "ghost"));
+    stage.appendChild(box);
+    return;
+  }
+
+  if (it.preview === "image" || it.preview === "photo") {
+    var img = document.createElement("img");
+    img.alt = it.name;
+    img.onerror = function () { stage.innerHTML = ""; nothing("This picture could not be shown. Download it to open it."); };
+    img.src = it.preview === "photo" ? "/api/fs/view" + it.q : inline;
+    if (it.preview === "photo") tell("Shown as a converted copy; Download gets the original.");
+    stage.appendChild(img);
+  } else if (it.preview === "video" || it.preview === "audio") {
+    var media = document.createElement(it.preview);
+    media.controls = true; media.autoplay = true; media.preload = "metadata";
+    media.onerror = function () { stage.innerHTML = ""; nothing("The browser cannot play this format. Download it to play it."); };
+    media.src = inline;
+    stage.appendChild(media);
+  } else if (it.preview === "pdf") {
+    var fr = document.createElement("iframe");
+    fr.title = it.name; fr.src = inline;
+    stage.appendChild(fr);
+  } else if (it.preview === "text" || it.preview === "doc") {
+    var pre = document.createElement("pre");
+    if (it.preview === "doc") pre.className = "doc";
+    pre.textContent = "Loading...";
+    stage.appendChild(pre);
+    var want = it;
+    (it.preview === "doc"
+      ? api("/api/fs/text" + it.q).then(function (r) { return r.json(); }).then(function (d) {
+          if (!d.found) throw new Error("none");
+          tell("The document's text only; Download it for the layout and pictures.");
+          return d.text;
+        })
+      // Only the start of a long file: enough to see what it is.
+      : fetch(inline, { credentials: "same-origin", headers: { Range: "bytes=0-" + (TEXT_PREVIEW - 1) } }).then(function (r) {
+          if (!r.ok) throw new Error("status " + r.status);
+          if (it.size > TEXT_PREVIEW) tell("The first " + bytes(TEXT_PREVIEW) + " of " + bytes(it.size) + ".");
+          return r.text();
+        })
+    ).then(function (text) {
+      if (viewer.items[viewer.i] === want) pre.textContent = text;
+    }).catch(function () {
+      if (viewer.items[viewer.i] !== want) return;
+      stage.innerHTML = ""; nothing("Nothing to preview in this file. Download it to open it.");
+    });
+  } else {
+    nothing("There is no preview for this kind of file. Download it to open it.");
+  }
+}
+
+function setupViewer() {
+  $("viewer-close").onclick = closeViewer;
+  $("viewer-prev").onclick = function () { stepViewer(-1); };
+  $("viewer-next").onclick = function () { stepViewer(1); };
+  // A click on the dark backdrop closes it, as it does a photo viewer.
+  $("viewer-stage").addEventListener("click", function (e) { if (e.target === e.currentTarget) closeViewer(); });
+  document.addEventListener("keydown", function (e) {
+    if ($("viewer").hidden) return;
+    if (e.key === "Escape") closeViewer();
+    else if (e.key === "ArrowLeft") { e.preventDefault(); stepViewer(-1); }
+    else if (e.key === "ArrowRight") { e.preventDefault(); stepViewer(1); }
   });
 }
 
@@ -3150,7 +3359,7 @@ function setupPlayer() {
   // Keyboard, when you are not typing: space plays and pauses, arrows seek.
   document.addEventListener("keydown", function (e) {
     var tag = (document.activeElement && document.activeElement.tagName) || "";
-    if (tag === "INPUT" || tag === "TEXTAREA" || !currentTrack()) return;
+    if (tag === "INPUT" || tag === "TEXTAREA" || !currentTrack() || !$("viewer").hidden) return;
     if (e.code === "Space") { e.preventDefault(); togglePlay(); }
     else if (e.code === "ArrowRight") { audio.currentTime = Math.min(audio.currentTime + 10, audio.duration || 1e9); }
     else if (e.code === "ArrowLeft") { audio.currentTime = Math.max(audio.currentTime - 10, 0); }
@@ -3212,6 +3421,7 @@ function showApp() {
     setupPlayer();
     setupPhoneFiles();
     setupNotifs();
+    setupViewer();
     wireMonitor();
     $("measure").addEventListener("click", measure);
     Array.prototype.forEach.call(document.querySelectorAll("[data-theme-choice]"), function (b) {

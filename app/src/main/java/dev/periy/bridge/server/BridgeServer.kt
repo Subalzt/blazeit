@@ -360,11 +360,43 @@ class BridgeServer(
                 call.respond(HttpStatusCode.NotFound, ApiResult(false, "No such file"))
                 return@get
             }
+            var type = runCatching { ContentType.parse(PhoneFiles.mimeOf(f.name)) }.getOrDefault(ContentType.Application.OctetStream)
+            // "?inline=1" is the page's preview: the browser shows the file instead of saving it.
+            // Only kinds a browser displays by itself are sent inline, text always as plain text,
+            // and everything inline is sandboxed (bar PDF, whose viewer will not run sandboxed),
+            // so an HTML or SVG file on the phone can never run as this page.
+            val preview = PhoneFiles.previewOf(f.name)
+            val inline = call.request.queryParameters["inline"] == "1" &&
+                preview in setOf("image", "video", "audio", "pdf", "text")
+            if (inline && preview == "text") type = ContentType.Text.Plain.withCharset(Charsets.UTF_8)
+            if (inline && preview != "pdf") call.response.header("Content-Security-Policy", "sandbox")
+            call.response.header("X-Content-Type-Options", "nosniff")
             call.response.header(
                 HttpHeaders.ContentDisposition,
-                ContentDisposition.Attachment.withParameter(ContentDisposition.Parameters.FileName, f.name).toString(),
+                (if (inline) ContentDisposition.Inline else ContentDisposition.Attachment)
+                    .withParameter(ContentDisposition.Parameters.FileName, f.name).toString(),
             )
-            call.respond(FileRangeContent(f, runCatching { ContentType.parse(PhoneFiles.mimeOf(f.name)) }.getOrDefault(ContentType.Application.OctetStream)))
+            call.respond(FileRangeContent(f, type))
+        }
+        // A photo the browser cannot decode itself (HEIC, DNG...), as a large JPEG to look at.
+        get("/api/fs/view") {
+            val f = phoneFiles.resolve(call.request.queryParameters["path"])
+            val bytes = if (phoneFiles.granted() && f != null && f.isFile && PhoneFiles.previewOf(f.name) == "photo")
+                withContext(Dispatchers.IO) { phoneFiles.viewImage(f, 2560) } else null
+            if (bytes == null) {
+                call.respond(HttpStatusCode.NotFound, ApiResult(false, "No preview for this file"))
+                return@get
+            }
+            call.response.header(HttpHeaders.CacheControl, "private, max-age=86400")
+            call.respondBytes(bytes, ContentType.Image.JPEG)
+        }
+        // The text of an Office or OpenDocument file, which browsers cannot show.
+        get("/api/fs/text") {
+            val f = phoneFiles.resolve(call.request.queryParameters["path"])
+            val text = if (phoneFiles.granted() && f != null && f.isFile && PhoneFiles.previewOf(f.name) == "doc")
+                withContext(Dispatchers.IO) { phoneFiles.documentText(f) } else null
+            call.response.header(HttpHeaders.CacheControl, "no-store")
+            call.respond(DocTextDto(text != null, text.orEmpty()))
         }
         get("/api/fs/thumb") {
             val f = phoneFiles.resolve(call.request.queryParameters["path"])
