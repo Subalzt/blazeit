@@ -55,6 +55,12 @@ data class UiState(
     val browsable: Boolean = false,
     /** Clipboard follows between phone and laptop without pressing Send. */
     val clipSync: Boolean = true,
+    /** New screenshots go on the shared clipboard; and whether BlazeIt may read the photos for it. */
+    val screenshotClip: Boolean = true,
+    val canReadPhotos: Boolean = false,
+    /** Copies in any app reach the laptop at once: the log permission and the overlay (see ClipWatch). */
+    val watchLogs: Boolean = false,
+    val watchOverlay: Boolean = false,
     /** Music permission granted, and how many tracks the library holds. */
     val musicGranted: Boolean = false,
     val musicTracks: Int = 0,
@@ -149,6 +155,10 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                 musicGranted = app.container.music.granted(),
                 browsable = Build.VERSION.SDK_INT >= 30 && android.os.Environment.isExternalStorageManager(),
                 clipSync = prefs.clipSync,
+                screenshotClip = prefs.screenshotClip,
+                canReadPhotos = dev.periy.bridge.server.canReadPhotos(app),
+                watchLogs = dev.periy.bridge.server.ClipWatch.canReadLogs(app),
+                watchOverlay = dev.periy.bridge.server.ClipWatch.canOverlay(app),
                 musicTracks = withContext(Dispatchers.IO) { app.container.music.tracks(refresh = true).size },
             )
         }
@@ -280,8 +290,14 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         refresh()
     }
 
-    fun setMaxUploadSize(bytes: Long) {
-        getApplication<Application>().container.prefs.tusMaxSize = bytes
+
+    /** Android's "Display over other apps" screen for BlazeIt, which the copy watch needs. */
+    fun overlayIntent(): Intent =
+        Intent(android.provider.Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:" + getApplication<Application>().packageName))
+
+    fun setScreenshotClip(on: Boolean) {
+        getApplication<Application>().container.prefs.screenshotClip = on
+        if (on) getApplication<Application>().container.prefs.clipSync = true
         refresh()
     }
 
@@ -444,11 +460,41 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     private val _clipStatus = MutableStateFlow("")
     val clipStatus: StateFlow<String> = _clipStatus
 
-    /** Publishes text to the PC. The browser sees it over SSE within a frame or two. */
+    /**
+     * Publishes text to the PC. The browser sees it over SSE within a frame or two. Typing
+     * calls this by itself, so it only speaks up when something went wrong.
+     */
     fun sendClipboard(text: String) {
         val ok = getApplication<Application>().container.clipboard.set(text)
-        flashClip(if (ok) "Sent to the computer" else "Too long to send")
+        if (!ok) flashClip("Too long to send")
     }
+
+    /** Recent clipboard items, newest first. */
+    val clipHistory: StateFlow<List<dev.periy.bridge.server.ClipMeta>>
+        get() = getApplication<Application>().container.clipboard.history
+
+    fun historyFile(v: Long): java.io.File? = getApplication<Application>().container.clipboard.historyBlob(v)
+
+    /** Puts a history item back on the clipboard: here, on the phone's own, and on the computer. */
+    fun reuseClip(v: Long) {
+        val app = getApplication<Application>()
+        val c = app.container.clipboard
+        val m = c.reuse(v) ?: return
+        c.blob()?.let { SystemClipboard.writeFile(app, it, m.name, m.mime) } ?: SystemClipboard.write(app, m.text)
+        flashClip("Back on the clipboard")
+    }
+
+    fun forgetClip(v: Long) {
+        val app = getApplication<Application>()
+        val wasCurrent = app.container.clipboard.meta.value.v == v
+        app.container.clipboard.forget(v)
+        if (wasCurrent) SystemClipboard.clear(app)
+    }
+
+    fun forgetAllClips() = getApplication<Application>().container.clipboard.forgetAll()
+
+    /** The picture or file on the shared clipboard, for the panel's preview. */
+    fun clipFile(): java.io.File? = getApplication<Application>().container.clipboard.blob()
 
     /**
      * Copies the phone's system clipboard into the shared slot.
@@ -459,30 +505,34 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
      * Making that a visible, deliberate action is the honest design, not a workaround.
      */
     fun pasteFromDevice() {
-        val app = getApplication<Application>()
-        val text = SystemClipboard.read(app)
-        if (text.isNullOrEmpty()) {
-            flashClip("Nothing in the phone clipboard")
-            return
-        }
-        val ok = app.container.clipboard.set(text)
-        flashClip(if (ok) "Clipboard sent to the computer" else "Too long to send")
+        // Text, a picture or a file: whatever was copied last on the phone.
+        flashClip(ClipSync.sendFromPhone(getApplication(), always = true)
+            .replace("the laptop", "the computer").ifEmpty { "Nothing in the phone clipboard" })
     }
 
-    /** Puts the shared text into the phone's system clipboard, ready to paste anywhere. */
+    /** What the shared clipboard holds, for the panel: text, a picture, a file. */
+    val clipMeta: StateFlow<dev.periy.bridge.server.ClipMeta>
+        get() = getApplication<Application>().container.clipboard.meta
+
+    /** Puts what is on the shared clipboard onto the phone's own, ready to paste anywhere. */
     fun copyToDevice() {
         val app = getApplication<Application>()
-        val text = app.container.clipboard.text
-        if (text.isEmpty()) {
-            flashClip("Nothing to copy")
-            return
+        val c = app.container.clipboard
+        val m = c.meta.value
+        val file = c.blob()
+        when {
+            file != null -> SystemClipboard.writeFile(app, file, m.name, m.mime)
+            m.text.isNotEmpty() -> SystemClipboard.write(app, m.text)
+            else -> { flashClip("Nothing to copy"); return }
         }
-        SystemClipboard.write(app, text)
         flashClip("Copied to the phone clipboard")
     }
 
+    /** Empties the shared clipboard everywhere, and the phone's own. */
     fun clearClipboard() {
-        getApplication<Application>().container.clipboard.set("")
+        val app = getApplication<Application>()
+        app.container.clipboard.set("")
+        SystemClipboard.clear(app)
         flashClip("Cleared")
     }
 

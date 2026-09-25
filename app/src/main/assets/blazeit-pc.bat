@@ -14,7 +14,8 @@ exit /b
 #  4. Joins the phone's direct link (its own offline Wi-Fi) when you start it, or its hotspot in
 #     hotspot mode (the laptop keeps internet), and goes back to your Wi-Fi when it stops.
 #  5. Switches to a USB cable whenever one is plugged in with USB tethering on: the fastest link.
-#  6. Keeps the clipboard in step with the phone (text; the phone's Settings can turn it off).
+#  6. Keeps the clipboard in step with the phone: text, pictures and files (the phone's Settings can turn it off).
+# Starting it again, or a newer copy, closes any helper already running and takes over.
 # Close this window to stop all of it.
 
 $ErrorActionPreference = 'Stop'
@@ -74,8 +75,12 @@ public static class BlazeItPc
         Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Xoosh");
     static readonly string Ua = "BlazeItPC/1 (" + Environment.MachineName + ")";
 
-    public static void Run()
+    /** Where this helper's .bat file is: scrcpy may sit beside it, in a "scrcpy" folder. */
+    static string HelperDir = "";
+
+    public static void Run(string scriptPath)
     {
+        try { HelperDir = Path.GetDirectoryName(scriptPath) ?? ""; } catch { }
         // .NET otherwise sends "Expect: 100-continue" with every POST body and waits for a
         // go-ahead the phone never sends, so the request times out.
         ServicePointManager.Expect100Continue = false;
@@ -703,17 +708,32 @@ public static class BlazeItPc
 
     // ------------------------------------------------------------------ clipboard sync
     //
-    // Copy on this laptop and it is on the phone, ready to paste; copy on the phone and it
-    // lands in this laptop's clipboard (the phone sends it when BlazeIt opens or its tile is
-    // tapped). The phone's Settings can turn it off. Text only.
+    // One clipboard for this laptop and the phone. Copy text, a picture (a screenshot, say) or
+    // a single file up to 50 MB here and it is on the phone, ready to paste; copy on the phone
+    // and it lands here (the phone sends it when BlazeIt opens or its tile is tapped): a picture
+    // pastes into apps and as a file into a folder, a file pastes into a folder. The phone's
+    // Settings can turn it off.
 
     [DllImport("user32.dll")]
     static extern uint GetClipboardSequenceNumber();
 
-    static readonly Queue<string> clipToSet = new Queue<string>();
+    /** Something to put on this laptop's clipboard: text, or a picture or file downloaded from the phone. */
+    class ClipSet { public string text; public string path; public bool image; }
+
+    static readonly Queue<ClipSet> clipToSet = new Queue<ClipSet>();
     /** The last text seen on, or put on, this laptop's clipboard; never sent back. */
     static volatile string lastClip;
     static volatile bool clipSync = true;
+    /** The version of the last picture or file that went either way, so none goes back and forth. */
+    static long lastBlobV = -1;
+    /** A fingerprint of the last picture or file sent from here, so re-copying it sends nothing. */
+    static string lastBlobSig;
+    /** The clipboard's sequence number just after this helper set it: what "Clear" may undo. */
+    static uint ourSeq;
+    /** True while a picture or file is going up: the change the phone announces meanwhile is that one. */
+    static volatile bool blobInFlight;
+    const long ClipMaxBytes = 50L * 1024 * 1024;
+    static readonly string ClipDir = Path.Combine(Path.GetTempPath(), "BlazeIt clipboard");
 
     static void ClipLoop()
     {
@@ -723,28 +743,61 @@ public static class BlazeItPc
             Thread.Sleep(350);
             try
             {
-                string pending = null;
+                ClipSet pending = null;
                 lock (clipToSet) { if (clipToSet.Count > 0) pending = clipToSet.Dequeue(); }
                 if (pending != null)
                 {
                     for (int i = 0; i < 5; i++)
                     {
-                        try { System.Windows.Forms.Clipboard.SetText(pending); break; }
+                        try { ApplyClip(pending); break; }
                         catch { Thread.Sleep(120); } // another app has the clipboard open
                     }
-                    lastClip = pending;
-                    seq = GetClipboardSequenceNumber();
+                    if (pending.text != null) lastClip = pending.text;
+                    seq = ourSeq = GetClipboardSequenceNumber();
                     continue;
                 }
                 uint now = GetClipboardSequenceNumber();
                 if (now == seq) continue;
                 seq = now;
                 if (!clipSync || session == null || phone == null) continue;
-                string text = null;
-                try { if (System.Windows.Forms.Clipboard.ContainsText()) text = System.Windows.Forms.Clipboard.GetText(); } catch { }
-                if (string.IsNullOrEmpty(text) || text == lastClip || text.Length > 200000) continue;
-                lastClip = text;
-                SendClip(text);
+                var cb = System.Windows.Forms.Clipboard.GetDataObject();
+                if (cb == null) continue;
+                if (System.Windows.Forms.Clipboard.ContainsText())
+                {
+                    string text = null;
+                    try { text = System.Windows.Forms.Clipboard.GetText(); } catch { }
+                    if (string.IsNullOrEmpty(text) || text == lastClip || text.Length > 200000) continue;
+                    lastClip = text;
+                    SendClip(text);
+                }
+                else if (System.Windows.Forms.Clipboard.ContainsFileDropList())
+                {
+                    var files = System.Windows.Forms.Clipboard.GetFileDropList();
+                    // One file goes on the shared clipboard; a folder or several files are for Send files.
+                    if (files.Count != 1 || !File.Exists(files[0])) continue;
+                    var fi = new FileInfo(files[0]);
+                    if (fi.Length > ClipMaxBytes) { Say("That file is over 50 MB, too big for the clipboard; send it from the page instead."); continue; }
+                    string sig = fi.FullName + "|" + fi.Length + "|" + fi.LastWriteTimeUtc.Ticks;
+                    if (sig == lastBlobSig) continue;
+                    lastBlobSig = sig;
+                    SendClipBlob(File.ReadAllBytes(fi.FullName), fi.Name, MimeOf(fi.Name));
+                }
+                else if (System.Windows.Forms.Clipboard.ContainsImage())
+                {
+                    byte[] png;
+                    using (var img = System.Windows.Forms.Clipboard.GetImage())
+                    using (var ms = new MemoryStream())
+                    {
+                        if (img == null) continue;
+                        img.Save(ms, System.Drawing.Imaging.ImageFormat.Png);
+                        png = ms.ToArray();
+                    }
+                    string sig;
+                    using (var md5 = System.Security.Cryptography.MD5.Create()) sig = Convert.ToBase64String(md5.ComputeHash(png));
+                    if (sig == lastBlobSig) continue;
+                    lastBlobSig = sig;
+                    SendClipBlob(png, "Picture " + DateTime.Now.ToString("yyyy-MM-dd HHmmss") + ".png", "image/png");
+                }
             }
             catch { }
         }
@@ -767,6 +820,105 @@ public static class BlazeItPc
             r.ContentLength = body.Length;
             using (Stream o = r.GetRequestStream()) o.Write(body, 0, body.Length);
             using (WebResponse resp = r.GetResponse()) { }
+        }
+        catch { }
+    }
+
+    /** Puts text, or a downloaded picture or file, on this laptop's clipboard. */
+    static void ApplyClip(ClipSet c)
+    {
+        if (c.text != null) { System.Windows.Forms.Clipboard.SetText(c.text); return; }
+        if (c.path == null)
+        {
+            // Cleared on the phone or the page: only what the sync itself put here is removed.
+            if (GetClipboardSequenceNumber() == ourSeq) System.Windows.Forms.Clipboard.Clear();
+            return;
+        }
+        var data = new System.Windows.Forms.DataObject();
+        var list = new System.Collections.Specialized.StringCollection();
+        list.Add(c.path);
+        // A file pastes into a folder; a picture also pastes into Paint, chat apps and documents.
+        data.SetFileDropList(list);
+        if (c.image)
+        {
+            try
+            {
+                using (var fs = new FileStream(c.path, FileMode.Open, FileAccess.Read))
+                using (var img = System.Drawing.Image.FromStream(fs))
+                    data.SetImage(new System.Drawing.Bitmap(img));
+            }
+            catch { } // a format Windows cannot draw (HEIC, say) still pastes as a file
+        }
+        System.Windows.Forms.Clipboard.SetDataObject(data, true);
+    }
+
+    static string MimeOf(string name)
+    {
+        switch (Path.GetExtension(name).ToLowerInvariant())
+        {
+            case ".png": return "image/png";
+            case ".jpg": case ".jpeg": return "image/jpeg";
+            case ".gif": return "image/gif";
+            case ".webp": return "image/webp";
+            case ".bmp": return "image/bmp";
+            case ".heic": return "image/heic";
+            case ".pdf": return "application/pdf";
+            case ".txt": return "text/plain";
+            case ".zip": return "application/zip";
+            case ".docx": return "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+            case ".xlsx": return "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+            case ".pptx": return "application/vnd.openxmlformats-officedocument.presentationml.presentation";
+            case ".mp4": return "video/mp4";
+            case ".mp3": return "audio/mpeg";
+            default: return "application/octet-stream";
+        }
+    }
+
+    /** A picture or file onto the shared clipboard, and so onto the phone's. */
+    static void SendClipBlob(byte[] body, string name, string mime)
+    {
+        try
+        {
+            HttpWebRequest r = (HttpWebRequest)WebRequest.Create("http://" + phone + ":" + PhonePort +
+                "/api/clipboard/blob?name=" + Uri.EscapeDataString(name));
+            r.Method = "POST";
+            r.Proxy = null;
+            r.UserAgent = Ua;
+            r.Timeout = 30000;
+            r.ReadWriteTimeout = 30000;
+            r.KeepAlive = false;
+            r.ContentType = mime;
+            r.Headers["Cookie"] = session;
+            r.Headers["Bridge-Auto"] = "1";
+            r.ContentLength = body.Length;
+            blobInFlight = true;
+            using (Stream o = r.GetRequestStream()) o.Write(body, 0, body.Length);
+            using (HttpWebResponse resp = (HttpWebResponse)r.GetResponse())
+            {
+                Match m = Regex.Match(Body(resp), "\"v\":(\\d+)");
+                if (m.Success) lastBlobV = long.Parse(m.Groups[1].Value);
+            }
+            Say((mime.StartsWith("image/") ? "Picture" : "File") + " copied here is on the phone's clipboard.");
+        }
+        catch (Exception e) { Say("Could not put it on the phone's clipboard (" + e.Message + ")."); }
+        finally { blobInFlight = false; }
+    }
+
+    /** Downloads the picture or file on the shared clipboard and queues it for this laptop's. */
+    static void FetchClipBlob(long v, string name, bool image)
+    {
+        try
+        {
+            Directory.CreateDirectory(ClipDir);
+            foreach (string old in Directory.GetFiles(ClipDir)) { try { File.Delete(old); } catch { } }
+            foreach (char ch in Path.GetInvalidFileNameChars()) name = name.Replace(ch, '_');
+            if (name.Length == 0) name = image ? "Picture.png" : "File";
+            string path = Path.Combine(ClipDir, name);
+            using (HttpWebResponse resp = Http("GET", "/api/clipboard/blob?v=" + v, session, 30000))
+            using (Stream s = resp.GetResponseStream())
+            using (FileStream f = File.Create(path))
+                s.CopyTo(f);
+            lock (clipToSet) clipToSet.Enqueue(new ClipSet { path = path, image = image });
         }
         catch { }
     }
@@ -814,7 +966,7 @@ public static class BlazeItPc
                 {
                     string ev = null, line;
                     StringBuilder data = new StringBuilder();
-                    bool snapshot = true;
+                    bool snapshot = true, clipSnapshot = true;
                     while ((line = rd.ReadLine()) != null)
                     {
                         if (phone != at) break; // moved to another link (cable, direct link): reconnect there
@@ -822,13 +974,27 @@ public static class BlazeItPc
                         {
                             string d = data.ToString();
                             if (ev == "clipsync") clipSync = d == "on";
+                            else if (ev == "clip")
+                            {
+                                string kind = Field(d, "kind");
+                                Match mv = Regex.Match(d, "\"v\":(\\d+)");
+                                long v = mv.Success ? long.Parse(mv.Groups[1].Value) : -1;
+                                if (clipSnapshot) { clipSnapshot = false; lastBlobV = v; }
+                                else if (blobInFlight) lastBlobV = v; // our own upload, announced back
+                                else if (clipSync && v != lastBlobV)
+                                {
+                                    lastBlobV = v;
+                                    if (kind == "image" || kind == "file") FetchClipBlob(v, Field(d, "name"), kind == "image");
+                                    else if (kind == "empty") lock (clipToSet) clipToSet.Enqueue(new ClipSet());
+                                }
+                            }
                             else if (ev == "clipboard")
                             {
                                 if (snapshot) { snapshot = false; if (lastClip == null) lastClip = d; }
                                 else if (clipSync && d.Length > 0 && d != lastClip)
                                 {
                                     lastClip = d;
-                                    lock (clipToSet) clipToSet.Enqueue(d);
+                                    lock (clipToSet) clipToSet.Enqueue(new ClipSet { text = d });
                                 }
                             }
                             ev = null;
@@ -1179,5 +1345,5 @@ public static class BlazeItPc
 }
 '@
 
-Add-Type -TypeDefinition $source -Language CSharp -ReferencedAssemblies System.Windows.Forms
-[BlazeItPc]::Run()
+Add-Type -TypeDefinition $source -Language CSharp -ReferencedAssemblies System.Windows.Forms, System.Drawing, System.IO.Compression, System.IO.Compression.FileSystem
+[BlazeItPc]::Run($f)

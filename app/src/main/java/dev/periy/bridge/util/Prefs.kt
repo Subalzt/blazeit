@@ -24,11 +24,6 @@ class Prefs(ctx: Context) {
         get() = sp.getInt(K_PORT, BuildConfig.DEFAULT_PORT)
         set(v) = sp.edit { putInt(K_PORT, v) }
 
-    /** Advertised Tus-Max-Size. Configurable, as asked. */
-    var tusMaxSize: Long
-        get() = sp.getLong(K_MAX, BuildConfig.DEFAULT_TUS_MAX_SIZE)
-        set(v) = sp.edit { putLong(K_MAX, v) }
-
     var autoStartOnBoot: Boolean
         get() = sp.getBoolean(K_AUTOSTART, false)
         set(v) = sp.edit { putBoolean(K_AUTOSTART, v) }
@@ -89,6 +84,11 @@ class Prefs(ctx: Context) {
         get() = sp.getBoolean(K_CLIP_SYNC, true)
         set(v) = sp.edit { putBoolean(K_CLIP_SYNC, v) }
 
+    /** New screenshots go on the shared clipboard by themselves, BlazeIt open or not. */
+    var screenshotClip: Boolean
+        get() = sp.getBoolean(K_SHOT_CLIP, true)
+        set(v) = sp.edit { putBoolean(K_SHOT_CLIP, v) }
+
     /** Whether the live monitor floats over the app's screens. */
     var showMonitor: Boolean
         get() = sp.getBoolean(K_MONITOR, false)
@@ -116,7 +116,6 @@ class Prefs(ctx: Context) {
     private companion object {
         const val K_TREE = "tree_uri"
         const val K_PORT = "port"
-        const val K_MAX = "tus_max_size"
         const val K_KEY = "session_key"
         const val K_AUTOSTART = "autostart"
         const val K_FORCE_STAGE = "force_staged_copy"
@@ -126,6 +125,7 @@ class Prefs(ctx: Context) {
         const val K_PHONE_DIRECT = "phone_direct"
         const val K_LAPTOP_LINK = "laptop_link"
         const val K_CLIP_SYNC = "clip_sync"
+        const val K_SHOT_CLIP = "screenshot_clip"
         const val K_HOTSPOT_SSID = "hotspot_ssid"
         const val K_HOTSPOT_PASS = "hotspot_pass"
         const val K_MONITOR = "show_monitor"

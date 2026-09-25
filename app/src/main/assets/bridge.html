@@ -204,9 +204,43 @@
   .clip-card { display: flex; flex-direction: column; }
   .clip-field { position: relative; }
   .clip-field textarea { min-height: 170px; padding-bottom: 36px; }
+  .clip-field textarea[hidden] { display: none; }
+  /* A picture or file on the shared clipboard, where the text would be. */
+  .clip-item { min-height: 170px; border-radius: var(--r); background: var(--surface-2); padding: 12px 12px 38px;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; }
+  .clip-item[hidden] { display: none; }
+  /* The history: recent items, newest first; click one to put it back. */
+  .clip-history { margin-bottom: 12px; max-height: 340px; overflow: auto; border-radius: var(--r); background: var(--surface-2); padding: 6px; }
+  .clip-history[hidden] { display: none; }
+  .clip-history .h-row { display: flex; align-items: center; gap: 10px; padding: 8px 8px 8px 10px; border-radius: 10px; cursor: pointer; min-width: 0; }
+  .clip-history .h-row:hover { background: var(--surface-3); }
+  .clip-history .h-row.now { background: color-mix(in srgb, var(--accent) 22%, transparent); }
+  .clip-history .h-row img { width: 40px; height: 40px; flex: 0 0 40px; object-fit: cover; border-radius: 8px; background: var(--surface); }
+  .clip-history .h-body { flex: 1 1 auto; min-width: 0; }
+  .clip-history .h-body b { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; font-size: 14px; font-weight: 500; word-break: break-word; }
+  .clip-history .h-body span { font-size: 12px; color: var(--sub); }
+  .clip-history .h-x { flex: 0 0 28px; height: 28px; border: 0; border-radius: 50%; background: none; color: var(--sub); cursor: pointer; font-size: 17px; line-height: 1; }
+  .clip-history .h-x:hover { background: var(--surface); color: var(--bad); }
+  .clip-history .h-foot { display: flex; justify-content: space-between; align-items: center; padding: 6px 8px 2px; font-size: 12.5px; color: var(--sub); }
+  .clip-history .h-foot button { border: 0; background: none; color: var(--bad); font-weight: 600; cursor: pointer; padding: 4px; }
+  .clip-history .empty { padding: 14px; text-align: center; color: var(--sub); font-size: 13.5px; }
+  .clip-item img { max-width: 100%; max-height: 260px; object-fit: contain; border-radius: 10px; background: var(--surface); }
+  .clip-item .file { display: flex; align-items: center; gap: 12px; width: 100%; min-width: 0; }
+  .clip-item .file .grow { min-width: 0; }
+  .clip-item .file b { display: block; font-size: 14.5px; font-weight: 650; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .clip-item .file span { font-size: 13px; color: var(--sub); }
+  .clip-item .cap { font-size: 12.5px; color: var(--sub); max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .clip-status { position: absolute; left: 16px; bottom: 12px; font-size: 13px; font-weight: 600; color: var(--good); }
-  .clip-tools { display: flex; gap: 8px; margin-top: 12px; align-items: center; }
-  .clip-tools .grow { flex: 1; }
+  /* The card is narrow when the monitor is docked beside it: Paste, Copy and Clear then show
+     only their icons (their titles still say what they do), so Send keeps its place on the right. */
+  .clip-card { container: clip / inline-size; }
+  .clip-head { display: flex; gap: 6px; flex: 0 0 auto; }
+  .clip-head .btn.on { background: color-mix(in srgb, var(--accent) 30%, var(--surface-2)); }
+  /* In a narrow card the two buttons show only their icons; their titles still say what they do. */
+  @container clip (max-width: 430px) {
+    .clip-head .btn.ghost { padding: 0; width: 36px; justify-content: center; }
+    .clip-head .btn.ghost .lbl { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+  }
   .drop { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; border: 2px dashed var(--surface-3); border-radius: 20px;
     padding: 34px 18px; text-align: center; cursor: pointer; transition: border-color .12s, background .12s; min-height: 220px; }
   .drop:hover, .drop.over { border-color: var(--good); background: color-mix(in srgb, var(--good) 7%, transparent); }
@@ -494,18 +528,17 @@
       <div class="card clip-card">
         <div class="card-title">
           <span class="appicon yellow"><svg viewBox="0 0 24 24"><path d="M9 5.5H7.5A1.5 1.5 0 0 0 6 7v12a1.5 1.5 0 0 0 1.5 1.5h9A1.5 1.5 0 0 0 18 19V7a1.5 1.5 0 0 0-1.5-1.5H15"/><path d="M10 3.5h4a1 1 0 0 1 1 1v1.5a1 1 0 0 1-1 1h-4a1 1 0 0 1-1-1V4.5a1 1 0 0 1 1-1Z"/></svg></span>
-          <div class="grow"><h3>Clipboard</h3><p>Shared with the phone, both ways</p></div>
+          <div class="grow"><h3>Clipboard</h3></div>
+          <div class="clip-head">
+            <button class="btn sm ghost" id="clip-history-btn" title="Recent items: put one back, or remove it"><svg class="i" viewBox="0 0 24 24"><path d="M4 12a8 8 0 1 0 2.4-5.7"/><path d="M4 4.5v4h4"/><path d="M12 7.5V12l3 2"/></svg><span class="lbl">History</span></button>
+            <button class="btn sm ghost danger" id="clip-clear" title="Clear it here and on the phone"><svg class="i" viewBox="0 0 24 24"><path d="M4.5 7h15"/><path d="M9.5 7V5a1 1 0 0 1 1-1h3a1 1 0 0 1 1 1v2"/><path d="M6.5 7l.8 11.5A1.5 1.5 0 0 0 8.8 20h6.4a1.5 1.5 0 0 0 1.5-1.5L17.5 7"/></svg><span class="lbl">Clear</span></button>
+          </div>
         </div>
+        <div class="clip-history" id="clip-history" hidden></div>
         <div class="clip-field">
-          <textarea id="clip" placeholder="Type or paste text here, then send it to the phone."></textarea>
+          <textarea id="clip" placeholder="Type or paste anything"></textarea>
+          <div class="clip-item" id="clip-item" hidden></div>
           <span class="clip-status" id="clip-status"></span>
-        </div>
-        <div class="clip-tools">
-          <button class="btn sm ghost" id="clip-paste" title="Paste what this computer last copied"><svg class="i" viewBox="0 0 24 24"><path d="M9 5.5H7.5A1.5 1.5 0 0 0 6 7v12a1.5 1.5 0 0 0 1.5 1.5h9A1.5 1.5 0 0 0 18 19V7a1.5 1.5 0 0 0-1.5-1.5H15"/><path d="M10 3.5h4a1 1 0 0 1 1 1v1.5a1 1 0 0 1-1 1h-4a1 1 0 0 1-1-1V4.5a1 1 0 0 1 1-1Z"/></svg>Paste</button>
-          <button class="btn sm ghost" id="clip-copy" title="Copy the text on this computer"><svg class="i" viewBox="0 0 24 24"><path d="M15 8.5V6a1.5 1.5 0 0 0-1.5-1.5H6A1.5 1.5 0 0 0 4.5 6v7.5A1.5 1.5 0 0 0 6 15h2.5"/><path d="M10 8.5h8a1.5 1.5 0 0 1 1.5 1.5v8a1.5 1.5 0 0 1-1.5 1.5h-8A1.5 1.5 0 0 1 8.5 18v-8A1.5 1.5 0 0 1 10 8.5Z"/></svg>Copy</button>
-          <button class="btn sm ghost danger" id="clip-clear" title="Clear here and on the phone"><svg class="i" viewBox="0 0 24 24"><path d="M4.5 7h15"/><path d="M9.5 7V5a1 1 0 0 1 1-1h3a1 1 0 0 1 1 1v2"/><path d="M6.5 7l.8 11.5A1.5 1.5 0 0 0 8.8 20h6.4a1.5 1.5 0 0 0 1.5-1.5L17.5 7"/></svg>Clear</button>
-          <span class="grow"></span>
-          <button id="clip-send" class="btn" title="Send to the phone (Ctrl+Enter)"><svg class="i" viewBox="0 0 24 24"><path d="M12 19V5.5"/><path d="M6.5 11 12 5.5 17.5 11"/></svg>Send to phone</button>
         </div>
         <p class="note" id="clip-note"></p>
       </div>
@@ -1101,61 +1134,192 @@ function copyText(text) {
   });
 }
 
+// One clipboard for the phone and this laptop. Whatever is typed or pasted here is on the
+// phone a moment later, and whatever is copied there shows here: text, a picture, or any file
+// up to 50 MB (bigger files go the ordinary way). No Send button; Paste, Copy and Clear.
+var clip = { kind: "empty", text: "", name: "", mime: "", size: 0, v: 0 };
+var clipDirty = false, clipTimer = null;
+var CLIP_MAX = 50 * 1024 * 1024;
+
+/** Shows what the shared clipboard holds: the text in the box, or the picture or file in its place. */
+function renderClip() {
+  var m = clip, blob = m.kind === "image" || m.kind === "file", box = $("clip-item"), ta = $("clip");
+  ta.hidden = blob; box.hidden = !blob;
+  if (!blob) {
+    box._v = null;
+    // Never overwrite what is being typed; it is on its way to the phone.
+    if (!clipDirty && ta.value !== m.text) ta.value = m.text;
+    return;
+  }
+  if (box._v === m.v) return;
+  box._v = m.v; box.innerHTML = "";
+  var url = "/api/clipboard/blob?v=" + m.v;
+  if (m.kind === "image") {
+    var img = document.createElement("img");
+    img.alt = m.name; img.src = url; img.title = "Open full size";
+    img.style.cursor = "zoom-in";
+    img.onclick = function () { window.open(url, "_blank", "noopener"); };
+    var cap = document.createElement("div"); cap.className = "cap";
+    cap.textContent = m.name + " · " + bytes(m.size);
+    box.appendChild(img); box.appendChild(cap);
+  } else {
+    var row = document.createElement("div"); row.className = "file";
+    row.appendChild(appIcon("file", "orange"));
+    var body = document.createElement("div"); body.className = "grow";
+    var b = document.createElement("b"); b.textContent = m.name;
+    var s = document.createElement("span"); s.textContent = "File · " + bytes(m.size);
+    body.appendChild(b); body.appendChild(s); row.appendChild(body);
+    row.appendChild(btn("Download", function () { startDownload({ id: null, url: url, name: m.name, size: m.size, mime: m.mime }); }, ""));
+    box.appendChild(row);
+  }
+}
+
+async function loadClip() {
+  try { clip = await (await api("/api/clipboard")).json(); } catch (e) { return; }
+  renderClip();
+}
+
+/** Publishes the box's text. Typing calls this a moment after the last key. */
+async function publishText() {
+  clearTimeout(clipTimer); clipTimer = null;
+  if (!clipDirty) return;
+  var text = $("clip").value;
+  clipDirty = false;
+  var res = await api("/api/clipboard", {
+    method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ text: text }),
+  });
+  if (!res.ok) flash("Too long for the clipboard");
+}
+
+/** A picture or file onto the shared clipboard, and so onto the phone's. */
+async function publishBlob(blob, name) {
+  if (blob.size > CLIP_MAX) {
+    addFiles([blob]);
+    flash("Over 50 MB: sending it as a file instead");
+    return;
+  }
+  clearTimeout(clipTimer); clipDirty = false;
+  flash("Putting it on the phone...");
+  try {
+    var res = await fetch("/api/clipboard/blob?name=" + encodeURIComponent(name || blob.name || "Picture.png"), {
+      method: "POST", credentials: "same-origin",
+      headers: { "Content-Type": blob.type || "application/octet-stream" }, body: blob,
+    });
+    if (!res.ok) throw new Error("status " + res.status);
+    clip = await res.json();
+    renderClip();
+    flash(clip.kind === "image" ? "Picture on the phone's clipboard" : "File on the phone's clipboard");
+  } catch (e) { flash("Could not put it on the phone"); }
+}
+
 function setupClipboard() {
-  $("clip-note").textContent = window.isSecureContext
-    ? "Text appears on the phone straight away, and is put on the phone's clipboard ready to paste."
-    : "Pasting needs Ctrl+V on this page, and downloads use one connection. The laptop helper (Settings) lifts both.";
+  $("clip-note").textContent = viaHelper ? ""
+    : "With the laptop helper (Settings), the Windows clipboard follows by itself.";
+  $("clip-history-btn").addEventListener("click", toggleHistory);
 
-  $("clip-send").addEventListener("click", async function () {
-    var res = await api("/api/clipboard", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ text: $("clip").value }),
-    });
-    flash(res.ok ? "Sent to the phone" : "Too long to send");
+  // Typing reaches the phone by itself, a moment after the last key or when you click away.
+  $("clip").addEventListener("input", function () {
+    clipDirty = true;
+    clearTimeout(clipTimer);
+    clipTimer = setTimeout(publishText, 450);
   });
+  $("clip").addEventListener("blur", publishText);
 
-  // Paste: the clipboard API where the browser allows it (the laptop helper's localhost
-  // page); otherwise the box takes focus and Ctrl+V does it.
-  $("clip-paste").addEventListener("click", async function () {
-    if (navigator.clipboard && navigator.clipboard.readText) {
-      try { $("clip").value = await navigator.clipboard.readText(); flash("Pasted, not yet sent"); return; } catch (e) {}
-    }
-    $("clip").focus();
-    flash("Press Ctrl+V to paste");
-  });
-  $("clip").addEventListener("keydown", function (e) {
-    if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) { e.preventDefault(); $("clip-send").click(); }
-  });
-
-  $("clip-copy").addEventListener("click", function () {
-    copyText($("clip").value).then(
-      function () { flash("Copied"); },
-      function () { flash("The browser blocked the copy"); }
-    );
-  });
-
+  // Clear: here, on the phone, and the phone's own clipboard.
   $("clip-clear").addEventListener("click", async function () {
-    $("clip").value = "";
-    await api("/api/clipboard", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ text: "" }),
-    });
+    clearTimeout(clipTimer); clipDirty = false;
+    clip = { kind: "empty", text: "", v: clip.v }; $("clip").value = ""; renderClip();
+    await api("/api/clipboard", { method: "DELETE" });
     flash("Cleared");
   });
 
-  // A real paste event carries its data regardless of secure context, and also
-  // carries files -- so pasting a screenshot uploads it.
+  // A real paste anywhere on the page carries its data regardless of secure context, files
+  // included: one picture or file goes on the clipboard; several go as ordinary files.
   document.addEventListener("paste", function (e) {
     if (!e.clipboardData) return;
     var files = e.clipboardData.files;
-    if (files && files.length) { e.preventDefault(); addFiles(files); selectTab("home"); return; }
-    if (document.activeElement !== $("clip")) {
-      var t = e.clipboardData.getData("text");
-      if (t) { $("clip").value = t; selectTab("home"); flash("Pasted, not yet sent"); }
+    if (files && files.length === 1) { e.preventDefault(); selectTab("home"); publishBlob(files[0], files[0].name); return; }
+    if (files && files.length > 1) { e.preventDefault(); addFiles(files); selectTab("home"); return; }
+    var active = document.activeElement;
+    if (active === $("clip")) return; // typed into the box: the input event sends it
+    if (active && (active.tagName === "INPUT" || active.tagName === "TEXTAREA")) return;
+    var t = e.clipboardData.getData("text");
+    if (t) {
+      e.preventDefault(); selectTab("home");
+      clip = { kind: "text", text: t, v: clip.v }; $("clip").value = t; clipDirty = true; renderClip();
+      publishText(); flash("Pasted");
     }
   });
+}
+
+// ------------------------------------------------------------------ clipboard history
+//
+// The last 30 items, like a keyboard's or Windows' clipboard history, kept on the phone and the
+// same everywhere. Click one to put it back on the clipboard (the phone's and this laptop's
+// too); the cross removes it.
+
+var clipHist = [];
+
+function toggleHistory() {
+  var box = $("clip-history"), open = box.hidden;
+  box.hidden = !open;
+  $("clip-history-btn").classList.toggle("on", open);
+  if (open) loadHistory();
+}
+
+async function loadHistory() {
+  try { clipHist = await (await api("/api/clipboard/history")).json(); } catch (e) { return; }
+  renderHistory();
+}
+
+function ago(at) {
+  if (!at) return "";
+  var s = Math.round((Date.now() - at) / 1000);
+  if (s < 60) return "just now";
+  if (s < 3600) return Math.floor(s / 60) + " min ago";
+  if (s < 86400) return Math.floor(s / 3600) + " h ago";
+  return new Date(at).toLocaleDateString(undefined, { day: "numeric", month: "short" });
+}
+
+function renderHistory() {
+  var box = $("clip-history");
+  if (box.hidden) return;
+  box.innerHTML = "";
+  if (!clipHist.length) { box.innerHTML = '<p class="empty">Nothing copied yet.</p>'; return; }
+  clipHist.forEach(function (m) {
+    var row = document.createElement("div");
+    row.className = "h-row" + (m.v === clip.v ? " now" : "");
+    row.title = m.v === clip.v ? "On the clipboard now" : "Put it back on the clipboard";
+    if (m.kind === "image") {
+      var img = document.createElement("img"); img.alt = ""; img.loading = "lazy";
+      img.src = "/api/clipboard/history/" + m.v + "/blob";
+      row.appendChild(img);
+    } else if (m.kind === "file") row.appendChild(appIcon("file", "orange"));
+    var body = document.createElement("div"); body.className = "h-body";
+    var b = document.createElement("b");
+    b.textContent = m.kind === "text" ? m.text.trim().replace(/\s+/g, " ") : m.name;
+    var s = document.createElement("span");
+    s.textContent = (m.kind === "text" ? "" : bytes(m.size) + " · ") + ago(m.at) + (m.v === clip.v ? " · on the clipboard" : "");
+    body.appendChild(b); body.appendChild(s); row.appendChild(body);
+    var x = document.createElement("button");
+    x.className = "h-x"; x.type = "button"; x.title = "Remove"; x.textContent = "\u00d7";
+    x.onclick = async function (e) {
+      e.stopPropagation();
+      await api("/api/clipboard/history/" + m.v, { method: "DELETE" });
+    };
+    row.appendChild(x);
+    row.onclick = async function () {
+      if (m.v === clip.v) return;
+      await api("/api/clipboard/history/" + m.v + "/use", { method: "POST" });
+      flash("Back on the clipboard");
+    };
+    box.appendChild(row);
+  });
+  var foot = document.createElement("div"); foot.className = "h-foot";
+  foot.innerHTML = "<span></span><button type=\"button\">Clear history</button>";
+  foot.firstChild.textContent = clipHist.length + (clipHist.length === 1 ? " item" : " items") + ", newest first";
+  foot.lastChild.onclick = async function () { await api("/api/clipboard/history", { method: "DELETE" }); };
+  box.appendChild(foot);
 }
 
 function flash(msg) {
@@ -2129,11 +2293,15 @@ function connectEvents() {
   events.addEventListener("files", function (e) {
     try { state.files = JSON.parse(e.data); renderFiles(); } catch (err) {}
   });
-  events.addEventListener("clipboard", function (e) {
-    if (document.activeElement !== $("clip")) {
-      $("clip").value = e.data;
-      if (e.data) flash("New text from the phone");
-    }
+  events.addEventListener("cliphistory", function (e) {
+    try { clipHist = JSON.parse(e.data); } catch (err) { return; }
+    renderHistory();
+  });
+  events.addEventListener("clip", function (e) {
+    var m; try { m = JSON.parse(e.data); } catch (err) { return; }
+    var changed = m.kind !== clip.kind || m.text !== clip.text || (m.kind !== "text" && m.v !== clip.v);
+    clip = m; renderClip();
+    if (changed && m.kind !== "empty" && !clipDirty) flash(m.kind === "image" ? "New picture" : m.kind === "file" ? "New file" : "New text");
   });
 }
 
@@ -2153,7 +2321,7 @@ async function refreshState() {
   $("hero-title").textContent = state.device || "Phone";
   $("status-device").textContent = state.device || "Phone";
   renderRoute();
-  if (document.activeElement !== $("clip") && !$("clip").value) $("clip").value = s.clipboard || "";
+  if (s.clip) { clip = s.clip; renderClip(); }
   renderStreams();
   renderFiles();
 }

@@ -165,6 +165,23 @@ object BlazeIcons {
         "M12 7.5h4.5", "M12 11.5h5.5", "M12 15.5h4.5",
     )
 
+
+    /** A clock turning back: the clipboard's history. */
+    val History: ImageVector = stroked(
+        "history",
+        "M4 12a8 8 0 1 0 2.4-5.7",
+        "M4 4.5v4h4",
+        "M12 7.5V12l3 2",
+    )
+
+    /** A framed landscape: a picture. */
+    val Image: ImageVector = stroked(
+        "image",
+        "M5 4.5h14a1.5 1.5 0 0 1 1.5 1.5v12a1.5 1.5 0 0 1-1.5 1.5H5A1.5 1.5 0 0 1 3.5 18V6A1.5 1.5 0 0 1 5 4.5Z",
+        "M3.5 16l5-5 4 4 3-3 5 5",
+        "M15.5 8.2a1.2 1.2 0 1 1 0 2.4a1.2 1.2 0 1 1 0-2.4Z",
+    )
+
     private fun stroked(name: String, vararg paths: String): ImageVector =
         ImageVector.Builder(name, 24.dp, 24.dp, 24f, 24f).apply {
             paths.forEach { d ->

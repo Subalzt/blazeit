@@ -19,6 +19,7 @@ import dev.periy.bridge.R
 import dev.periy.bridge.container
 import dev.periy.bridge.net.NetInfo
 import dev.periy.bridge.server.Transfers
+import dev.periy.bridge.server.canReadPhotos
 import dev.periy.bridge.ui.MainActivity
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
@@ -56,9 +57,27 @@ class BridgeService : Service() {
 
     override fun onBind(intent: Intent?): IBinder? = null
 
+    /** New screenshots onto the shared clipboard, while the server runs, app open or closed. */
+    private var screenshots: dev.periy.bridge.server.ScreenshotWatcher? = null
+
     override fun onCreate() {
         super.onCreate()
         createChannel()
+    }
+
+    private fun watchScreenshots() {
+        if (screenshots != null) return
+        val app = applicationContext
+        screenshots = dev.periy.bridge.server.ScreenshotWatcher(
+            app, container.clipboard,
+            enabled = { container.prefs.clipSync && container.prefs.screenshotClip && canReadPhotos(app) },
+            onNew = {
+                // The phone's own clipboard too, ready to paste in any app here as well.
+                val c = container.clipboard
+                val m = c.meta.value
+                c.blob()?.let { dev.periy.bridge.server.SystemClipboard.writeFile(app, it, m.name, m.mime) }
+            },
+        ).also { it.start() }
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -108,6 +127,9 @@ class BridgeService : Service() {
 
     override fun onDestroy() {
         _running.value = false
+        screenshots?.stop()
+        screenshots = null
+        dev.periy.bridge.server.ClipWatch.stop(applicationContext)
         container.direct.stop()
         container.peers.stopAdvertising()
         container.stopServer()

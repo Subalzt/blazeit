@@ -18,9 +18,6 @@ android {
         versionCode = 7
         versionName = "0.5.0"
 
-        // Default advertised Tus-Max-Size. Overridable at runtime in Settings; this is
-        // only the value a fresh install starts with.
-        buildConfigField("long", "DEFAULT_TUS_MAX_SIZE", "12L * 1024L * 1024L * 1024L")
         // Default listen port.
         buildConfigField("int", "DEFAULT_PORT", "8787")
     }

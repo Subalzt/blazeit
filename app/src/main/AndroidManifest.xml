@@ -32,6 +32,15 @@
     <!-- Music streaming reads the audio library only. READ_MEDIA_AUDIO covers audio and
          nothing else on Android 13+; older versions need the broader storage read. -->
     <uses-permission android:name="android.permission.READ_MEDIA_AUDIO" />
+    <!-- New screenshots go to the shared clipboard (Settings, Laptop access). Not needed when
+         "All files access" is on, which covers the photo library too. -->
+    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
+    <!-- What you copy in any app goes to the laptop with BlazeIt in the background (ClipWatch):
+         the system log says when a copy happens, and a blink-long window over other apps reads
+         it. READ_LOGS is granted once over USB with adb; the overlay in Android's settings. -->
+    <uses-permission android:name="android.permission.READ_LOGS"
+        tools:ignore="ProtectedPermissions" />
+    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"
         android:maxSdkVersion="32" />
 
@@ -115,6 +124,24 @@
             android:taskAffinity=""
             android:theme="@android:style/Theme.Translucent.NoTitleBar" />
 
+
+        <!-- "Send to laptop" in the menu that appears on selecting text in any app: the words
+             go on the shared clipboard at once, without opening BlazeIt. -->
+        <activity
+            android:name=".ui.ClipTextActivity"
+            android:exported="true"
+            android:excludeFromRecents="true"
+            android:noHistory="true"
+            android:taskAffinity=""
+            android:label="Send to laptop"
+            android:theme="@android:style/Theme.Translucent.NoTitleBar">
+            <intent-filter>
+                <action android:name="android.intent.action.PROCESS_TEXT" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="text/plain" />
+            </intent-filter>
+        </activity>
+
         <service
             android:name=".ui.ClipTileService"
             android:exported="true"
@@ -165,5 +192,17 @@
                 android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
                 android:value="BlazeIt hosts a local HTTP server on this device so a computer on the same network can transfer files and clipboard text to and from the phone. The service must remain running while the browser page is open, because the phone is the server." />
         </service>
+
+        <!-- Hands the picture or file on the shared clipboard to other apps that paste it.
+             Only the clipboard folder, read-only (see res/xml/clip_paths.xml). -->
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.clip"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/clip_paths" />
+        </provider>
     </application>
 </manifest>

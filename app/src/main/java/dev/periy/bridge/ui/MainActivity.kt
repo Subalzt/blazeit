@@ -18,6 +18,7 @@ import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -119,14 +120,17 @@ class MainActivity : ComponentActivity() {
     override fun onResume() {
         super.onResume()
         vm.refresh()
+        // On screen now, so Android can ask (once) to let BlazeIt read the log the watch needs.
+        if (BridgeService.running.value) dev.periy.bridge.server.ClipWatch.ensure(this, container.prefs.clipSync)
     }
 
     /** With clipboard sync on, opening BlazeIt sends what was last copied on the phone. */
     override fun onWindowFocusChanged(hasFocus: Boolean) {
         super.onWindowFocusChanged(hasFocus)
         if (!hasFocus) return
-        if (ClipSync.sendFromPhone(this) == "Sent to the laptop") {
-            Toast.makeText(this, "Clipboard sent to the laptop", Toast.LENGTH_SHORT).show()
+        val said = ClipSync.sendFromPhone(this)
+        if (said.endsWith("sent to the laptop") || said == "Sent to the laptop") {
+            Toast.makeText(this, if (said == "Sent to the laptop") "Clipboard sent to the laptop" else said, Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -235,6 +239,10 @@ private fun BlazeItUi(vm: MainViewModel) {
     val requestNotifications = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { vm.refresh() }
     val openSettings = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { vm.refresh() }
     val requestMusic = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { vm.refresh() }
+    val requestPhotos = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { ok ->
+        if (ok) vm.setScreenshotClip(true)
+        vm.refresh()
+    }
     // The direct link needs "nearby devices" (Android 13+) or location (older) to start a hotspot.
     val requestNearby = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { ok ->
         if (ok) vm.startDirect() else Toast.makeText(ctx, "BlazeIt needs Nearby devices to start the direct link", Toast.LENGTH_LONG).show()
@@ -319,6 +327,12 @@ private fun BlazeItUi(vm: MainViewModel) {
                                 pickFolder = { pickFolder.launch(null) },
                                 requestNotifications = { requestNotifications.launch(android.Manifest.permission.POST_NOTIFICATIONS) },
                                 requestMusic = { requestMusic.launch(musicPermission()) },
+                                requestPhotos = {
+                                    requestPhotos.launch(
+                                        if (Build.VERSION.SDK_INT >= 33) android.Manifest.permission.READ_MEDIA_IMAGES
+                                        else android.Manifest.permission.READ_EXTERNAL_STORAGE
+                                    )
+                                },
                                 openSettings = { openSettings.launch(it) },
                                 showOem = { showOem = true },
                             )
@@ -433,8 +447,7 @@ private fun LazyListScope.homeTab(
     if (direct is DirectLink.State.On) item { DirectCard(direct.info, toggleDirect) }
     else if (laptopLink.mode == "hotspot" && state.hotspotActive) item { HotspotCard(laptopLink, toggleDirect) }
 
-    item { SectionBar("Clipboard") }
-    item { ClipboardPanel(shared, clipStatus, vm) }
+    item { Column { ClipboardPanel(shared, clipStatus, vm) } }
 
     transfersSection(transfers)
 
@@ -737,40 +750,165 @@ private fun LazyListScope.transfersSection(transfers: List<Transfer>) {
     items(transfers, key = { "t-" + it.id }) { TransferRow(it) }
 }
 
+/** A picture decoded no larger than [px] on its long side: a phone photo is too big to hold whole. */
+private fun decodeSampled(path: String, px: Int): android.graphics.Bitmap? = runCatching {
+    val bounds = android.graphics.BitmapFactory.Options().apply { inJustDecodeBounds = true }
+    android.graphics.BitmapFactory.decodeFile(path, bounds)
+    var sample = 1
+    while (maxOf(bounds.outWidth, bounds.outHeight) / (sample * 2) >= px) sample *= 2
+    android.graphics.BitmapFactory.decodeFile(path, android.graphics.BitmapFactory.Options().apply { inSampleSize = sample })
+}.getOrNull()
+
+/**
+ * The shared clipboard: one thing at a time, the same on the phone and the computer. Typing
+ * here reaches the computer by itself a moment after you stop; a picture or file copied on
+ * either side shows here too, and what the computer copies is on this phone's own clipboard
+ * already, so there are no Paste and Copy buttons. Clear empties it everywhere; the clock opens
+ * the history of recent items, to put one back or remove it.
+ */
 @Composable
 private fun ClipboardPanel(shared: String, status: String, vm: MainViewModel) {
+    val meta by vm.clipMeta.collectAsStateWithLifecycle()
+    val history by vm.clipHistory.collectAsStateWithLifecycle()
+    var showHistory by remember { mutableStateOf(false) }
     var draft by remember { mutableStateOf(shared) }
-    LaunchedEffect(shared) { if (shared != draft) draft = shared }
-
-    Column(Modifier.fillMaxWidth().panel().padding(16.dp)) {
-        Box(Modifier.fillMaxWidth().heightIn(min = 92.dp).padding(horizontal = 4.dp, vertical = 2.dp)) {
-            if (draft.isEmpty()) {
-                Text("Type here, or tap Paste to grab what you copied.", style = BodyStyle.copy(fontSize = 16.sp), color = Bridge.Faint)
-            }
-            BasicTextField(
-                value = draft,
-                onValueChange = { draft = it },
-                textStyle = BodyStyle.copy(fontSize = 16.sp, lineHeight = 22.sp, color = Bridge.Text),
-                cursorBrush = SolidColor(Bridge.Yellow),
-                modifier = Modifier.fillMaxWidth(),
-            )
+    // True between a keystroke and the moment it is published; incoming text waits till then.
+    var pending by remember { mutableStateOf(false) }
+    LaunchedEffect(shared) { if (!pending) draft = shared }
+    LaunchedEffect(draft, pending) {
+        if (!pending) return@LaunchedEffect
+        kotlinx.coroutines.delay(600)
+        vm.sendClipboard(draft)
+        pending = false
+    }
+    val picture by androidx.compose.runtime.produceState<androidx.compose.ui.graphics.ImageBitmap?>(null, meta.v, meta.kind) {
+        value = if (meta.kind != "image") null else kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+            vm.clipFile()?.let { f -> decodeSampled(f.path, 1080)?.asImageBitmap() }
         }
-        Spacer(Modifier.height(10.dp))
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            SoftButton("Paste", icon = BlazeIcons.Paste) { vm.pasteFromDevice() }
-            Spacer(Modifier.width(8.dp))
-            SoftButton("Copy", icon = BlazeIcons.Copy) { vm.copyToDevice() }
-            Spacer(Modifier.width(8.dp))
-            IconChip(BlazeIcons.Trash, "Clear", tint = Bridge.Danger) { vm.clearClipboard(); draft = "" }
-            Spacer(Modifier.weight(1f))
-            Box(
-                Modifier.size(46.dp).clip(CircleShape).background(Bridge.Yellow).clickable { vm.sendClipboard(draft) },
-                contentAlignment = Alignment.Center,
-            ) { Icon(BlazeIcons.Send, "Send to computer", tint = Bridge.OnYellow, modifier = Modifier.size(22.dp)) }
+    }
+
+    // History and Clear sit by the title and the history opens under it, as on the laptop page.
+    SectionBar("Clipboard") {
+        HeaderAction(BlazeIcons.History, "History", lit = showHistory) { showHistory = !showHistory }
+        Spacer(Modifier.width(8.dp))
+        HeaderAction(BlazeIcons.Trash, "Clear", tint = Bridge.Danger) { vm.clearClipboard(); draft = ""; pending = false }
+    }
+    Column(Modifier.fillMaxWidth().panel().padding(16.dp)) {
+        if (showHistory) {
+            ClipHistory(history, current = meta.v, vm = vm)
+            Spacer(Modifier.height(12.dp))
+        }
+        when (meta.kind) {
+            "image", "file" -> Column(Modifier.fillMaxWidth()) {
+                picture?.let {
+                    Image(
+                        it, meta.name,
+                        contentScale = androidx.compose.ui.layout.ContentScale.Fit,
+                        modifier = Modifier.fillMaxWidth().heightIn(max = 260.dp).clip(RoundedCornerShape(14.dp)),
+                    )
+                    Spacer(Modifier.height(10.dp))
+                }
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    if (picture == null) {
+                        AppIcon(if (meta.kind == "image") BlazeIcons.Image else BlazeIcons.File, if (meta.kind == "image") Bridge.Purple else Bridge.Orange)
+                        Spacer(Modifier.width(12.dp))
+                    }
+                    Column(Modifier.weight(1f)) {
+                        Text(meta.name, style = TextStyle(fontSize = 15.sp, fontWeight = FontWeight.SemiBold), color = Bridge.Text,
+                            maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        Text((if (meta.kind == "image") "Picture" else "File") + " · " + formatBytes(meta.size),
+                            style = BodyStyle.copy(fontSize = 13.sp), color = Bridge.Muted)
+                    }
+                }
+            }
+            else -> Box(Modifier.fillMaxWidth().heightIn(min = 92.dp).padding(horizontal = 4.dp, vertical = 2.dp)) {
+                if (draft.isEmpty()) Text("Type or paste anything", style = BodyStyle.copy(fontSize = 16.sp), color = Bridge.Faint)
+                BasicTextField(
+                    value = draft,
+                    onValueChange = { draft = it; pending = true },
+                    textStyle = BodyStyle.copy(fontSize = 16.sp, lineHeight = 22.sp, color = Bridge.Text),
+                    cursorBrush = SolidColor(Bridge.Yellow),
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            }
         }
         if (status.isNotEmpty()) {
-            Text(status, style = LabelStyle, color = Bridge.Good, modifier = Modifier.padding(top = 10.dp, start = 4.dp))
+            Spacer(Modifier.height(8.dp))
+            Text(status, style = LabelStyle, color = Bridge.Good, modifier = Modifier.padding(start = 4.dp))
         }
+    }
+}
+
+/**
+ * Recent clipboard items, newest first, like a keyboard's clipboard: tap one to put it back
+ * (on the computer too), the cross to remove it.
+ */
+@Composable
+private fun ClipHistory(items: List<dev.periy.bridge.server.ClipMeta>, current: Long, vm: MainViewModel) {
+    Column(Modifier.fillMaxWidth().padding(top = 12.dp)) {
+        if (items.isEmpty()) {
+            Text("Nothing copied yet.", style = BodyStyle, color = Bridge.Muted, modifier = Modifier.padding(4.dp))
+            return@Column
+        }
+        items.forEach { m ->
+            Row(
+                Modifier.fillMaxWidth().padding(vertical = 3.dp).clip(RoundedCornerShape(12.dp))
+                    .background(if (m.v == current) Bridge.Yellow.copy(alpha = 0.18f) else Bridge.Chip)
+                    .clickable { vm.reuseClip(m.v) }.padding(horizontal = 12.dp, vertical = 10.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                when (m.kind) {
+                    "image" -> ClipThumb(vm, m)
+                    "file" -> AppIcon(BlazeIcons.File, Bridge.Orange, size = 34.dp)
+                    else -> {}
+                }
+                if (m.kind != "text") Spacer(Modifier.width(10.dp))
+                Column(Modifier.weight(1f)) {
+                    Text(
+                        if (m.kind == "text") m.text.trim().replace(Regex("\\s+"), " ") else m.name,
+                        style = BodyStyle.copy(fontSize = 14.sp), color = Bridge.Text, maxLines = 2, overflow = TextOverflow.Ellipsis,
+                    )
+                    Text(
+                        (if (m.kind == "text") "" else formatBytes(m.size) + " · ") + ago(m.at) + (if (m.v == current) " · now on the clipboard" else ""),
+                        style = BodyStyle.copy(fontSize = 12.sp), color = Bridge.Muted,
+                    )
+                }
+                Spacer(Modifier.width(6.dp))
+                Box(Modifier.size(30.dp).clip(CircleShape).clickable { vm.forgetClip(m.v) }, contentAlignment = Alignment.Center) {
+                    Icon(BlazeIcons.Close, "Remove", tint = Bridge.Muted, modifier = Modifier.size(16.dp))
+                }
+            }
+        }
+        Text(
+            "Clear history", style = LabelStyle, color = Bridge.Danger,
+            modifier = Modifier.padding(top = 8.dp, start = 4.dp).clip(RoundedCornerShape(8.dp)).clickable { vm.forgetAllClips() }.padding(4.dp),
+        )
+    }
+}
+
+/** A small square of a picture in the history. */
+@Composable
+private fun ClipThumb(vm: MainViewModel, m: dev.periy.bridge.server.ClipMeta) {
+    val bmp by androidx.compose.runtime.produceState<androidx.compose.ui.graphics.ImageBitmap?>(null, m.v) {
+        value = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+            vm.historyFile(m.v)?.let { f -> decodeSampled(f.path, 160)?.asImageBitmap() }
+        }
+    }
+    val b = bmp
+    if (b == null) AppIcon(BlazeIcons.Image, Bridge.Purple, size = 34.dp)
+    else Image(b, m.name, contentScale = androidx.compose.ui.layout.ContentScale.Crop,
+        modifier = Modifier.size(34.dp).clip(RoundedCornerShape(8.dp)))
+}
+
+/** "just now", "5 min ago", "3 h ago", or the date. */
+private fun ago(at: Long): String {
+    if (at <= 0) return ""
+    val s = (System.currentTimeMillis() - at) / 1000
+    return when {
+        s < 60 -> "just now"
+        s < 3600 -> "${s / 60} min ago"
+        s < 86400 -> "${s / 3600} h ago"
+        else -> java.text.DateFormat.getDateInstance(java.text.DateFormat.MEDIUM).format(java.util.Date(at))
     }
 }
 
@@ -992,6 +1130,7 @@ private fun LazyListScope.settingsTab(
     pickFolder: () -> Unit,
     requestNotifications: () -> Unit,
     requestMusic: () -> Unit,
+    requestPhotos: () -> Unit,
     openSettings: (Intent) -> Unit,
     showOem: () -> Unit,
 ) {
@@ -1071,11 +1210,34 @@ private fun LazyListScope.settingsTab(
                 onClick = { vm.allFilesIntent()?.let(openSettings) },
             ) { if (state.browsable) Check(true) else Text("Allow", style = LabelStyle, color = Bridge.Blue) }
             SettingRow(
-                "Sync clipboard automatically",
-                "With the laptop helper running, what you copy on the laptop is ready to paste here, and what you " +
-                    "copy here goes over when you open BlazeIt or tap its quick-settings tile.",
+                "Sync clipboard",
                 icon = BlazeIcons.Paste, iconColor = Bridge.Yellow,
             ) { Toggle(state.clipSync) { vm.setClipSync(it) } }
+            SettingRow(
+                "Copies from any app, at once",
+                when {
+                    !state.watchLogs -> "One-time, over USB: adb shell pm grant ${LocalContext.current.packageName} android.permission.READ_LOGS"
+                    !state.watchOverlay -> "Needs Display over other apps"
+                    else -> null
+                },
+                icon = BlazeIcons.Copy, iconColor = Bridge.Blue,
+                onClick = if (state.watchLogs && !state.watchOverlay) ({ openSettings(vm.overlayIntent()) }) else null,
+            ) {
+                when {
+                    state.watchLogs && state.watchOverlay -> Check(true)
+                    state.watchLogs -> Text("Allow", style = LabelStyle, color = Bridge.Blue)
+                    else -> Text("USB", style = LabelStyle, color = Bridge.Muted)
+                }
+            }
+            SettingRow(
+                "Screenshots to the laptop",
+                if (state.screenshotClip && !state.canReadPhotos) "Needs photo access" else null,
+                icon = BlazeIcons.Image, iconColor = Bridge.Purple,
+            ) {
+                Toggle(state.clipSync && state.screenshotClip && state.canReadPhotos) { on ->
+                    if (on && !state.canReadPhotos) requestPhotos() else vm.setScreenshotClip(on)
+                }
+            }
         }
     }
 

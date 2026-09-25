@@ -284,6 +284,31 @@ fun SoftButton(
     }
 }
 
+/** A small action beside a section's title: an icon and a word, on the well colour or lit. */
+@Composable
+fun HeaderAction(
+    icon: ImageVector,
+    label: String,
+    tint: Color = Bridge.Text,
+    lit: Boolean = false,
+    onClick: () -> Unit,
+) {
+    Row(
+        Modifier
+            .height(32.dp)
+            .clip(ButtonShape)
+            .background(if (lit) Bridge.Yellow else Bridge.Chip)
+            .clickable(onClick = onClick)
+            .padding(horizontal = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        val c = if (lit) Bridge.OnYellow else tint
+        Icon(icon, null, tint = c, modifier = Modifier.size(16.dp))
+        Spacer(Modifier.width(6.dp))
+        Text(label, style = TextStyle(fontSize = 13.sp, fontWeight = FontWeight.SemiBold), color = c)
+    }
+}
+
 /** A round icon button on the well colour. */
 @Composable
 fun IconChip(icon: ImageVector, description: String, tint: Color = Bridge.Text, bg: Color = Bridge.Chip, onClick: () -> Unit) {

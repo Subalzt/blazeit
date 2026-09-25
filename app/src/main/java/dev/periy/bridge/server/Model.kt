@@ -40,6 +40,8 @@ data class StateDto(
     val theme: String = "system",
     /** Clipboard follows between phone and laptop helper without pressing Send. */
     val clipSync: Boolean = true,
+    /** What the shared clipboard holds: text, a picture, a file, or nothing. */
+    val clip: ClipMeta = ClipMeta(),
     /** Smallest file worth splitting; below this the round trips cost more than they save. */
     val parallelThreshold: Long = 16L * 1024 * 1024,
 )

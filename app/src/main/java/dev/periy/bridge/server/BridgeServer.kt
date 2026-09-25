@@ -53,6 +53,7 @@ import io.ktor.utils.io.writeFully
 import io.ktor.utils.io.writeStringUtf8
 import io.ktor.utils.io.writer
 import kotlinx.coroutines.CoroutineScope
+import io.ktor.utils.io.jvm.javaio.toInputStream
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.isActive
@@ -409,6 +410,16 @@ class BridgeServer(
         }
     }
 
+    /** Makes the phone's own clipboard hold what the shared one does: text, a picture, a file, or nothing. */
+    private fun mirrorToPhone() {
+        val m = clipboard.meta.value
+        val f = clipboard.blob()
+        when {
+            f != null -> SystemClipboard.writeFile(ctx, f, m.name, m.mime)
+            m.kind == "text" -> SystemClipboard.write(ctx, m.text)
+            else -> SystemClipboard.clear(ctx)
+        }
+    }
 
     /** The phone's address a request came in on, and the kind of link that is: the socket's own end says. */
     private fun ApplicationCall.arrivedOn(
@@ -417,6 +428,7 @@ class BridgeServer(
         val here = request.local.localAddress.removePrefix("::ffff:").substringBefore('%')
         return here to (all.firstOrNull { it.host == here }?.kind ?: dev.periy.bridge.net.LinkKind.OTHER)
     }
+
     private fun directDto(): DirectDto {
         if (config.laptopLink() == "hotspot" && direct.state.value !is dev.periy.bridge.net.DirectLink.State.On) return hotspotDto()
         return directLinkDto()
@@ -587,6 +599,7 @@ class BridgeServer(
                     uploadStreams = config.uploadStreams(),
                     theme = config.theme(),
                     clipSync = config.clipSync(),
+                    clip = clipboard.meta.value,
                 )
             )
         }
@@ -607,7 +620,113 @@ class BridgeServer(
             }
             // Mirror into the system clipboard so it is ready to paste on the phone.
             // Writing is always allowed; only reading is restricted on API 29+.
-            SystemClipboard.write(ctx, body.text)
+            mirrorToPhone()
+            call.respond(ApiResult(true))
+        }
+
+        // What the shared clipboard holds: text, a picture, a file, or nothing.
+        get("/api/clipboard") {
+            call.response.header(HttpHeaders.CacheControl, "no-store")
+            call.respond(clipboard.meta.value)
+        }
+
+        // A picture or file copied on the laptop (pasted into the page, or copied in Windows
+        // and sent by the helper). It lands on the phone's own clipboard too, ready to paste.
+        post("/api/clipboard/blob") {
+            if (call.request.header("Bridge-Auto") == "1" && !config.clipSync()) {
+                call.respond(ApiResult(false, "Clipboard sync is off on the phone"))
+                return@post
+            }
+            val declared = call.request.header(HttpHeaders.ContentLength)?.toLongOrNull() ?: -1
+            if (declared > ClipboardStore.MAX_BYTES) {
+                call.respond(HttpStatusCode.PayloadTooLarge, ApiResult(false, "Over ${ClipboardStore.MAX_BYTES / 1048576} MB; send it as a file instead"))
+                return@post
+            }
+            val name = call.request.queryParameters["name"].orEmpty()
+            val mime = call.request.header(HttpHeaders.ContentType)?.substringBefore(';')?.trim().orEmpty()
+            val channel = call.receiveChannel()
+            val meta = withContext(Dispatchers.IO) {
+                clipboard.setBlob(name, mime, channel.toInputStream())
+            }
+            if (meta == null) {
+                call.respond(HttpStatusCode.PayloadTooLarge, ApiResult(false, "Over ${ClipboardStore.MAX_BYTES / 1048576} MB; send it as a file instead"))
+                return@post
+            }
+            mirrorToPhone()
+            call.respond(meta)
+        }
+
+        // The picture or file itself, for the page's preview and download and the helper.
+        get("/api/clipboard/blob") {
+            val m = clipboard.meta.value
+            val f = clipboard.blob()
+            if (f == null) {
+                call.respond(HttpStatusCode.NotFound, ApiResult(false, "The clipboard holds no picture or file"))
+                return@get
+            }
+            val type = runCatching { ContentType.parse(m.mime) }.getOrDefault(ContentType.Application.OctetStream)
+            // Pictures show inline; everything is sandboxed so no file can run as this page.
+            val inline = m.kind == "image" && m.mime != "image/svg+xml"
+            call.response.header("Content-Security-Policy", "sandbox")
+            call.response.header("X-Content-Type-Options", "nosniff")
+            call.response.header(HttpHeaders.CacheControl, "private, max-age=31536000, immutable")
+            call.response.header(
+                HttpHeaders.ContentDisposition,
+                (if (inline) ContentDisposition.Inline else ContentDisposition.Attachment)
+                    .withParameter(ContentDisposition.Parameters.FileName, m.name).toString(),
+            )
+            call.respond(FileRangeContent(f, type))
+        }
+
+        // Clear, from anywhere: the shared clipboard and the phone's own. The history stays.
+        delete("/api/clipboard") {
+            clipboard.set("")
+            SystemClipboard.clear(ctx)
+            call.respond(ApiResult(true))
+        }
+
+        // The history: recent items, newest first, like a keyboard's clipboard.
+        get("/api/clipboard/history") {
+            call.response.header(HttpHeaders.CacheControl, "no-store")
+            call.respond(clipboard.history.value)
+        }
+        get("/api/clipboard/history/{v}/blob") {
+            val v = call.parameters["v"]?.toLongOrNull() ?: -1
+            val m = clipboard.history.value.firstOrNull { it.v == v }
+            val f = clipboard.historyBlob(v)
+            if (m == null || f == null) {
+                call.respond(HttpStatusCode.NotFound, ApiResult(false, "Not in the history"))
+                return@get
+            }
+            call.response.header("Content-Security-Policy", "sandbox")
+            call.response.header("X-Content-Type-Options", "nosniff")
+            call.response.header(HttpHeaders.CacheControl, "private, max-age=31536000, immutable")
+            call.response.header(
+                HttpHeaders.ContentDisposition,
+                (if (m.kind == "image" && m.mime != "image/svg+xml") ContentDisposition.Inline else ContentDisposition.Attachment)
+                    .withParameter(ContentDisposition.Parameters.FileName, m.name).toString(),
+            )
+            call.respond(FileRangeContent(f, runCatching { ContentType.parse(m.mime) }.getOrDefault(ContentType.Application.OctetStream)))
+        }
+        // Puts an item from the history back on the clipboard, everywhere.
+        post("/api/clipboard/history/{v}/use") {
+            val m = clipboard.reuse(call.parameters["v"]?.toLongOrNull() ?: -1)
+            if (m == null) {
+                call.respond(HttpStatusCode.NotFound, ApiResult(false, "Not in the history"))
+                return@post
+            }
+            mirrorToPhone()
+            call.respond(m)
+        }
+        delete("/api/clipboard/history/{v}") {
+            val v = call.parameters["v"]?.toLongOrNull() ?: -1
+            val wasCurrent = clipboard.meta.value.v == v
+            clipboard.forget(v)
+            if (wasCurrent) SystemClipboard.clear(ctx)
+            call.respond(ApiResult(true))
+        }
+        delete("/api/clipboard/history") {
+            clipboard.forgetAll()
             call.respond(ApiResult(true))
         }
 
@@ -650,6 +769,8 @@ class BridgeServer(
             // Immediate snapshot so a reconnecting tab is correct before anything changes.
             send(data = json.encodeToString(index.entries), event = "files")
             send(data = clipboard.text, event = "clipboard")
+            send(data = clipboard.metaJson(), event = "clip")
+            send(data = clipboard.historyJson(), event = "cliphistory")
             send(data = config.theme(), event = "theme")
 
             val pump = CoroutineScope(coroutineContext).launch {
