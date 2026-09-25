@@ -50,6 +50,14 @@ object Control {
      */
     @Volatile var inUse = false
 
+    /** The laptop's master volume (0..1) and mute, as its helper last reported; level -1 until it has. */
+    data class Volume(val level: Float = -1f, val muted: Boolean = false)
+
+    private val _volume = MutableStateFlow(Volume())
+    val volume: StateFlow<Volume> = _volume.asStateFlow()
+
+    fun reportVolume(level: Float, muted: Boolean) { _volume.value = Volume(level.coerceIn(0f, 1f), muted) }
+
     fun send(line: String) {
         for (h in helpers) h.trySend(line)
     }

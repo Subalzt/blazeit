@@ -530,6 +530,23 @@ class BridgeServer(
     }
 
     private fun io.ktor.server.routing.Route.controlRoutes() {
+        // "Phone screen" on the page: the laptop helper opens a window with this phone's screen,
+        // to watch and use with the laptop's mouse and keyboard (scrcpy, over adb).
+        post("/api/mirror") {
+            val mode = call.request.queryParameters["mode"] ?: "start"
+            if (Control.connected.value.isEmpty()) {
+                call.respond(ApiResult(false, "The laptop helper is not running"))
+                return@post
+            }
+            EventBus.emit("mirror", mode)
+            call.respond(ApiResult(true))
+        }
+        // The helper says what the laptop's volume is: on connecting, after each change from
+        // the phone, and when it is changed on the laptop itself. The volume bar shows it.
+        post("/api/control/volume") {
+            runCatching { call.receive<VolumeReport>() }.getOrNull()?.let { Control.reportVolume(it.level, it.muted) }
+            call.respond(ApiResult(true))
+        }
         // The laptop helper holds this open and turns each line into real input. Lines
         // that piled up while the socket was busy go out together in one flush, so a
         // slow moment costs one late batch rather than a growing delay.

@@ -12,3 +12,5 @@ captures/
 .kotlin/
 # Local copy of app/src/main/assets/blazeit-pc.bat; the app serves the real one.
 /tools/blazeit-pc.bat
+# scrcpy, downloaded for phone mirroring (the helper also fetches it by itself)
+/tools/scrcpy/

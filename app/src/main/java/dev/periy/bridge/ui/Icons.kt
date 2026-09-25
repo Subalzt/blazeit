@@ -165,6 +165,17 @@ object BlazeIcons {
         "M12 7.5h4.5", "M12 11.5h5.5", "M12 15.5h4.5",
     )
 
+    /** Media keys: previous track, play or pause, next track. */
+    val Prev: ImageVector = stroked("prev", "M6.5 6v12", "M18 6l-8.5 6 8.5 6Z")
+    val Next: ImageVector = stroked("next", "M17.5 6v12", "M6 6l8.5 6-8.5 6Z")
+    val PlayPause: ImageVector = stroked("playpause", "M4.5 6l7.5 6-7.5 6Z", "M15.5 6.5v11", "M19.5 6.5v11")
+
+    /** A speaker with one wave, two waves, or crossed out: volume down, up, mute. */
+    val VolumeDown: ImageVector = stroked("voldown", "M4 9.5h3.5L12 5.5v13l-4.5-4H4Z", "M15.5 9.5a3.5 3.5 0 0 1 0 5")
+    val VolumeUp: ImageVector = stroked(
+        "volup", "M4 9.5h3.5L12 5.5v13l-4.5-4H4Z", "M15.5 9.5a3.5 3.5 0 0 1 0 5", "M18 7a7 7 0 0 1 0 10",
+    )
+    val Mute: ImageVector = stroked("mute", "M4 9.5h3.5L12 5.5v13l-4.5-4H4Z", "M16 9.5l5 5", "M21 9.5l-5 5")
 
     /** A clock turning back: the clipboard's history. */
     val History: ImageVector = stroked(

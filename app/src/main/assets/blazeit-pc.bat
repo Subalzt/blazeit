@@ -121,6 +121,10 @@ public static class BlazeItPc
         events.IsBackground = true;
         events.Start();
 
+        Thread volume = new Thread(VolumeLoop);
+        volume.IsBackground = true;
+        volume.Start();
+
         ControlLoop();
     }
 
@@ -974,6 +978,12 @@ public static class BlazeItPc
                         {
                             string d = data.ToString();
                             if (ev == "clipsync") clipSync = d == "on";
+                            else if (ev == "mirror" && !snapshot)
+                            {
+                                Thread m = new Thread(delegate () { OpenPhoneScreen(); });
+                                m.IsBackground = true;
+                                m.Start();
+                            }
                             else if (ev == "clip")
                             {
                                 string kind = Field(d, "kind");
@@ -1097,6 +1107,14 @@ public static class BlazeItPc
         string[] a = line.Split(' ');
         switch (a[0])
         {
+            case "v":
+                MasterVolume.Set(float.Parse(a[1], System.Globalization.CultureInfo.InvariantCulture));
+                volumeDirty = true;
+                break;
+            case "vm":
+                MasterVolume.SetMute(!MasterVolume.Muted());
+                volumeDirty = true;
+                break;
             case "m": Mouse(MOVE, int.Parse(a[1]), int.Parse(a[2]), 0); break;
             case "b": Button(a[1], a[2] == "d"); break;
             case "c": Button(a[1], true); Button(a[1], false); break;
@@ -1119,6 +1137,171 @@ public static class BlazeItPc
                 for (int i = keys.Length - 1; i >= 0; i--) Key(keys[i], false);
                 break;
             case "t": Type(Uri.UnescapeDataString(line.Substring(2))); break;
+        }
+    }
+
+    // ------------------------------------------------------------------ the phone's screen
+    //
+    // "Phone screen" on the page opens the phone in a window here, to watch and use with this
+    // laptop's mouse and keyboard, sound included: scrcpy (github.com/Genymobile/scrcpy), which
+    // talks to the phone over adb. It is fetched from its official release the first time and
+    // checked against the release's own checksum. The phone needs USB debugging on, once.
+
+    static Process screen;
+
+    static void OpenPhoneScreen()
+    {
+        try
+        {
+            if (screen != null && !screen.HasExited) { Say("The phone's screen is already open."); return; }
+            string exe = FindScrcpy() ?? FetchScrcpy();
+            if (exe == null) return;
+            string adb = FindAdb(Path.GetDirectoryName(exe));
+            // The cable when there is one: it is the fastest and needs nothing else.
+            string usb = null;
+            foreach (string line in RunOut(adb, "devices").Split('\n'))
+            {
+                string[] p = line.Trim().Split('\t');
+                if (p.Length == 2 && p[1] == "device" && !p[0].Contains(":")) { usb = p[0]; break; }
+            }
+            string target;
+            if (usb != null) target = "-s " + usb;
+            else if (phone != null) target = "--tcpip=" + phone + ":5555";
+            else { Say("Plug the phone in with a USB cable (USB debugging on), then try again."); return; }
+
+            var psi = new ProcessStartInfo(exe,
+                target + " --window-title=\"Phone (BlazeIt)\" --stay-awake --video-bit-rate=16M --max-fps=60");
+            psi.UseShellExecute = false;
+            psi.CreateNoWindow = true;
+            psi.RedirectStandardError = true;
+            psi.RedirectStandardOutput = true;
+            psi.EnvironmentVariables["ADB"] = adb;
+            psi.WorkingDirectory = Path.GetDirectoryName(exe);
+            Say("Opening the phone's screen" + (usb != null ? " over the USB cable." : " over Wi-Fi."));
+            screen = Process.Start(psi);
+            string err = screen.StandardError.ReadToEnd() + screen.StandardOutput.ReadToEnd();
+            screen.WaitForExit();
+            if (screen.ExitCode != 0)
+            {
+                if (err.Contains("Could not find any ADB device") || err.Contains("failed to connect") || err.Contains("Could not connect"))
+                    Say("Could not reach the phone over adb. On the phone: Developer options, turn on USB debugging " +
+                        "(and on Xiaomi, USB debugging (Security settings)); plug it in once, and allow this computer.");
+                else Say("The phone's screen closed: " + LastLine(err));
+            }
+        }
+        catch (Exception e) { Say("Could not open the phone's screen (" + e.Message + ")."); }
+    }
+
+    static string LastLine(string s)
+    {
+        string[] lines = s.Trim().Split('\n');
+        return lines.Length == 0 ? "" : lines[lines.Length - 1].Trim();
+    }
+
+    static string RunOut(string exe, string args)
+    {
+        var psi = new ProcessStartInfo(exe, args);
+        psi.UseShellExecute = false; psi.CreateNoWindow = true; psi.RedirectStandardOutput = true;
+        using (Process p = Process.Start(psi)) { string o = p.StandardOutput.ReadToEnd(); p.WaitForExit(15000); return o; }
+    }
+
+    static string ScrcpyHome
+    {
+        get { return Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "BlazeIt", "scrcpy"); }
+    }
+
+    static string FindScrcpy()
+    {
+        foreach (string dir in new string[] { ScrcpyHome, Path.Combine(HelperDir, "scrcpy") })
+        {
+            string exe = Path.Combine(dir, "scrcpy.exe");
+            if (File.Exists(exe)) return exe;
+        }
+        return null;
+    }
+
+    /** The Android SDK's adb when there is one (two different adbs fight over the same port), else scrcpy's own. */
+    static string FindAdb(string scrcpyDir)
+    {
+        string sdk = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Android", "Sdk", "platform-tools", "adb.exe");
+        if (File.Exists(sdk)) return sdk;
+        return Path.Combine(scrcpyDir, "adb.exe");
+    }
+
+    /** Downloads the latest scrcpy for 64-bit Windows from its official GitHub release, checked. */
+    static string FetchScrcpy()
+    {
+        try
+        {
+            ServicePointManager.SecurityProtocol |= SecurityProtocolType.Tls12;
+            Say("Getting scrcpy (about 11 MB), the piece that shows the phone's screen, from its official release...");
+            string api;
+            var r = (HttpWebRequest)WebRequest.Create("https://api.github.com/repos/Genymobile/scrcpy/releases/latest");
+            r.UserAgent = Ua;
+            using (var resp = r.GetResponse()) using (var rd = new StreamReader(resp.GetResponseStream())) api = rd.ReadToEnd();
+            // The 64-bit Windows zip, then its checksum and link, which follow its name in the listing.
+            Match n = Regex.Match(api, "\"name\":\\s*\"(scrcpy-win64-v[^\"]+\\.zip)\"");
+            string rest = n.Success ? api.Substring(n.Index, Math.Min(6000, api.Length - n.Index)) : "";
+            Match d = Regex.Match(rest, "\"digest\":\\s*\"sha256:([0-9a-f]{64})\"");
+            Match u = Regex.Match(rest, "\"browser_download_url\":\\s*\"([^\"]+)\"");
+            if (!n.Success || !d.Success || !u.Success) { Say("Could not find scrcpy's download. Get it from github.com/Genymobile/scrcpy and unzip it into " + ScrcpyHome); return null; }
+            string zip = Path.Combine(Path.GetTempPath(), n.Groups[1].Value);
+            using (var wc = new WebClient()) { wc.Headers["User-Agent"] = Ua; wc.DownloadFile(u.Groups[1].Value, zip); }
+            string sum;
+            using (var sha = System.Security.Cryptography.SHA256.Create()) using (var fs = File.OpenRead(zip))
+                sum = BitConverter.ToString(sha.ComputeHash(fs)).Replace("-", "").ToLowerInvariant();
+            if (sum != d.Groups[1].Value) { File.Delete(zip); Say("scrcpy's download did not match its checksum; not using it."); return null; }
+            string tmp = ScrcpyHome + ".part";
+            if (Directory.Exists(tmp)) Directory.Delete(tmp, true);
+            System.IO.Compression.ZipFile.ExtractToDirectory(zip, tmp);
+            File.Delete(zip);
+            // The zip holds one folder (scrcpy-win64-vX.Y); that folder becomes ScrcpyHome.
+            string[] inner = Directory.GetDirectories(tmp);
+            string src = inner.Length == 1 && !File.Exists(Path.Combine(tmp, "scrcpy.exe")) ? inner[0] : tmp;
+            if (Directory.Exists(ScrcpyHome)) Directory.Delete(ScrcpyHome, true);
+            Directory.Move(src, ScrcpyHome);
+            if (Directory.Exists(tmp)) Directory.Delete(tmp, true);
+            Say("scrcpy is ready.");
+            return Path.Combine(ScrcpyHome, "scrcpy.exe");
+        }
+        catch (Exception e) { Say("Could not get scrcpy (" + e.Message + ")."); return null; }
+    }
+
+    // ------------------------------------------------------------------ volume
+    //
+    // The phone's volume bar sets the laptop's master volume directly, and shows where it is:
+    // this reports the level on connecting, right after each change, and whenever it is
+    // changed on the laptop itself (keys, the taskbar).
+
+    static volatile bool volumeDirty = true;
+
+    static void VolumeLoop()
+    {
+        string last = null;
+        int n = 0;
+        while (true)
+        {
+            Thread.Sleep(250);
+            try
+            {
+                string cookie = session;
+                if (cookie == null || phone == null) { last = null; continue; }
+                // Quick after a change from the phone; otherwise a look every two seconds.
+                if (!volumeDirty && ++n < 8) continue;
+                n = 0; volumeDirty = false;
+                string now = "{\"level\":" + MasterVolume.Get().ToString("0.###", System.Globalization.CultureInfo.InvariantCulture) +
+                    ",\"muted\":" + (MasterVolume.Muted() ? "true" : "false") + "}";
+                if (now == last) continue;
+                HttpWebRequest r = (HttpWebRequest)WebRequest.Create("http://" + phone + ":" + PhonePort + "/api/control/volume");
+                r.Method = "POST"; r.Proxy = null; r.UserAgent = Ua; r.Timeout = 3000; r.KeepAlive = false;
+                r.ContentType = "application/json"; r.Headers["Cookie"] = cookie;
+                byte[] body = Encoding.UTF8.GetBytes(now);
+                r.ContentLength = body.Length;
+                using (Stream o = r.GetRequestStream()) o.Write(body, 0, body.Length);
+                using (WebResponse resp = r.GetResponse()) { }
+                last = now;
+            }
+            catch { last = null; }
         }
     }
 
@@ -1173,6 +1356,9 @@ public static class BlazeItPc
         { "win", 0x5B }, { "ctrl", 0x11 }, { "alt", 0x12 }, { "shift", 0x10 },
         { "f1", 0x70 }, { "f2", 0x71 }, { "f3", 0x72 }, { "f4", 0x73 }, { "f5", 0x74 }, { "f6", 0x75 },
         { "f7", 0x76 }, { "f8", 0x77 }, { "f9", 0x78 }, { "f10", 0x79 }, { "f11", 0x7A }, { "f12", 0x7B },
+        // Media keys from the Control tab: they reach whatever is playing, even in the background.
+        { "playpause", 0xB3 }, { "next", 0xB0 }, { "prev", 0xB1 },
+        { "volup", 0xAF }, { "voldown", 0xAE }, { "mute", 0xAD },
     };
 
     static readonly HashSet<string> Extended = new HashSet<string>
@@ -1343,6 +1529,72 @@ public static class BlazeItPc
         try { toSocket.Shutdown(SocketShutdown.Send); } catch { }
     }
 }
+
+/** Windows' master volume for the default speakers, through Core Audio. */
+public static class MasterVolume
+{
+    [ComImport, Guid("BCDE0395-E52F-467C-8E3D-C4579291692E")]
+    class MMDeviceEnumerator { }
+
+    [Guid("A95664D2-9614-4F35-A746-DE8DB63617E6"), InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
+    interface IMMDeviceEnumerator
+    {
+        int EnumAudioEndpoints(int dataFlow, int stateMask, out IntPtr devices);
+        int GetDefaultAudioEndpoint(int dataFlow, int role, out IMMDevice device);
+    }
+
+    [Guid("D666063F-1587-4E43-81F1-B948E807363F"), InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
+    interface IMMDevice
+    {
+        int Activate(ref Guid iid, int clsCtx, IntPtr activationParams, [MarshalAs(UnmanagedType.IUnknown)] out object iface);
+    }
+
+    [Guid("5CDF2C82-841E-4546-9722-0CF74078229A"), InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
+    interface IAudioEndpointVolume
+    {
+        int RegisterControlChangeNotify(IntPtr notify);
+        int UnregisterControlChangeNotify(IntPtr notify);
+        int GetChannelCount(out int count);
+        int SetMasterVolumeLevel(float db, ref Guid context);
+        int SetMasterVolumeLevelScalar(float level, ref Guid context);
+        int GetMasterVolumeLevel(out float db);
+        int GetMasterVolumeLevelScalar(out float level);
+        int SetChannelVolumeLevel(uint channel, float db, ref Guid context);
+        int SetChannelVolumeLevelScalar(uint channel, float level, ref Guid context);
+        int GetChannelVolumeLevel(uint channel, out float db);
+        int GetChannelVolumeLevelScalar(uint channel, out float level);
+        int SetMute([MarshalAs(UnmanagedType.Bool)] bool mute, ref Guid context);
+        int GetMute([MarshalAs(UnmanagedType.Bool)] out bool mute);
+    }
+
+    /** The default speakers as they are now: a different device may be plugged in any time. */
+    static IAudioEndpointVolume Endpoint()
+    {
+        var e = (IMMDeviceEnumerator)new MMDeviceEnumerator();
+        IMMDevice dev;
+        Marshal.ThrowExceptionForHR(e.GetDefaultAudioEndpoint(0, 1, out dev)); // render, multimedia
+        Guid iid = typeof(IAudioEndpointVolume).GUID;
+        object o;
+        Marshal.ThrowExceptionForHR(dev.Activate(ref iid, 23, IntPtr.Zero, out o)); // CLSCTX_ALL
+        return (IAudioEndpointVolume)o;
+    }
+
+    public static float Get() { float v; Endpoint().GetMasterVolumeLevelScalar(out v); return v; }
+
+    public static void Set(float level)
+    {
+        Guid g = Guid.Empty;
+        var ep = Endpoint();
+        ep.SetMasterVolumeLevelScalar(Math.Max(0f, Math.Min(1f, level)), ref g);
+        // Turning it up means wanting to hear it.
+        if (level > 0) { bool m; ep.GetMute(out m); if (m) ep.SetMute(false, ref g); }
+    }
+
+    public static bool Muted() { bool m; Endpoint().GetMute(out m); return m; }
+
+    public static void SetMute(bool mute) { Guid g = Guid.Empty; Endpoint().SetMute(mute, ref g); }
+}
+
 '@
 
 Add-Type -TypeDefinition $source -Language CSharp -ReferencedAssemblies System.Windows.Forms, System.Drawing, System.IO.Compression, System.IO.Compression.FileSystem

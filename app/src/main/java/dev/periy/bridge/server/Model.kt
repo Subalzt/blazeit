@@ -126,6 +126,9 @@ data class PairStatusDto(val state: String)
 /** The phone's notifications, and whether BlazeIt may see them at all. */
 @Serializable data class NotifList(val allowed: Boolean, val items: List<NotifDto>)
 
+/** The laptop's master volume, from its helper. */
+@Serializable data class VolumeReport(val level: Float = 0f, val muted: Boolean = false)
+
 /** A browser reporting the round trip it measured to this phone. */
 @Serializable data class RttReport(val ms: Int = -1)
 

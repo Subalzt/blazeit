@@ -39,6 +39,14 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.systemGestureExclusion
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.ui.draw.shadow
+import kotlin.math.roundToInt
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -202,6 +210,9 @@ private fun Trackpad(pad: PadState, status: String, live: Boolean, modifier: Mod
     // Where the speed control sits, in the pad's own coordinates. A touch that starts
     // there belongs to the control, not to the pointer.
     var speedArea by remember { mutableStateOf(Rect.Zero) }
+    // The two seek arrows on the sides: touches there are theirs, not the pointer's.
+    var backArea by remember { mutableStateOf(Rect.Zero) }
+    var skipArea by remember { mutableStateOf(Rect.Zero) }
     var fling by remember { mutableStateOf<Job?>(null) }
     var lastTapAt by remember { mutableStateOf(0L) }
     var lastTapPos by remember { mutableStateOf(Offset.Zero) }
@@ -220,7 +231,9 @@ private fun Trackpad(pad: PadState, status: String, live: Boolean, modifier: Mod
 
                 awaitEachGesture {
                     val first = awaitFirstDown(requireUnconsumed = false)
-                    if (speedArea.contains(first.position)) return@awaitEachGesture
+                    if (speedArea.contains(first.position) || backArea.contains(first.position) ||
+                        skipArea.contains(first.position)
+                    ) return@awaitEachGesture
                     fling?.cancel()
                     val t0 = first.uptimeMillis
                     val dragArmed = t0 - lastTapAt < DOUBLE_TAP_MS &&
@@ -382,7 +395,17 @@ private fun Trackpad(pad: PadState, status: String, live: Boolean, modifier: Mod
                 .align(Alignment.TopEnd)
                 .onGloballyPositioned { speedArea = it.boundsInParent() },
         )
-        Column(Modifier.padding(horizontal = 16.dp, vertical = 28.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+        // Rewind and skip: the left and right arrow keys, which seek in YouTube, Netflix and most
+        // players (and step through photos and slides). Hold to keep going.
+        SeekArrow(
+            pad, "left", "Back",
+            Modifier.align(Alignment.CenterStart).onGloballyPositioned { backArea = it.boundsInParent() },
+        )
+        SeekArrow(
+            pad, "right", "Skip",
+            Modifier.align(Alignment.CenterEnd).onGloballyPositioned { skipArea = it.boundsInParent() },
+        )
+        Column(Modifier.padding(horizontal = 62.dp, vertical = 28.dp), horizontalAlignment = Alignment.CenterHorizontally) {
             Icon(BlazeIcons.Trackpad, null, tint = Bridge.Faint, modifier = Modifier.size(34.dp))
             Spacer(Modifier.height(12.dp))
             Text("Trackpad", style = TitleStyle, color = Bridge.Muted)
@@ -396,6 +419,56 @@ private fun Trackpad(pad: PadState, status: String, live: Boolean, modifier: Mod
         }
     }
 }
+
+/**
+ * A tall, quiet arrow at the pad's edge that sends an arrow key: once on a tap, and again and
+ * again while held, as a real key repeats.
+ */
+@Composable
+private fun SeekArrow(pad: PadState, key: String, label: String, modifier: Modifier) {
+    val view = LocalView.current
+    val scope = rememberCoroutineScope()
+    var held by remember { mutableStateOf(false) }
+    Column(
+        modifier
+            .padding(6.dp)
+            .width(44.dp)
+            .height(112.dp)
+            .clip(ButtonShape)
+            .background(if (held) Bridge.Yellow else Bridge.Chip.copy(alpha = 0.7f))
+            .pointerInput(key) {
+                awaitEachGesture {
+                    awaitFirstDown()
+                    held = true
+                    view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+                    pad.key(key)
+                    val repeat = scope.launch {
+                        kotlinx.coroutines.delay(REPEAT_AFTER_MS)
+                        while (true) {
+                            pad.key(key)
+                            kotlinx.coroutines.delay(REPEAT_EVERY_MS)
+                        }
+                    }
+                    // Wait for every finger to lift.
+                    do { val e = awaitPointerEvent() } while (e.changes.any { it.pressed })
+                    repeat.cancel()
+                    held = false
+                }
+            },
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center,
+    ) {
+        Icon(
+            BlazeIcons.Chevron, label,
+            tint = if (held) Bridge.OnYellow else Bridge.Text,
+            modifier = Modifier.size(24.dp).graphicsLayer { rotationZ = if (key == "left") 180f else 0f },
+        )
+        Text(label, style = LabelStyle.copy(fontSize = 10.sp), color = if (held) Bridge.OnYellow else Bridge.Muted)
+    }
+}
+
+private const val REPEAT_AFTER_MS = 420L
+private const val REPEAT_EVERY_MS = 110L
 
 /**
  * Pointer speed as one quiet control in the pad's corner: a small dial whose needle
@@ -469,6 +542,12 @@ private suspend fun momentum(pad: PadState, startX: Float, startY: Float) {
 
 // -------------------------------------------------------------------- keys
 
+/**
+ * Under the pad. With the phone keyboard down: the keyboard button and the laptop's media keys
+ * (previous, play or pause, next, volume, mute), which work in whatever is playing. With the
+ * keyboard up, the keys a phone keyboard lacks sit on top of it, in a row that scrolls: Esc, Tab,
+ * Ctrl, Alt, Shift and Win (tap to hold for the next key or click), the arrows, Del, Home, End.
+ */
 @Composable
 private fun KeyRow(pad: PadState, imeUp: Boolean) {
     val ctx = LocalContext.current
@@ -488,7 +567,7 @@ private fun KeyRow(pad: PadState, imeUp: Boolean) {
             factory = { KeyCatcher(it, onText = pad::type, onKey = pad::key).also { v -> catcher = v } },
             modifier = Modifier.size(1.dp),
         )
-        KeyChip("Keyboard", Modifier.weight(1.6f), on = imeUp) {
+        KeyChip(if (imeUp) "Done" else "Keyboard", on = imeUp) {
             val v = catcher ?: return@KeyChip
             val imm = ctx.getSystemService(InputMethodManager::class.java)
             if (imeUp) {
@@ -499,13 +578,235 @@ private fun KeyRow(pad: PadState, imeUp: Boolean) {
                 imm?.showSoftInput(v, InputMethodManager.SHOW_IMPLICIT)
             }
         }
-        KeyChip("Ctrl", Modifier.weight(1f), on = "ctrl" in pad.mods) { pad.toggleMod("ctrl") }
-        KeyChip("Win", Modifier.weight(1f), on = "win" in pad.mods) {
-            // Tapped twice with nothing in between, Win opens Start, as the real key does.
-            if ("win" in pad.mods) { pad.mods.remove("win"); pad.key("win") } else pad.toggleMod("win")
+        if (imeUp) {
+            KeyChip("Esc") { pad.key("esc") }
+            KeyChip("Ctrl", on = "ctrl" in pad.mods) { pad.toggleMod("ctrl") }
+            KeyChip("Win", on = "win" in pad.mods) {
+                // Tapped twice with nothing in between, Win opens Start, as the real key does.
+                if ("win" in pad.mods) { pad.mods.remove("win"); pad.key("win") } else pad.toggleMod("win")
+            }
+            // The arrows fill the rest of the row, big enough to hit without looking, and
+            // repeat while held.
+            ArrowKey(pad, "left", Modifier.weight(1f))
+            ArrowKey(pad, "up", Modifier.weight(1f))
+            ArrowKey(pad, "down", Modifier.weight(1f))
+            ArrowKey(pad, "right", Modifier.weight(1f))
+        } else {
+            // The laptop's media keys: they reach whatever is playing, even in the background.
+            // Play or pause is the one reached for most, so it is the big yellow one in the middle.
+            IconKeyChip(BlazeIcons.Prev, "Previous", Modifier.weight(1f)) { pad.key("prev") }
+            PlayPauseKey(pad)
+            IconKeyChip(BlazeIcons.Next, "Next", Modifier.weight(1f)) { pad.key("next") }
+            Spacer(Modifier.width(4.dp))
+            VolumeKey(pad, Modifier.weight(1.3f))
         }
-        KeyChip("Esc", Modifier.weight(1f)) { pad.key("esc") }
     }
+}
+
+/**
+ * The laptop's volume: a speaker key that opens a tall bar above it. Drag or tap the bar to set
+ * the level, the speaker at its foot mutes; tap the key again, or anywhere else, to close it.
+ * The level shown is the laptop's own, reported by its helper, so a change made on the laptop
+ * shows here too.
+ */
+@Composable
+private fun VolumeKey(pad: PadState, modifier: Modifier) {
+    val vol by Control.volume.collectAsStateWithLifecycle()
+    var open by remember { mutableStateOf(false) }
+    val lift = with(androidx.compose.ui.platform.LocalDensity.current) { 50.dp.roundToPx() }
+    val icon = when {
+        vol.muted || vol.level == 0f -> BlazeIcons.Mute
+        vol.level in 0f..0.5f -> BlazeIcons.VolumeDown
+        else -> BlazeIcons.VolumeUp
+    }
+    Box(modifier) {
+        Box(
+            Modifier
+                .fillMaxWidth()
+                .height(40.dp)
+                .clip(ButtonShape)
+                .background(if (open) Bridge.Yellow else Bridge.Surface)
+                .clickable { open = !open },
+            contentAlignment = Alignment.Center,
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(icon, "Volume", tint = if (open) Bridge.OnYellow else Bridge.Text, modifier = Modifier.size(20.dp))
+                if (vol.level >= 0f) {
+                    Spacer(Modifier.width(3.dp))
+                    Text(
+                        (vol.level * 100).roundToInt().toString(),
+                        style = LabelStyle.copy(fontSize = 12.sp), color = if (open) Bridge.OnYellow else Bridge.Muted,
+                    )
+                }
+            }
+        }
+        if (open) {
+            androidx.compose.ui.window.Popup(
+                alignment = Alignment.BottomCenter,
+                offset = androidx.compose.ui.unit.IntOffset(0, -lift),
+                onDismissRequest = { open = false },
+                properties = androidx.compose.ui.window.PopupProperties(focusable = true),
+            ) { VolumeBar(pad, vol) }
+        }
+    }
+}
+
+@Composable
+private fun VolumeBar(pad: PadState, vol: Control.Volume) {
+    val view = LocalView.current
+    // What the finger set, shown until the laptop reports it back.
+    var local by remember { mutableStateOf<Float?>(null) }
+    var dragging by remember { mutableStateOf(false) }
+    LaunchedEffect(vol) { if (!dragging) local = null }
+    val level = local ?: vol.level.takeIf { it >= 0f } ?: 0.5f
+    Column(
+        Modifier
+            .width(68.dp)
+            .shadow(14.dp, RoundedCornerShape(26.dp))
+            .clip(RoundedCornerShape(26.dp))
+            .background(Bridge.Surface)
+            .padding(vertical = 12.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Text((level * 100).roundToInt().toString(), style = LabelStyle, color = Bridge.Text)
+        Box(
+            Modifier
+                .padding(vertical = 10.dp)
+                .width(42.dp)
+                .height(210.dp)
+                .clip(RoundedCornerShape(21.dp))
+                .background(Bridge.Chip)
+                .pointerInput(Unit) {
+                    fun at(y: Float) = (1f - y / size.height).coerceIn(0f, 1f)
+                    var lastSent = 0L
+                    fun set(v: Float, force: Boolean) {
+                        local = v
+                        val now = SystemClock.uptimeMillis()
+                        if (force || now - lastSent > 45) {
+                            pad.send("v " + String.format(java.util.Locale.US, "%.3f", v))
+                            lastSent = now
+                        }
+                    }
+                    awaitEachGesture {
+                        val down = awaitFirstDown()
+                        dragging = true
+                        var cur = at(down.position.y)
+                        set(cur, false)
+                        down.consume()
+                        while (true) {
+                            val e = awaitPointerEvent()
+                            val c = e.changes.firstOrNull() ?: break
+                            if (!c.pressed) break
+                            cur = at(c.position.y)
+                            set(cur, false)
+                            c.consume()
+                        }
+                        set(cur, true)
+                        view.performHapticFeedback(HapticFeedbackConstants.CLOCK_TICK)
+                        dragging = false
+                    }
+                },
+        ) {
+            Box(
+                Modifier
+                    .align(Alignment.BottomCenter)
+                    .fillMaxWidth()
+                    .fillMaxHeight(level)
+                    .background(if (vol.muted) Bridge.Faint else Bridge.Yellow),
+            )
+        }
+        Box(
+            Modifier
+                .size(42.dp)
+                .clip(androidx.compose.foundation.shape.CircleShape)
+                .background(if (vol.muted) Bridge.Yellow else Bridge.Chip)
+                .clickable {
+                    view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+                    pad.send("vm")
+                },
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(BlazeIcons.Mute, if (vol.muted) "Unmute" else "Mute", tint = if (vol.muted) Bridge.OnYellow else Bridge.Text, modifier = Modifier.size(20.dp))
+        }
+    }
+}
+
+/** Play or pause on the laptop: a big yellow circle, the key a remote is held for. */
+@Composable
+private fun PlayPauseKey(pad: PadState) {
+    val view = LocalView.current
+    Box(
+        Modifier
+            .size(54.dp)
+            .clip(androidx.compose.foundation.shape.CircleShape)
+            .background(Bridge.Yellow)
+            .clickable {
+                view.performHapticFeedback(HapticFeedbackConstants.CONFIRM)
+                pad.key("playpause")
+            },
+        contentAlignment = Alignment.Center,
+    ) { Icon(BlazeIcons.PlayPause, "Play or pause", tint = Bridge.OnYellow, modifier = Modifier.size(26.dp)) }
+}
+
+/** An arrow key over the phone keyboard: sent once on a tap, again and again while held. */
+@Composable
+private fun ArrowKey(pad: PadState, key: String, modifier: Modifier) {
+    val view = LocalView.current
+    val scope = rememberCoroutineScope()
+    var held by remember { mutableStateOf(false) }
+    Box(
+        modifier
+            .height(40.dp)
+            .clip(ButtonShape)
+            .background(if (held) Bridge.Yellow else Bridge.Surface)
+            .pointerInput(key) {
+                awaitEachGesture {
+                    awaitFirstDown()
+                    held = true
+                    view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+                    pad.key(key)
+                    val repeat = scope.launch {
+                        kotlinx.coroutines.delay(REPEAT_AFTER_MS)
+                        while (true) { pad.key(key); kotlinx.coroutines.delay(REPEAT_EVERY_MS) }
+                    }
+                    do { val e = awaitPointerEvent() } while (e.changes.any { it.pressed })
+                    repeat.cancel()
+                    held = false
+                }
+            },
+        contentAlignment = Alignment.Center,
+    ) {
+        Icon(
+            BlazeIcons.Chevron, key,
+            tint = if (held) Bridge.OnYellow else Bridge.Text,
+            modifier = Modifier.size(22.dp).graphicsLayer {
+                rotationZ = when (key) { "left" -> 180f; "up" -> -90f; "down" -> 90f; else -> 0f }
+            },
+        )
+    }
+}
+
+/** A key chip showing an icon, for keys a word would not fit on. */
+@Composable
+private fun IconKeyChip(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    label: String,
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit,
+) {
+    val view = LocalView.current
+    Box(
+        modifier
+            .widthIn(min = 44.dp)
+            .height(40.dp)
+            .clip(ButtonShape)
+            .background(Bridge.Surface)
+            .clickable {
+                view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+                onClick()
+            },
+        contentAlignment = Alignment.Center,
+    ) { Icon(icon, label, tint = Bridge.Text, modifier = Modifier.size(20.dp)) }
 }
 
 @Composable

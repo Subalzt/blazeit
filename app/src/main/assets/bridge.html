@@ -582,6 +582,7 @@
     <div class="status-line">
       <span class="dot" id="hero-dot"></span>
       <div class="who"><b id="hero-title">Phone</b><span id="hero-state">Connecting</span><span id="hero-sub"></span></div>
+      <button class="btn sm" id="mirror-btn" hidden title="Open the phone's screen in a window on this laptop, to use with the mouse and keyboard">Phone screen</button>
       <div class="rate"><b id="hero-rate">Idle</b><span id="hero-rate-sub"></span></div>
     </div>
     <p class="route-hint" id="route-hint" hidden></p>
@@ -1549,6 +1550,23 @@ function setupNotifs() {
     renderNotifs();
   };
   loadNotifs();
+}
+
+// ------------------------------------------------------------------ the phone's screen
+//
+// The laptop helper opens the phone's screen in a window of its own (scrcpy, over adb): the
+// phone at full frame rate with its sound, used with this laptop's mouse and keyboard. It needs
+// USB debugging on the phone, set up once; the helper says so in its window if it is missing.
+
+function setupMirror() {
+  var b = $("mirror-btn");
+  b.hidden = !viaHelper;
+  b.onclick = async function () {
+    b.disabled = true;
+    var r = await (await api("/api/mirror", { method: "POST" })).json();
+    b.textContent = r.ok ? "Opening..." : "Run the helper";
+    setTimeout(function () { b.disabled = false; b.textContent = "Phone screen"; }, 4000);
+  };
 }
 
 function flash(msg) {
@@ -3421,6 +3439,7 @@ function showApp() {
     setupPlayer();
     setupPhoneFiles();
     setupNotifs();
+    setupMirror();
     setupViewer();
     wireMonitor();
     $("measure").addEventListener("click", measure);
