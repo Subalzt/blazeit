@@ -37,7 +37,6 @@ data class UiState(
     val storageMode: Storage.Mode = Storage.Mode.NO_DESTINATION,
     val destination: String? = null,
     val freeSpace: Long = -1,
-    val maxUploadSize: Long = 0,
     val forceStagedCopy: Boolean = false,
     val notificationsGranted: Boolean = true,
     val batteryExempt: Boolean = false,
@@ -137,7 +136,6 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                 storageMode = storageInfo.first,
                 destination = storageInfo.second,
                 freeSpace = storageInfo.third,
-                maxUploadSize = prefs.tusMaxSize,
                 forceStagedCopy = prefs.forceStagedCopy,
                 notificationsGranted = notificationsGranted(),
                 batteryExempt = OemBatterySetup.isIgnoringBatteryOptimizations(app),
@@ -428,17 +426,6 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         getApplication<Application>().container.clipboard.set(text)
         _sendStatus.value = "Text sent to the computer"
         clearSendStatusLater()
-    }
-
-    fun removeFile(id: String) {
-        val app = getApplication<Application>()
-        viewModelScope.launch {
-            withContext(Dispatchers.IO) {
-                val gone = app.container.index.remove(id)
-                // Only delete files this app created. A picked file is the user's own.
-                if (gone != null && gone.owned) app.container.storage.delete(gone)
-            }
-        }
     }
 
     private fun clearSendStatusLater() {

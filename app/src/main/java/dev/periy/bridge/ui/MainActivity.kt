@@ -452,9 +452,7 @@ private fun LazyListScope.homeTab(
                     first = i == 0,
                     icon = if (f.origin == "PHONE") BlazeIcons.Upload else BlazeIcons.Download,
                     iconColor = if (f.origin == "PHONE") Bridge.Good else Bridge.Orange,
-                ) {
-                    IconChip(BlazeIcons.Close, "Remove ${f.name}", tint = Bridge.Muted) { vm.removeFile(f.id) }
-                }
+                )
             }
         }
     }
@@ -1021,18 +1019,7 @@ private fun LazyListScope.settingsTab(
                 first = true, icon = BlazeIcons.File, iconColor = Bridge.Orange,
                 onClick = pickFolder,
             ) { Text("Change", style = LabelStyle, color = Bridge.Blue) }
-            SettingRow(
-                "Largest file accepted",
-                if (state.maxUploadSize == Long.MAX_VALUE) "No limit: anything that fits in the free space." else null,
-            )
-            Box(Modifier.padding(start = 16.dp, end = 16.dp, bottom = 14.dp)) {
-                // Long.MAX_VALUE is "no limit": the free-space check on every upload is then the only one.
-                val sizes = listOf(4L shl 30, 12L shl 30, 32L shl 30, 64L shl 30, Long.MAX_VALUE)
-                SegmentedRow(listOf("4 GB", "12", "32", "64", "Any"), sizes.indexOf(state.maxUploadSize)) {
-                    vm.setMaxUploadSize(sizes[it])
-                }
-            }
-            SettingRow("Always stage in app storage", "Slower but always safe. Only if files arrive damaged.") {
+            SettingRow("Always stage in app storage", "Slower; only if files arrive damaged") {
                 Toggle(state.forceStagedCopy) { vm.setForceStagedCopy(it) }
             }
         }

@@ -107,7 +107,6 @@ class TusStore(
     ctx: Context,
     private val storage: Storage,
     private val index: FileIndex,
-    private val maxSize: () -> Long,
 ) {
     private val json = Json { ignoreUnknownKeys = true; encodeDefaults = true }
     private val dir = File(ctx.applicationContext.filesDir, "tus").apply { mkdirs() }
@@ -121,8 +120,6 @@ class TusStore(
 
     /** Live byte counts per stream, for aggregate progress without hitting the disk. */
     private val runtimes = ConcurrentHashMap<String, GroupRuntime>()
-
-    val maxUploadSize: Long get() = maxSize()
 
     private class GroupRuntime(val total: Long) {
         val positions = ConcurrentHashMap<String, Long>()
@@ -206,6 +203,8 @@ class TusStore(
     /** Cancels a whole upload. Callers may pass any stream id belonging to it. */
     fun terminate(idOrStreamId: String) {
         val group = group(idOrStreamId) ?: get(idOrStreamId)?.let { group(it.groupId) } ?: return
+        // Cancelling only ever throws away an unfinished upload; a finished file stays.
+        if (group.finalized) return
         group.streamIds.forEach { infoFile(it).delete() }
         storage.slotFromRef(group.slotRef)?.discard()
         groupFile(group.id).delete()
@@ -437,8 +436,6 @@ class TusStore(
         runtime.lastPublishedAt = now
         Transfers.progress(group.id, runtime.sum())
     }
-
-    fun withinLimit(length: Long): Boolean = length in 0..maxUploadSize
 
     // ---------------------------------------------------------------- persistence
 

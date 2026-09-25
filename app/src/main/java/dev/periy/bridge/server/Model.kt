@@ -33,7 +33,6 @@ data class FileEntry(
 data class StateDto(
     val clipboard: String,
     val files: List<FileEntry>,
-    val maxUploadSize: Long,
     val deviceName: String,
     /** How many parallel connections the page should open. See TusStore's class comment. */
     val uploadStreams: Int = 4,
@@ -67,8 +66,6 @@ class ServerConfig(
     val laptopLink: () -> String = { "direct" },
     val hotspot: () -> Pair<String, String> = { "" to "" },
     val clipSync: () -> Boolean = { true },
-    /** Sets the largest upload accepted; Long.MAX_VALUE means only free space counts. */
-    val setMaxUpload: (Long) -> Unit,
     val sessionTtlMs: Long = 30L * 24 * 60 * 60 * 1000,
     val deviceName: String,
 )
@@ -122,8 +119,6 @@ data class PairStatusDto(val state: String)
 
 @Serializable data class ThemeRequest(val theme: String = "system")
 
-/** From the page's Settings: a size in GB, or no limit. */
-@Serializable data class MaxUploadRequest(val gb: Int = 0, val unlimited: Boolean = false)
 
 /** A browser reporting the round trip it measured to this phone. */
 @Serializable data class RttReport(val ms: Int = -1)

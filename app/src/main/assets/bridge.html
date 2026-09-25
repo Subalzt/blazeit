@@ -521,7 +521,6 @@
         </div>
         <input id="file-input" type="file" multiple hidden>
         <input id="folder-input" type="file" webkitdirectory multiple hidden>
-        <p class="note" id="limit"></p>
       </div>
     </div>
 
@@ -604,21 +603,6 @@
         <button data-theme-choice="light">Light</button>
         <button data-theme-choice="dark">Dark</button>
       </div>
-    </div>
-
-    <div class="card">
-      <div class="card-title">
-        <span class="appicon orange"><svg viewBox="0 0 24 24"><path d="M13.5 3.5H7A1.5 1.5 0 0 0 5.5 5v14A1.5 1.5 0 0 0 7 20.5h10a1.5 1.5 0 0 0 1.5-1.5V8.5Z"/><path d="M13.5 3.5v5h5"/></svg></span>
-        <div class="grow"><h3>Receiving on the phone</h3><p>Largest file accepted</p></div>
-      </div>
-      <div class="seg" id="size-seg">
-        <button data-gb="4">4 GB</button>
-        <button data-gb="12">12 GB</button>
-        <button data-gb="32">32 GB</button>
-        <button data-gb="64">64 GB</button>
-        <button data-gb="0">No limit</button>
-      </div>
-      <p class="note" id="size-note">The same setting as on the phone. With no limit, anything that fits in the phone's free space is accepted.</p>
     </div>
 
     <div class="card">
@@ -768,7 +752,7 @@ var MAX_TRIES = 8;
 var STORE_KEY = "bridge.uploads.v2";
 var BLOB_DOWNLOAD_LIMIT = 256 * 1024 * 1024;
 
-var state = { files: [], maxUpload: 0, device: "", streams: 4, parallelThreshold: 16 * 1024 * 1024 };
+var state = { files: [], device: "", streams: 4, parallelThreshold: 16 * 1024 * 1024 };
 var transfers = [];
 var events = null;
 var ticker = null;
@@ -1188,13 +1172,6 @@ function forget(row) {
 
 function addFiles(list) {
   Array.prototype.slice.call(list).forEach(function (f) {
-    if (state.maxUpload && f.size > state.maxUpload) {
-      transfers.unshift({
-        id: uid(), dir: "up", name: f.name, size: f.size, transferred: 0, streams: [],
-        state: "error", status: "larger than the phone accepts (" + bytes(state.maxUpload) + " limit; raise it in the phone's Setup)",
-      });
-      return;
-    }
     var row = {
       id: uid(), dir: "up", file: f, name: f.name, size: f.size,
       transferred: 0, bps: 0, streams: [], state: "queued", status: "waiting",
@@ -1508,11 +1485,10 @@ function addFolder(name, items) {
     id: uid(), dir: "up", kind: "folder", name: name, size: 0, transferred: 0, bps: 0,
     streams: [], state: "active", status: "", cursor: 0,
     children: items.map(function (it) {
-      var tooBig = state.maxUpload && it.file.size > state.maxUpload;
       return {
         id: uid(), dir: "up", inFolder: true, file: it.file, relDir: it.dir, name: it.file.name,
         size: it.file.size, transferred: 0, bps: 0, streams: [],
-        state: tooBig ? "error" : "queued", status: tooBig ? "larger than the phone accepts" : "",
+        state: "queued", status: "",
       };
     }),
   };
@@ -1940,10 +1916,6 @@ function renderFiles() {
       "Download",
       function () { startDownload(f); }, ""
     ));
-    acts.appendChild(btn("Delete", async function () {
-      await api("/api/files/" + encodeURIComponent(f.id), { method: "DELETE" });
-      refreshState();
-    }, "ghost danger"));
     body.appendChild(acts);
 
     d.appendChild(body);
@@ -2156,7 +2128,6 @@ async function refreshState() {
   if (!res.ok) return;
   var s = await res.json();
   state.files = s.files || [];
-  state.maxUpload = s.maxUploadSize || 0;
   state.device = s.deviceName || "";
   applyTheme(s.theme || "system");
   state.parallelThreshold = s.parallelThreshold || state.parallelThreshold;
@@ -2168,23 +2139,9 @@ async function refreshState() {
   $("hero-title").textContent = state.device || "Phone";
   $("status-device").textContent = state.device || "Phone";
   renderRoute();
-  // The phone sends Long.MAX_VALUE for "no limit"; only its free space counts then.
-  var unlimited = state.maxUpload > 1e15;
-  $("limit").textContent = !state.maxUpload ? ""
-    : (unlimited ? "No size limit: anything that fits in the phone's free space."
-                 : "Up to " + bytes(state.maxUpload) + " per file.") +
-      " Transfers pick up by themselves if the connection drops.";
   if (document.activeElement !== $("clip") && !$("clip").value) $("clip").value = s.clipboard || "";
   renderStreams();
   renderFiles();
-  renderSizeSeg();
-}
-
-function renderSizeSeg() {
-  var gb = state.maxUpload > 1e15 ? 0 : Math.round(state.maxUpload / 1073741824);
-  Array.prototype.forEach.call($("size-seg").children, function (b) {
-    if (b.tagName === "BUTTON") b.classList.toggle("on", parseInt(b.dataset.gb, 10) === gb);
-  });
 }
 
 // ------------------------------------------------------------------ theme
@@ -2893,18 +2850,6 @@ function showApp() {
     $("measure").addEventListener("click", measure);
     Array.prototype.forEach.call(document.querySelectorAll("[data-theme-choice]"), function (b) {
       b.addEventListener("click", function () { setTheme(b.dataset.themeChoice); });
-    });
-    Array.prototype.forEach.call($("size-seg").children, function (b) {
-      b.addEventListener("click", async function () {
-        var gb = parseInt(b.dataset.gb, 10);
-        try {
-          await api("/api/settings/max-upload", {
-            method: "POST", headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(gb ? { gb: gb } : { unlimited: true }),
-          });
-        } catch (e) {}
-        refreshState();
-      });
     });
     renderPending();
   } else setMonitor(monitorWanted());

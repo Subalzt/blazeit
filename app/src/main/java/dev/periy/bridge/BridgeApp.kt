@@ -29,7 +29,7 @@ class Container(ctx: Context) {
     val storage = Storage(app, prefs)
     val index = FileIndex(app)
     val clipboard = ClipboardStore(app)
-    val tus = TusStore(app, storage, index) { prefs.tusMaxSize }
+    val tus = TusStore(app, storage, index)
     val devices = DeviceRegistry(app)
     val pairing = PairingManager(app, devices)
     val music = MusicLibrary(app)
@@ -69,7 +69,6 @@ class Container(ctx: Context) {
             laptopLink = { prefs.laptopLink },
             hotspot = { prefs.hotspotSsid to prefs.hotspotPass },
             clipSync = { prefs.clipSync },
-            setMaxUpload = { prefs.tusMaxSize = it },
             deviceName = deviceName(),
         )
         return BridgeServer(app, config, storage, tus, index, clipboard, devices, pairing, music, direct)

@@ -489,22 +489,6 @@ class BridgeServer(
 
     private fun io.ktor.server.routing.Route.themeRoutes() {
         // One shared setting: flipping it here changes the phone and every open page.
-        // The phone's receiving limit, set from a page's Settings; the same choice as on the phone.
-        post("/api/settings/max-upload") {
-            val body = runCatching { call.receive<MaxUploadRequest>() }.getOrNull()
-            val bytes = when {
-                body == null -> null
-                body.unlimited -> Long.MAX_VALUE
-                body.gb in 1..4096 -> body.gb.toLong() shl 30
-                else -> null
-            }
-            if (bytes == null) {
-                call.respond(HttpStatusCode.BadRequest, ApiResult(false, "Pick a size or no limit"))
-            } else {
-                config.setMaxUpload(bytes)
-                call.respond(ApiResult(true))
-            }
-        }
         post("/api/theme") {
             val body = runCatching { call.receive<ThemeRequest>() }.getOrDefault(ThemeRequest())
             config.setTheme(body.theme)
@@ -597,7 +581,6 @@ class BridgeServer(
                 StateDto(
                     clipboard = clipboard.text,
                     files = index.entries,
-                    maxUploadSize = tus.maxUploadSize,
                     deviceName = config.deviceName,
                     uploadStreams = config.uploadStreams(),
                     theme = config.theme(),
@@ -649,16 +632,8 @@ class BridgeServer(
                 )
             )
         }
-
-        delete("/api/files/{id}") {
-            val entry = index.remove(call.parameters["id"].orEmpty())
-            if (entry == null) {
-                call.respond(HttpStatusCode.NotFound, ApiResult(false, "No such file"))
-            } else {
-                if (entry.owned) storage.delete(entry)
-                call.respond(ApiResult(true))
-            }
-        }
+        // There is deliberately no DELETE: shared files cannot be removed from the page or the
+        // app. They go only when deleted on the phone itself, and the list drops them then.
     }
 
     // ------------------------------------------------------------------ sse
@@ -822,10 +797,8 @@ class BridgeServer(
      * creation endpoints so the two cannot drift apart.
      */
     private fun refuseUpload(length: Long): Pair<HttpStatusCode, String>? {
-        if (!tus.withinLimit(length)) {
-            return HttpStatusCode.PayloadTooLarge to
-                "Exceeds Tus-Max-Size of ${tus.maxUploadSize} bytes"
-        }
+        // No size limit: a file of any size is accepted as long as it fits in the free space.
+        if (length < 0) return HttpStatusCode.BadRequest to "Upload-Length must be a size in bytes"
         if (!storage.hasDestination()) {
             return HttpStatusCode.ServiceUnavailable to
                 "No destination folder has been chosen on the phone yet"
@@ -905,7 +878,6 @@ class BridgeServer(
         response.header("Tus-Resumable", TUS_VERSION)
         response.header("Tus-Version", TUS_VERSION)
         response.header("Tus-Extension", "creation,termination")
-        response.header("Tus-Max-Size", tus.maxUploadSize.toString())
         respond(HttpStatusCode.NoContent)
     }
 
