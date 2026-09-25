@@ -222,6 +222,7 @@
   .steps b { color: var(--txt); }
 
   /* ---------------------------------------------------------------- dock: transfers */
+  .mon-pill.waiting b, .mon-pill.waiting .pill-ch { visibility: hidden; }
   .dock { position: fixed; z-index: 35; right: 24px; bottom: calc(var(--player-h, 0px) + 18px); width: min(560px, calc(100vw - var(--side) - 48px));
     border-radius: 22px; overflow: hidden; background: var(--surface); box-shadow: var(--float-shadow); }
   body.mon-dock .dock { right: calc(var(--panel) + 24px); }
@@ -389,6 +390,7 @@
   .sw.in, .sw.files { background: var(--orange); }
   .sw.out, .sw.test { background: var(--blue); }
   .sw.music { background: var(--music); }
+  .sw.other { background: var(--purple); }
   .sw.live.on { background: var(--good); }
   .mon-graph { display: block; width: 100%; height: 240px; margin-top: 14px; }
   body.mon-dock .mon-graph { height: 170px; }
@@ -406,6 +408,7 @@
   .ch-bar i { flex: 1 1 0; border-radius: 2px; background: var(--surface-2); }
   .ch-bar .files { background: var(--orange); }
   .ch-bar .music { background: var(--music); }
+  .ch-bar .other { background: var(--purple); }
   .ch-bar .test { background: var(--blue); }
   .ch-legend { display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: 13px; color: var(--sub); }
   .ch-legend span { display: inline-flex; align-items: center; gap: 6px; }
@@ -660,7 +663,7 @@
 </div>
 
 <!-- ------------------------------------------------------------------ monitor -->
-<button class="mon-pill" id="mon-pill" hidden title="Open the monitor">
+<button class="mon-pill waiting" id="mon-pill" hidden title="Open the monitor">
   <i class="sw live" id="mon-live"></i>
   <b class="in" id="pill-in">-</b>
   <b class="out" id="pill-out">-</b>
@@ -689,7 +692,7 @@
     <section class="mon-side">
       <div class="mon-sub">Session</div>
       <div class="mon-grid" id="mon-stats"></div>
-      <div class="mon-sub">Wi-Fi link</div>
+      <div class="mon-sub">Link</div>
       <div class="mon-grid" id="mon-link"></div>
     </section>
   </div>
@@ -924,13 +927,14 @@ function renderMonitor(m, rtt) {
   var l0 = m.laptop, p0 = m.phone;
   var level = l0 ? (l0.signalPercent >= 80 ? 4 : l0.signalPercent >= 60 ? 3 : l0.signalPercent >= 40 ? 2 : l0.signalPercent > 0 ? 1 : 0)
     : p0 ? (p0.rssi >= -55 ? 4 : p0.rssi >= -67 ? 3 : p0.rssi >= -75 ? 2 : p0.rssi >= -85 ? 1 : 0) : 0;
+  $("mon-pill").classList.remove("waiting");
   $("pill-in").textContent = "↓ " + mbs(m.inBps);
   $("pill-out").textContent = "↑ " + mbs(m.outBps);
   $("pill-rtt").textContent = rtt + " ms";
   $("pill-rtt").className = "ping " + (rtt <= 15 ? "good" : rtt <= 60 ? "" : "bad");
   $("pill-bars").innerHTML = bars(level);
   $("mon-live").classList.toggle("on", m.activeTransfers > 0);
-  var used = (m.filesBps || 0) + (m.musicBps || 0) + (m.testBps || 0), cap = m.capacityBps || 0;
+  var used = (m.filesBps || 0) + (m.musicBps || 0) + (m.testBps || 0) + (m.otherBps || 0), cap = m.capacityBps || 0;
   var pct = cap > 0 ? Math.min(100, Math.round(used / cap * 100)) : 0;
   $("pill-ch").style.width = pct + "%";
   $("pill-ch").className = pct > 85 ? "hot" : "";
@@ -953,6 +957,7 @@ function renderMonitor(m, rtt) {
   ].map(function (kv) { return '<div><span>' + kv[0] + '</span><b>' + kv[1] + '</b></div>'; }).join("");
 
   var rows = [];
+  if (m.via && m.capacityLabel) rows.push(["In use", esc(m.capacityLabel)]);
   var l = m.laptop;
   if (l) {
     var lv = l.signalPercent >= 80 ? 4 : l.signalPercent >= 60 ? 3 : l.signalPercent >= 40 ? 2 : l.signalPercent > 0 ? 1 : 0;
@@ -972,29 +977,38 @@ function renderMonitor(m, rtt) {
 }
 
 /**
- * How full the Wi-Fi channel is, and with what. Files, music and speed tests share the
- * one channel, so music playing during a download takes its share from the download --
- * that dip is expected, and this shows where it went.
+ * How full the link in use is, and with what. The whole is what that link can carry (the
+ * cable's USB generation, or the Wi-Fi hop's link rate), never the fastest second seen: that
+ * is the peak, on the right. Files, music and speed tests share it, and so does traffic that
+ * is not BlazeIt's (the laptop's internet through the phone, other apps), which the laptop
+ * helper measures.
  */
 function renderChannel(m, used, cap, pct) {
-  var parts = [["Files", m.filesBps || 0, "files"], ["Music", m.musicBps || 0, "music"], ["Speed test", m.testBps || 0, "test"]];
+  var parts = [["Files", m.filesBps || 0, "files"], ["Music", m.musicBps || 0, "music"],
+    ["Speed test", m.testBps || 0, "test"], ["Other traffic", m.otherBps || 0, "other"]];
   var CELLS = 32, lit = 0, seg = "";
   parts.forEach(function (p) {
     var n = cap > 0 ? Math.round(p[1] / cap * CELLS) : 0;
     if (p[1] > 0 && n === 0) n = 1;
-    for (var k = 0; k < n && lit < CELLS; k++, lit++) seg += '<i class="' + p[2] + '"></i>';
+    for (var k = 0; k < n && lit < CELLS; k++, lit++) seg += '<i class="' + p[2] + '" title="' + p[0] + '"></i>';
   });
   for (; lit < CELLS; lit++) seg += "<i></i>";
   var legend = parts.filter(function (p, k) { return k < 2 || p[1] > 0; }).map(function (p) {
     return '<span><i class="sw ' + p[2] + '"></i>' + p[0] + ' <b>' + mbs(p[1]) + '</b></span>';
   }).join("");
+  var cable = m.via === "usb";
+  // The biggest user, named, when the link is filling up: that is what to pause.
+  var top = parts.slice().sort(function (a, b) { return b[1] - a[1]; })[0];
   $("mon-channel").innerHTML =
     '<div class="ch-head"><b>' + (cap > 0 ? pct + "%" : "-") + '</b><span>' +
-      (cap > 0 ? "of about " + mbs(cap) + (m.capacityFrom === "measured" ? " (fastest seen)" : " (from the link rate)") : "waiting for the link") +
+      (cap > 0 ? "full, of about " + mbs(cap) + " · " + esc(m.capacityLabel) : "waiting for the link (open the laptop helper for Wi-Fi rates)") +
     '</span></div>' +
     '<div class="ch-bar">' + seg + '</div>' +
     '<div class="ch-legend">' + legend + '</div>' +
-    (pct >= 70 ? '<p class="ch-hint">The Wi-Fi is nearly full. The direct link (Home) gives a channel of its own; a USB-C cable has no radio at all.</p>' : '');
+    (pct < 70 ? '' :
+      '<p class="ch-hint">' + (cable ? "The cable is nearly full" : "The link is nearly full") +
+      (top[1] > 0 ? ", mostly " + top[0].toLowerCase() + " (" + Math.round(top[1] / Math.max(used, 1) * 100) + "%)" : "") + ". " +
+      (cable ? "" : "The phone's direct link (started on the phone) gives a channel of its own; a USB 3 cable is several times faster.") + '</p>');
 }
 
 function bars(level) {

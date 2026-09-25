@@ -268,6 +268,7 @@ class BridgeServer(
     private fun io.ktor.server.routing.Route.monitorRoutes() {
         get("/api/monitor") {
             Monitor.touchWeb()
+            Monitor.noteVia(call.arrivedOn().second.name.lowercase())
             call.response.header(HttpHeaders.CacheControl, "no-store")
             call.respond(Monitor.snapshot.value)
         }
@@ -279,6 +280,7 @@ class BridgeServer(
         // The answer tells the helper whether anyone is watching, so it can report every
         // couple of seconds while the monitor is open and rarely otherwise.
         post("/api/monitor/link") {
+            Monitor.noteVia(call.arrivedOn().second.name.lowercase())
             runCatching { call.receive<LaptopLink>() }.getOrNull()?.let(Monitor::reportLaptop)
             call.respond(ApiResult(true, if (Monitor.watched()) "watch" else "idle"))
         }

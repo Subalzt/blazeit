@@ -193,12 +193,14 @@ private fun Sheet(m: MonitorSnapshot, running: Boolean, onHide: () -> Unit, onCl
 }
 
 /**
- * How full the channel is, and with what: files, music and speed tests share one Wi-Fi
- * channel, so music playing while a download runs takes its share from the download.
+ * How full the link in use is, and with what. The whole is what that link can carry (the
+ * cable's USB generation, or the Wi-Fi hop's link rate), not the fastest second seen. Files,
+ * music and speed tests share it, and so does traffic that is not BlazeIt's, which the laptop
+ * helper measures.
  */
 @Composable
 private fun ChannelUse(m: MonitorSnapshot) {
-    val used = m.filesBps + m.musicBps + m.testBps
+    val used = m.filesBps + m.musicBps + m.testBps + m.otherBps
     val cap = m.capacityBps
     val pct = if (cap > 0) (used * 100 / cap).coerceIn(0, 100) else -1
     Column(Modifier.padding(horizontal = 20.dp, vertical = 8.dp)) {
@@ -210,7 +212,7 @@ private fun ChannelUse(m: MonitorSnapshot) {
             )
         }
         Spacer(Modifier.height(8.dp))
-        val parts = listOf(m.filesBps to Bridge.Orange, m.musicBps to LaneMusic, m.testBps to Bridge.Blue)
+        val parts = listOf(m.filesBps to Bridge.Orange, m.musicBps to LaneMusic, m.testBps to Bridge.Blue, m.otherBps to Bridge.Purple)
         Row(Modifier.fillMaxWidth().height(10.dp).clip(ButtonShape).background(Bridge.Chip)) {
             if (cap > 0) {
                 var left = 1f
@@ -226,10 +228,11 @@ private fun ChannelUse(m: MonitorSnapshot) {
             Legend("Files", Bridge.Orange, m.filesBps)
             Legend("Music", LaneMusic, m.musicBps)
             if (m.testBps > 0) Legend("Test", Bridge.Blue, m.testBps)
+            if (m.otherBps > 0) Legend("Other", Bridge.Purple, m.otherBps)
         }
         Text(
-            if (m.capacityFrom == "measured") "Capacity from the fastest second seen so far."
-            else "Capacity estimated from the Wi-Fi link rate.",
+            if (cap > 0) "Of what ${m.capacityLabel} can carry."
+            else "Waiting for the link; the laptop helper reports Wi-Fi rates.",
             style = BodyStyle.copy(fontSize = 12.sp), color = Bridge.Faint, modifier = Modifier.padding(top = 4.dp),
         )
     }

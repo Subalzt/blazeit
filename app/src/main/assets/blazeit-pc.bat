@@ -433,6 +433,14 @@ public static class BlazeItPc
                     Dictionary<string, string> kv = Netsh();
                     Stopwatch sw = Stopwatch.StartNew();
                     int rtt = Ping(phone) ? (int)sw.ElapsedMilliseconds : -1;
+                    // All traffic on the adapter that reaches the phone; the phone subtracts its
+                    // own to show what else (this laptop's internet, other apps) shares the link.
+                    NetworkInterface via = LinkAdapter(phone);
+                    long rx = 0, tx = 0;
+                    if (via != null)
+                    {
+                        try { IPInterfaceStatistics st = via.GetIPStatistics(); rx = st.BytesReceived; tx = st.BytesSent; } catch { }
+                    }
                     string json = "{\"ssid\":" + Q(Get(kv, "SSID")) +
                         ",\"signalPercent\":" + Num(Get(kv, "Signal")) +
                         ",\"rxMbps\":" + Num(Get(kv, "Receive rate (Mbps)")) +
@@ -440,7 +448,10 @@ public static class BlazeItPc
                         ",\"channel\":" + Q(Get(kv, "Channel")) +
                         ",\"band\":" + Q(Get(kv, "Band")) +
                         ",\"radio\":" + Q(Radio(Get(kv, "Radio type"))) +
-                        ",\"rttMs\":" + rtt + "}";
+                        ",\"rttMs\":" + rtt +
+                        ",\"usbMbps\":" + (usbHost != null && phone == usbHost ? UsbLinkMbps(usbHost) : 0) +
+                        ",\"iface\":" + Q(via != null ? via.Id : "") +
+                        ",\"rxBytes\":" + rx + ",\"txBytes\":" + tx + "}";
                     HttpWebRequest r = (HttpWebRequest)WebRequest.Create("http://" + phone + ":" + PhonePort + "/api/monitor/link");
                     r.Method = "POST";
                     r.Proxy = null;
