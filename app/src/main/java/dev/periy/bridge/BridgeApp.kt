@@ -48,6 +48,19 @@ class Container(ctx: Context) {
         EventBus.emit("theme", v)
     }
 
+    private val _look = MutableStateFlow(Look(prefs.glass, prefs.oled))
+
+    /** Glass on the floating bars, and dark as pure black: shared like the theme. */
+    val look: StateFlow<Look> = _look
+
+    fun setLook(glass: Boolean? = null, oled: Boolean? = null) {
+        val v = Look(glass ?: _look.value.glass, oled ?: _look.value.oled)
+        prefs.glass = v.glass
+        prefs.oled = v.oled
+        _look.value = v
+        EventBus.emit("look", v.json())
+    }
+
     @Volatile
     var server: BridgeServer? = null
         private set
@@ -66,6 +79,8 @@ class Container(ctx: Context) {
             uploadStreams = { prefs.uploadStreams },
             theme = { _theme.value },
             setTheme = ::setTheme,
+            look = { _look.value },
+            setLook = { g, o -> setLook(g, o) },
             laptopLink = { prefs.laptopLink },
             hotspot = { prefs.hotspotSsid to prefs.hotspotPass },
             clipSync = { prefs.clipSync },
@@ -83,6 +98,11 @@ class Container(ctx: Context) {
 }
 
 val THEMES = setOf("system", "light", "dark")
+
+/** How the app and the pages look beyond light and dark. */
+data class Look(val glass: Boolean = false, val oled: Boolean = false) {
+    fun json() = """{"glass":$glass,"oled":$oled}"""
+}
 
 class BridgeApp : Application() {
     lateinit var container: Container

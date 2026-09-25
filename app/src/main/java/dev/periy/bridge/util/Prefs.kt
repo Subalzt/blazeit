@@ -49,6 +49,16 @@ class Prefs(ctx: Context) {
         get() = sp.getString(K_THEME, null) ?: if (sp.getBoolean(K_OLED, false)) "dark" else "system"
         set(v) = sp.edit { putString(K_THEME, v) }
 
+    /** Frosted glass on the floating bars (tab bar, monitor), shared with every page. */
+    var glass: Boolean
+        get() = sp.getBoolean(K_GLASS, false)
+        set(v) = sp.edit { putBoolean(K_GLASS, v) }
+
+    /** Dark as pure black, for OLED screens; off, dark is a soft graphite. Shared with every page. */
+    var oled: Boolean
+        get() = sp.getBoolean(K_OLED, false)
+        set(v) = sp.edit { putBoolean(K_OLED, v) }
+
     /** Sends to another phone set up a direct link first (Android asks once per send). */
     var phoneDirect: Boolean
         get() = sp.getBoolean(K_PHONE_DIRECT, true)
@@ -126,6 +136,7 @@ class Prefs(ctx: Context) {
         const val K_FORCE_STAGE = "force_staged_copy"
         const val K_STREAMS = "upload_streams"
         const val K_OLED = "oled"
+        const val K_GLASS = "glass"
         const val K_THEME = "theme"
         const val K_PHONE_DIRECT = "phone_direct"
         const val K_LAPTOP_LINK = "laptop_link"

@@ -38,6 +38,10 @@ data class StateDto(
     val uploadStreams: Int = 4,
     /** Shared appearance, "system", "light" or "dark": changing it anywhere changes all of them. */
     val theme: String = "system",
+    /** Frosted glass on the floating bars. */
+    val glass: Boolean = false,
+    /** Dark as pure black. */
+    val oled: Boolean = false,
     /** Clipboard follows between phone and laptop helper without pressing Send. */
     val clipSync: Boolean = true,
     /** What the shared clipboard holds: text, a picture, a file, or nothing. */
@@ -64,6 +68,9 @@ class ServerConfig(
     val uploadStreams: () -> Int,
     val theme: () -> String,
     val setTheme: (String) -> Unit,
+    /** Glass bars and pure-black dark, shared like the theme. */
+    val look: () -> dev.periy.bridge.Look = { dev.periy.bridge.Look() },
+    val setLook: (Boolean?, Boolean?) -> Unit = { _, _ -> },
     /** "direct" or "hotspot", and the hotspot's name and password; see Prefs.laptopLink. */
     val laptopLink: () -> String = { "direct" },
     val hotspot: () -> Pair<String, String> = { "" to "" },
@@ -123,6 +130,8 @@ data class PairStatusDto(val state: String)
 
 @Serializable data class ThemeRequest(val theme: String = "system")
 
+/** From a page's Settings: either or both of the look's switches. */
+@Serializable data class LookRequest(val glass: Boolean? = null, val oled: Boolean? = null)
 
 
 /** The phone's notifications, and whether BlazeIt may see them at all. */

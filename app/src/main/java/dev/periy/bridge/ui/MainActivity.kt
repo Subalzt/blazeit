@@ -30,6 +30,9 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.IntrinsicSize
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -107,7 +110,8 @@ class MainActivity : ComponentActivity() {
         handleShare(intent)
         setContent {
             val theme by vm.theme.collectAsStateWithLifecycle()
-            BlazeTheme(theme) { BlazeItUi(vm) }
+            val look by vm.look.collectAsStateWithLifecycle()
+            BlazeTheme(theme, look) { BlazeItUi(vm) }
         }
     }
 
@@ -194,6 +198,7 @@ private fun BlazeItUi(vm: MainViewModel) {
     val live by vm.liveDevices.collectAsStateWithLifecycle()
     val monitor by Monitor.snapshot.collectAsStateWithLifecycle()
     val theme by vm.theme.collectAsStateWithLifecycle()
+    val look by vm.look.collectAsStateWithLifecycle()
     val direct by vm.direct.collectAsStateWithLifecycle()
     val phoneDirect by vm.phoneDirect.collectAsStateWithLifecycle()
     val laptopLink by vm.laptopLink.collectAsStateWithLifecycle()
@@ -275,9 +280,16 @@ private fun BlazeItUi(vm: MainViewModel) {
 
     val bottomInset = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
     val imeUp = WindowInsets.isImeVisible
+    // Glass: the content runs under a floating tab bar, which shows it through; plain: the bar
+    // is docked below the content.
+    val glass = LocalGlass.current
+    val backdrop = rememberBackdrop()
+    val barOver = glass && !imeUp && !showOem
+    val underBar = if (barOver) GlassTabBarSpace + bottomInset else 0.dp
 
+    CompositionLocalProvider(LocalBackdrop provides backdrop) {
     Box(Modifier.fillMaxSize().background(Bridge.Bg)) {
-        Column(Modifier.fillMaxSize()) {
+        Column(Modifier.fillMaxSize().then(if (glass) Modifier.backdropSource(backdrop).background(Bridge.Bg) else Modifier)) {
             Header(if (tab == TAB_HOME) "BlazeIt" else TABS[tab].first, running, showMonitor) { setMonitor(!showMonitor) }
             // Room for the monitor pill, so by default it covers nothing.
             if (showMonitor) Spacer(Modifier.height(48.dp))
@@ -293,11 +305,11 @@ private fun BlazeItUi(vm: MainViewModel) {
                     tab == TAB_CONTROL -> ControlPane(
                         running = running,
                         onStart = { BridgeService.start(ctx) },
-                        modifier = Modifier.fillMaxSize(),
+                        modifier = Modifier.fillMaxSize().padding(bottom = underBar),
                     )
 
                     // Each tab keeps its own scroll position.
-                    else -> key(tab) { LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = 24.dp)) {
+                    else -> key(tab) { LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = 24.dp + underBar)) {
                         when (tab) {
                             TAB_HOME -> homeTab(
                                 state, running, direct, laptopLink, shared, clipStatus, requests, devices, live, vm,
@@ -323,7 +335,7 @@ private fun BlazeItUi(vm: MainViewModel) {
                                 },
                             )
                             else -> settingsTab(
-                                state, vm, theme, laptopLink,
+                                state, vm, theme, look, laptopLink,
                                 pickFolder = { pickFolder.launch(null) },
                                 requestNotifications = { requestNotifications.launch(android.Manifest.permission.POST_NOTIFICATIONS) },
                                 requestMusic = { requestMusic.launch(musicPermission()) },
@@ -341,11 +353,13 @@ private fun BlazeItUi(vm: MainViewModel) {
                 }
             }
 
-            if (!imeUp && !showOem) TabBar(TABS, tab, bottomInset) { tab = it }
-            else if (!imeUp) Spacer(Modifier.height(bottomInset))
+            if (!glass && !imeUp && !showOem) TabBar(TABS, tab, bottomInset) { tab = it }
+            else if (!imeUp && !barOver) Spacer(Modifier.height(bottomInset))
         }
 
+        if (barOver) TabBar(TABS, tab, bottomInset, Modifier.align(Alignment.BottomCenter)) { tab = it }
         if (showMonitor) MonitorOverlay(monitor, running) { setMonitor(false) }
+    }
     }
 }
 
@@ -408,44 +422,40 @@ private fun LazyListScope.homeTab(
 
     item {
         Row(
-            Modifier.fillMaxWidth().padding(horizontal = 16.dp).padding(top = 12.dp),
+            Modifier.fillMaxWidth().height(IntrinsicSize.Min).padding(horizontal = 16.dp).padding(top = 12.dp),
             horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
+            val tile = Modifier.weight(1f).fillMaxHeight().heightIn(min = 124.dp)
             if (laptopLink.mode == "hotspot" && direct !is DirectLink.State.On) {
                 Tile(
                     BlazeIcons.Hotspot, Bridge.Purple, "Hotspot",
                     when {
-                        state.hotspotActive -> "On · the laptop keeps internet"
-                        laptopLink.ssid.isBlank() -> "Add its name in Settings"
-                        else -> "Tap to turn it on"
+                        state.hotspotActive -> "On"
+                        laptopLink.ssid.isBlank() -> "Set up in Settings"
+                        else -> "Off"
                     },
-                    Modifier.weight(1f),
+                    tile,
                     active = state.hotspotActive,
                     onClick = toggleDirect,
                 )
             } else Tile(
                 BlazeIcons.Bolt, Bridge.Blue, "Direct link",
                 when (direct) {
-                    DirectLink.State.Off -> "Fastest. Works offline"
-                    DirectLink.State.Starting -> "Starting..."
-                    is DirectLink.State.On -> "On · " + direct.info.ssid
+                    DirectLink.State.Off -> "Fastest, offline"
+                    DirectLink.State.Starting -> "Starting…"
+                    is DirectLink.State.On -> direct.info.ssid
                     is DirectLink.State.Failed -> direct.reason
                 },
-                Modifier.weight(1f),
+                tile,
                 active = direct is DirectLink.State.On || direct == DirectLink.State.Starting,
                 onClick = toggleDirect,
             )
-            Tile(
-                BlazeIcons.Upload, Bridge.Good, "Send files",
-                sendStatus.ifEmpty { "To the computer" },
-                Modifier.weight(1f),
-                onClick = pickFiles,
-            )
+            Tile(BlazeIcons.Upload, Bridge.Good, "Send files", sendStatus.ifEmpty { null }, tile, onClick = pickFiles)
         }
     }
 
+    // The hotspot's details live in the phone's own settings, a tap on its tile away.
     if (direct is DirectLink.State.On) item { DirectCard(direct.info, toggleDirect) }
-    else if (laptopLink.mode == "hotspot" && state.hotspotActive) item { HotspotCard(laptopLink, toggleDirect) }
 
     item { Column { ClipboardPanel(shared, clipStatus, vm) } }
 
@@ -454,9 +464,7 @@ private fun LazyListScope.homeTab(
     item { SectionBar("On the phone") }
     item {
         GroupCard {
-            if (files.isEmpty()) {
-                SettingRow("Nothing here yet", "Files from the computer, and files you send to it, show up here.", first = true)
-            }
+            if (files.isEmpty()) SettingRow("Nothing yet", first = true, titleColor = Bridge.Muted)
             files.forEachIndexed { i, f ->
                 SettingRow(
                     f.name,
@@ -477,9 +485,7 @@ private fun LazyListScope.homeTab(
     }
     item {
         GroupCard {
-            if (devices.isEmpty()) {
-                SettingRow("No computers yet", "Open the address above on a computer, or connect a phone from Phones.", first = true)
-            }
+            if (devices.isEmpty()) SettingRow("None yet", first = true, titleColor = Bridge.Muted)
             devices.forEachIndexed { i, d ->
                 val isLive = (live[d.id] ?: 0) > 0
                 SettingRow(
@@ -513,7 +519,7 @@ private fun RequestCard(req: PairRequest, vm: MainViewModel) {
             style = TextStyle(fontSize = 44.sp, fontWeight = FontWeight.Bold, letterSpacing = 10.sp, fontFeatureSettings = "tnum"),
             color = Bridge.Text,
         )
-        Text("Allow it only if the other screen shows this same code.", style = BodyStyle, color = Bridge.Muted)
+        Text("Allow only if the other screen shows this code.", style = BodyStyle, color = Bridge.Muted)
         Spacer(Modifier.height(14.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             BridgeButton("Allow", Modifier.weight(1f)) { vm.approve(req.id) }
@@ -551,25 +557,24 @@ private fun ServerCard(state: UiState, running: Boolean, onToggle: () -> Unit, o
             .padding(20.dp)
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Column(Modifier.weight(1f)) {
-                Text(if (on) "Ready" else "Off", style = TextStyle(fontSize = 15.sp, fontWeight = FontWeight.SemiBold), color = soft)
-                Text(
-                    when {
-                        !on -> "BlazeIt is off"
-                        state.storageMode == Storage.Mode.NO_DESTINATION -> "Choose a folder"
-                        url == null -> "No network"
-                        else -> "Open on your computer"
-                    },
-                    style = TitleStyle.copy(fontSize = 19.sp, fontWeight = FontWeight.Bold), color = fg,
-                )
-            }
+            Text(
+                when {
+                    !on -> "BlazeIt is off"
+                    state.storageMode == Storage.Mode.NO_DESTINATION -> "Choose a folder"
+                    url == null -> "No network"
+                    else -> "Open on your computer"
+                },
+                style = TitleStyle.copy(fontSize = 19.sp, fontWeight = FontWeight.Bold), color = fg,
+                modifier = Modifier.weight(1f),
+            )
             Toggle(on, color = Color(0xFF15120A)) { onToggle() }
         }
 
-        if (!on) {
-            Spacer(Modifier.height(6.dp))
-            Text("Turn it on to connect a computer or a phone.", style = BodyStyle, color = soft)
-            return@Column
+        if (!on) return@Column
+        when {
+            state.storageMode == Storage.Mode.NO_DESTINATION -> RowNote("Set it in Settings, Receiving.", soft)
+            url == null -> RowNote("Join Wi-Fi or start the direct link.", soft)
+            state.onlyCellular -> RowNote("Mobile data can't be reached. Use the direct link or USB.", soft)
         }
         // The cable is in, but it carries nothing until USB tethering is on; Android lets only
         // the phone's own settings switch that.
@@ -593,7 +598,7 @@ private fun ServerCard(state: UiState, running: Boolean, onToggle: () -> Unit, o
             OnYellowPill(if (showQr) "Hide code" else "QR code", BlazeIcons.Qr) { showQr = !showQr }
         }
         state.fasterLink?.let { usb ->
-            RowNote("USB is plugged in and faster: " + usb.url(state.port), fg)
+            RowNote("Faster over USB: " + usb.url(state.port).removePrefix("http://").removeSuffix("/"), fg)
         }
         if (showQr) {
             val qr = remember(url) { QrCode.render(url, 520) }
@@ -647,10 +652,7 @@ private fun DirectCard(info: DirectLink.Info, stop: () -> Unit) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             AppIcon(BlazeIcons.Bolt, Bridge.Blue)
             Spacer(Modifier.width(12.dp))
-            Column(Modifier.weight(1f)) {
-                Text("Direct link is on", style = TitleStyle, color = Bridge.Text)
-                Text("Offline, just for this phone and yours", style = BodyStyle.copy(fontSize = 13.sp), color = Bridge.Muted)
-            }
+            Text("Direct link", style = TitleStyle, color = Bridge.Text, modifier = Modifier.weight(1f))
             SoftButton("Stop", onClick = stop)
         }
         Spacer(Modifier.height(16.dp))
@@ -662,13 +664,7 @@ private fun DirectCard(info: DirectLink.Info, stop: () -> Unit) {
             CopyField("Then open", "${info.host}:${info.port}")
         }
         Spacer(Modifier.height(12.dp))
-        Text(
-            "With the laptop helper running, the laptop joins by itself and comes back to your Wi-Fi when you stop. " +
-                "A phone can scan the code with its camera.",
-            style = BodyStyle, color = Bridge.Muted,
-        )
-        Spacer(Modifier.height(12.dp))
-        SoftButton(if (showQr) "Hide code" else "Show code to join", icon = BlazeIcons.Qr) { showQr = !showQr }
+        SoftButton(if (showQr) "Hide code" else "QR code", icon = BlazeIcons.Qr) { showQr = !showQr }
         if (showQr) {
             val qr = remember(info.qr) { QrCode.render(info.qr, 520) }
             if (qr != null) {
@@ -681,30 +677,6 @@ private fun DirectCard(info: DirectLink.Info, stop: () -> Unit) {
                 }
             }
         }
-    }
-}
-
-/** The phone's hotspot while it is on, in hotspot mode: the laptop joins it and keeps internet. */
-@Composable
-private fun HotspotCard(link: MainViewModel.LaptopLink, openSettings: () -> Unit) {
-    Column(Modifier.fillMaxWidth().padding(top = 12.dp).panel().padding(18.dp)) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            AppIcon(BlazeIcons.Hotspot, Bridge.Purple)
-            Spacer(Modifier.width(12.dp))
-            Column(Modifier.weight(1f)) {
-                Text("Hotspot is on", style = TitleStyle, color = Bridge.Text)
-                Text("The laptop keeps its internet through the phone", style = BodyStyle.copy(fontSize = 13.sp), color = Bridge.Muted)
-            }
-            SoftButton("Settings", onClick = openSettings)
-        }
-        Spacer(Modifier.height(16.dp))
-        CopyField("Network", link.ssid)
-        Spacer(Modifier.height(12.dp))
-        Text(
-            "With the laptop helper running, the laptop joins it by itself and goes back to your Wi-Fi when " +
-                "the hotspot goes off. About a third slower than the direct link, measured here.",
-            style = BodyStyle, color = Bridge.Muted,
-        )
     }
 }
 
@@ -935,8 +907,7 @@ private fun LazyListScope.phonesTab(
     item {
         GroupCard(Modifier.padding(top = 12.dp)) {
             SettingRow(
-                "Send over a direct link",
-                "The two phones connect to each other: one hop, many times faster than through a router. Android asks you to allow it.",
+                "Send over a direct link", "Phone to phone, many times faster",
                 first = true, icon = BlazeIcons.Bolt, iconColor = Bridge.Blue,
             ) { Toggle(phoneDirect, color = Bridge.Blue) { setPhoneDirect(it) } }
         }
@@ -1026,8 +997,7 @@ private fun Searching(running: Boolean, found: Int) {
                 style = TitleStyle.copy(fontSize = 19.sp, fontWeight = FontWeight.Bold), color = Bridge.Text,
             )
             Text(
-                if (!running) "Turn it on from Home so other phones can find this one."
-                else "Phones running BlazeIt on the same Wi-Fi show up here.",
+                if (!running) "Turn it on from Home" else "On this Wi-Fi",
                 style = BodyStyle.copy(fontSize = 13.sp), color = Bridge.Muted,
             )
         }
@@ -1067,8 +1037,7 @@ private fun ConnectByAddress(connect: (NearbyPhone) -> Unit) {
     Column(Modifier.fillMaxWidth().panel()) {
         if (!open) {
             SettingRow(
-                "Connect by address", "If a phone is not listed, type the address on its Home.",
-                first = true, icon = BlazeIcons.Link, iconColor = Bridge.Orange, onClick = { open = true },
+                "Connect by address", first = true, icon = BlazeIcons.Link, iconColor = Bridge.Orange, onClick = { open = true },
             ) { Icon(BlazeIcons.Chevron, null, tint = Bridge.Faint, modifier = Modifier.size(18.dp)) }
             return@Column
         }
@@ -1126,6 +1095,7 @@ private fun LazyListScope.settingsTab(
     state: UiState,
     vm: MainViewModel,
     theme: String,
+    look: dev.periy.bridge.Look,
     laptopLink: MainViewModel.LaptopLink,
     pickFolder: () -> Unit,
     requestNotifications: () -> Unit,
@@ -1137,10 +1107,16 @@ private fun LazyListScope.settingsTab(
     item { SectionBar("Appearance") }
     item {
         GroupCard {
-            SettingRow("Theme", "The phone and every open page follow this.", first = true, icon = BlazeIcons.Contrast, iconColor = Bridge.Purple)
-            Box(Modifier.padding(start = 16.dp, end = 16.dp, bottom = 16.dp)) {
+            // Shared with every open page.
+            Box(Modifier.padding(16.dp)) {
                 val themes = listOf("system", "light", "dark")
                 SegmentedRow(listOf("Automatic", "Light", "Dark"), themes.indexOf(theme)) { vm.setTheme(themes[it]) }
+            }
+            SettingRow("Glass", "Frosted tab bar and monitor", icon = BlazeIcons.Contrast, iconColor = Bridge.Blue) {
+                Toggle(look.glass) { vm.setLook(glass = it) }
+            }
+            SettingRow("OLED black", "Pure black in dark mode", icon = BlazeIcons.Moon, iconColor = Color(0xFF3A3A40)) {
+                Toggle(look.oled) { vm.setLook(oled = it) }
             }
         }
     }
@@ -1152,7 +1128,7 @@ private fun LazyListScope.settingsTab(
                 "Save files to",
                 (state.destination ?: "Not chosen yet") + when (state.storageMode) {
                     Storage.Mode.DIRECT_SEEK -> if (state.freeSpace > 0) " · " + formatBytes(state.freeSpace) + " free" else ""
-                    Storage.Mode.STAGED_COPY -> " · slow path, copies at the end"
+                    Storage.Mode.STAGED_COPY -> " · staged"
                     Storage.Mode.NO_DESTINATION -> ""
                 },
                 first = true, icon = BlazeIcons.File, iconColor = Bridge.Orange,
@@ -1169,11 +1145,8 @@ private fun LazyListScope.settingsTab(
         GroupCard {
             SettingRow(
                 "Laptop link",
-                if (laptopLink.mode == "hotspot")
-                    "The phone's hotspot. The laptop keeps its internet through the phone; " +
-                        "measured 44-66 MB/s. Turn the hotspot on in the phone's settings."
-                else "The phone's own offline network, the fastest: measured 55-115 MB/s. " +
-                    "The laptop has no internet while on it.",
+                if (laptopLink.mode == "hotspot") "Keeps the laptop's internet · 44–66 MB/s"
+                else "Fastest, offline · 55–115 MB/s",
                 first = true,
                 icon = if (laptopLink.mode == "hotspot") BlazeIcons.Hotspot else BlazeIcons.Bolt,
                 iconColor = if (laptopLink.mode == "hotspot") Bridge.Purple else Bridge.Blue,
@@ -1183,15 +1156,14 @@ private fun LazyListScope.settingsTab(
                 SegmentedRow(listOf("Direct link", "Hotspot"), modes.indexOf(laptopLink.mode)) { vm.setLaptopLink(mode = modes[it]) }
             }
             if (laptopLink.mode == "hotspot") HotspotFields(laptopLink, vm) { vm.tetherSettingsIntent()?.let(openSettings) }
-            SettingRow("Connections per file", "Several keep the link busy; 4 suits most links.")
+            SettingRow("Connections per file")
             Box(Modifier.padding(start = 16.dp, end = 16.dp, bottom = 14.dp)) {
                 SegmentedRow(listOf("1", "2", "4", "8"), listOf(1, 2, 4, 8).indexOf(state.uploadStreams)) {
                     vm.setUploadStreams(listOf(1, 2, 4, 8)[it])
                 }
             }
             SettingRow(
-                "USB-C cable",
-                "Plug the phone into the laptop and turn on USB tethering. BlazeIt then shows the cable's address on Home.",
+                "USB-C cable", "Needs USB tethering on",
                 onClick = { vm.tetherSettingsIntent()?.let(openSettings) },
             ) { Text("Set up", style = LabelStyle, color = Bridge.Blue) }
         }
@@ -1202,10 +1174,7 @@ private fun LazyListScope.settingsTab(
         GroupCard {
             SettingRow(
                 "Browse this phone",
-                if (state.browsable) "On. The laptop page can see and download the phone's files, never change them. " +
-                    "Turn it off on the same screen."
-                else if (Build.VERSION.SDK_INT < 30) "Needs Android 11 or later."
-                else "Let the laptop page show the phone's folders (DCIM, Download...) and download from them. Read-only.",
+                if (Build.VERSION.SDK_INT < 30) "Needs Android 11" else "Read-only",
                 first = true, icon = BlazeIcons.File, iconColor = Bridge.Orange,
                 onClick = { vm.allFilesIntent()?.let(openSettings) },
             ) { if (state.browsable) Check(true) else Text("Allow", style = LabelStyle, color = Bridge.Blue) }
@@ -1255,13 +1224,12 @@ private fun LazyListScope.settingsTab(
         GroupCard {
             if (state.musicGranted) {
                 SettingRow(
-                    if (state.musicTracks > 0) "${state.musicTracks} songs ready to stream" else "No music found",
-                    "Play them in the Music tab on your computer.",
+                    if (state.musicTracks > 0) "${state.musicTracks} songs" else "No music found",
                     first = true, icon = BlazeIcons.Pulse, iconColor = Bridge.Danger,
                 )
             } else {
                 SettingRow(
-                    "Allow music access", "Audio only, not photos or other files.",
+                    "Music library", "Audio only",
                     first = true, icon = BlazeIcons.Pulse, iconColor = Bridge.Danger, onClick = requestMusic,
                 ) { Text("Allow", style = LabelStyle, color = Bridge.Blue) }
             }
@@ -1272,15 +1240,15 @@ private fun LazyListScope.settingsTab(
     item {
         GroupCard {
             SettingRow(
-                "Notifications", if (state.notificationsGranted) "Allowed" else "Needed to stay running",
+                "Notifications", if (state.notificationsGranted) null else "Needed to stay running",
                 first = true,
                 onClick = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU && !state.notificationsGranted) requestNotifications else null,
             ) { Check(state.notificationsGranted) }
             SettingRow(
-                "Battery optimisation", if (state.batteryExempt) "Off, good" else "Tap to turn off",
+                "Battery optimisation", if (state.batteryExempt) "Off" else "Tap to turn off",
                 onClick = if (!state.batteryExempt) ({ vm.batteryOptimizationIntent()?.let(openSettings) ?: showOem() }) else null,
             ) { Check(state.batteryExempt) }
-            SettingRow("Manufacturer settings", "Some phones stop apps on their own. Fix it here.", onClick = showOem) {
+            SettingRow("Manufacturer settings", "If BlazeIt gets stopped", onClick = showOem) {
                 Icon(BlazeIcons.Chevron, null, tint = Bridge.Faint, modifier = Modifier.size(18.dp))
             }
         }
@@ -1289,7 +1257,7 @@ private fun LazyListScope.settingsTab(
     item { SectionBar("Pairing") }
     item {
         GroupCard {
-            SettingRow("Unpair everything", "Every computer and phone will have to ask again.", first = true, titleColor = Bridge.Danger, onClick = { vm.unpairAll() })
+            SettingRow("Unpair everything", first = true, titleColor = Bridge.Danger, onClick = { vm.unpairAll() })
         }
     }
 }
@@ -1309,11 +1277,11 @@ private fun HotspotFields(link: MainViewModel.LaptopLink, vm: MainViewModel, ope
         Spacer(Modifier.height(10.dp))
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(
-                "As in the phone's hotspot settings. The password can stay empty if the laptop already knows the network.",
+                "As in the hotspot settings",
                 style = BodyStyle.copy(fontSize = 13.sp), color = Bridge.Muted, modifier = Modifier.weight(1f),
             )
             Spacer(Modifier.width(10.dp))
-            SoftButton("Open", onClick = openHotspot)
+            SoftButton("Hotspot settings", onClick = openHotspot)
         }
     }
 }
@@ -1334,15 +1302,6 @@ private fun OemScreen(
 ) {
     LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = 24.dp)) {
         item { SectionBar("Keep BlazeIt running") }
-        item {
-            Text(
-                "Only the screens this phone actually has are listed. Each one belongs to the manufacturer " +
-                    "rather than to Android, so the wording differs by phone.",
-                style = BodyStyle, color = Bridge.Muted,
-                modifier = Modifier.fillMaxWidth().panel().padding(16.dp),
-            )
-        }
-        item { Spacer(Modifier.height(8.dp)) }
         items(steps) { step ->
             BridgeRow(step.title) {
                 RowNote(step.detail)

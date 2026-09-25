@@ -226,6 +226,11 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
 
     fun setTheme(value: String) = getApplication<Application>().container.setTheme(value)
 
+    val look: StateFlow<dev.periy.bridge.Look>
+        get() = getApplication<Application>().container.look
+
+    fun setLook(glass: Boolean? = null, oled: Boolean? = null) = getApplication<Application>().container.setLook(glass, oled)
+
     // ------------------------------------------------------------------ direct link
 
     /** The phone's own offline network, for the laptop or another phone. */

@@ -27,20 +27,25 @@
   }
   @media (prefers-color-scheme: dark) {
     :root:not([data-theme="light"]) {
-      --bg: #000000; --surface: #151518; --surface-2: #232328; --surface-3: #2E2E34;
-      --txt: #F5F5F7; --sub: #9C9CA5; --faint: #5A5A62; --line: rgba(255,255,255,.09);
+      --bg: #111113; --surface: #1C1C1F; --surface-2: #2A2A2F; --surface-3: #36363C;
+      --txt: #F5F5F7; --sub: #9C9CA5; --faint: #5E5E66; --line: rgba(255,255,255,.09);
       --accent: #FFC933; --blue: #3D8BFF; --good: #30D158; --orange: #FF8A2A; --purple: #9079FF; --bad: #FF453A; --music: #FF375F;
       --shadow: none; --float-shadow: 0 0 0 1px rgba(255,255,255,.08), 0 18px 50px rgba(0,0,0,.6); --scrim: rgba(0,0,0,.6);
       color-scheme: dark;
     }
   }
   :root[data-theme="dark"] {
-    --bg: #000000; --surface: #151518; --surface-2: #232328; --surface-3: #2E2E34;
-    --txt: #F5F5F7; --sub: #9C9CA5; --faint: #5A5A62; --line: rgba(255,255,255,.09);
+    --bg: #111113; --surface: #1C1C1F; --surface-2: #2A2A2F; --surface-3: #36363C;
+    --txt: #F5F5F7; --sub: #9C9CA5; --faint: #5E5E66; --line: rgba(255,255,255,.09);
     --accent: #FFC933; --blue: #3D8BFF; --good: #30D158; --orange: #FF8A2A; --purple: #9079FF; --bad: #FF453A; --music: #FF375F;
     --shadow: none; --float-shadow: 0 0 0 1px rgba(255,255,255,.08), 0 18px 50px rgba(0,0,0,.6); --scrim: rgba(0,0,0,.6);
     color-scheme: dark;
   }
+  /* OLED black (Settings, Appearance): dark as pure black. */
+  @media (prefers-color-scheme: dark) {
+    :root[data-oled]:not([data-theme="light"]) { --bg: #000000; --surface: #121214; --surface-2: #212125; --surface-3: #2C2C31; --faint: #5A5A62; }
+  }
+  :root[data-theme="dark"][data-oled] { --bg: #000000; --surface: #121214; --surface-2: #212125; --surface-3: #2C2C31; --faint: #5A5A62; }
   * { box-sizing: border-box; }
   html, body { margin: 0; padding: 0; }
   body {
@@ -106,7 +111,7 @@
   body.mon-dock .main { margin-right: var(--panel); }
   .main > * { max-width: 1180px; }
   .page-head { margin-bottom: 22px; }
-  .page-head h1 { margin: 0; font-size: 34px; font-weight: 800; letter-spacing: -.9px; line-height: 1.1; }
+  .page-head h1 { margin: 0; font-size: 32px; font-weight: 720; letter-spacing: -.6px; line-height: 1.1; }
   .page-head p { margin: 6px 0 0; color: var(--sub); font-size: 15px; }
 
   /* ---------------------------------------------------------------- cards */
@@ -118,8 +123,7 @@
   .card-title p { margin: 1px 0 0; font-size: 13px; color: var(--sub); }
   .grid2 { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; }
   @media (min-width: 1180px) { .grid2 { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } }
-  .settings { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; align-items: start; }
-  @media (min-width: 1180px) { .settings { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } }
+  .settings { display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; max-width: 760px; }
   .note { font-size: 13.5px; color: var(--sub); margin: 12px 0 0; max-width: 72ch; }
   .note b { color: var(--txt); }
   .empty { color: var(--sub); margin: 6px 0; }
@@ -528,6 +532,15 @@
     .status-line .dot { margin-top: 6px; }
     .status-line .who { flex-direction: column; gap: 1px; }
     .status-line #hero-state { display: none; }
+    /* The tab bar: evenly spaced, the one you are on marked by a pill behind its icon. */
+    .tabs { flex: 4 1 0; }
+    .side-foot { flex: 1 1 0; }
+    .side-foot .side-item { width: 100%; }
+    .tabs button.on { background: none; }
+    .tabs button svg, .side-item svg { box-sizing: content-box; padding: 3px 16px; border-radius: 14px; transition: background .12s; }
+    .tabs button.on svg { background: color-mix(in srgb, var(--accent) 34%, transparent); }
+    .mon-toggle.on svg { background: color-mix(in srgb, var(--good) 26%, transparent); }
+    .tabs button:hover, .side-item:hover { background: none; }
     .dock { right: 12px; left: 12px; width: auto; bottom: calc(var(--player-h, 0px) + 76px); }
     .player { grid-template-columns: minmax(0, 1fr) auto; gap: 12px; padding: 8px 12px; }
     .pl-right, .pl-bar, #pl-shuffle, #pl-repeat { display: none; }
@@ -535,6 +548,91 @@
     .tt { width: min(280px, 70vw); align-self: center; }
     .mon-rates b { font-size: 22px; }
     .album-head { flex-direction: column; align-items: flex-start; }
+  }
+
+  /* ---------------------------------------------------------------- settings: rows with a switch */
+  .set-row { display: flex; align-items: center; gap: 14px; width: 100%; margin-top: 14px; padding: 14px 2px 0; border: 0;
+    border-top: 1px solid var(--line); background: none; color: var(--txt); text-align: left; cursor: pointer; }
+  .set-row .grow { display: flex; flex-direction: column; line-height: 1.35; }
+  .set-row b { font-size: 15px; font-weight: 600; }
+  .set-row .grow span { font-size: 13px; color: var(--sub); }
+  .set-row.on .switch { background: var(--good); }
+  .set-row.on .switch::after { left: 17px; }
+  .card-title p:empty, .note:empty, .page-head p:empty { display: none; }
+  .card-title .btn { flex: 0 0 auto; }
+
+  /* ---------------------------------------------------------------- glass (Settings, Appearance, Glass)
+     The floating parts (sidebar, transfer dock, player, monitor, pop-ups) turn to frosted glass
+     over a softly coloured page: what is behind them shows through, blurred and a little richer,
+     under a lit top edge and a thin rim tinted pink and blue where light bends at the edge.
+     The cards stay solid. */
+  :root[data-glass] {
+    --glass: rgba(239,239,242,.58);
+    --glass-strong: rgba(242,242,245,.82);
+    --glass-blur: blur(10px) saturate(1.8);
+    --glass-shadow: 0 12px 34px rgba(0,0,0,.12), 0 0 0 .6px rgba(0,0,0,.12);
+    --glass-rim: linear-gradient(135deg, rgba(255,255,255,.95), rgba(255,255,255,.55) 35%, rgba(255,255,255,.5) 65%, rgba(255,255,255,.9));
+    --glass-cell: rgba(0,0,0,.06); --glass-cell-rim: rgba(255,255,255,.6);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root[data-glass]:not([data-theme="light"]) {
+      --glass: rgba(0,0,0,.28); --glass-strong: rgba(18,18,22,.8);
+      --glass-shadow: 0 14px 40px rgba(0,0,0,.5);
+      --glass-rim: linear-gradient(135deg, rgba(255,255,255,.42), rgba(255,255,255,.12) 35%, rgba(255,255,255,.10) 65%, rgba(255,255,255,.30));
+      --glass-cell: rgba(255,255,255,.13); --glass-cell-rim: rgba(255,255,255,.14);
+    }
+  }
+  :root[data-glass][data-theme="dark"] {
+    --glass: rgba(0,0,0,.28); --glass-strong: rgba(18,18,22,.8);
+    --glass-shadow: 0 14px 40px rgba(0,0,0,.5);
+    --glass-rim: linear-gradient(135deg, rgba(255,255,255,.42), rgba(255,255,255,.12) 35%, rgba(255,255,255,.10) 65%, rgba(255,255,255,.30));
+    --glass-cell: rgba(255,255,255,.13); --glass-cell-rim: rgba(255,255,255,.14);
+  }
+  :root[data-glass] body {
+    background-color: var(--bg);
+    background-image:
+      radial-gradient(900px 620px at 8% 0%, color-mix(in srgb, var(--accent) 14%, transparent), transparent 62%),
+      radial-gradient(820px 640px at 96% 12%, color-mix(in srgb, var(--purple) 16%, transparent), transparent 62%),
+      radial-gradient(900px 700px at 50% 108%, color-mix(in srgb, var(--blue) 14%, transparent), transparent 62%);
+    background-attachment: fixed;
+  }
+  :root[data-glass] .side,
+  :root[data-glass] .dock,
+  :root[data-glass] .player,
+  :root[data-glass] .mon-pill,
+  :root[data-glass] .mon-sheet,
+  :root[data-glass] .toasts .notif {
+    background: var(--glass); border: 0;
+    -webkit-backdrop-filter: var(--glass-blur); backdrop-filter: var(--glass-blur);
+    box-shadow: var(--glass-shadow);
+  }
+  /* Text over busy content needs more glass under it. */
+  :root[data-glass] .toasts .notif, :root[data-glass] .dock { background: var(--glass-strong); }
+  :root[data-glass] .mon-sheet { background: var(--glass-strong); box-shadow: var(--glass-shadow), 0 0 0 100vmax var(--scrim); }
+  :root[data-glass] body.mon-dock .mon-sheet { top: 12px; right: 12px; bottom: calc(var(--player-h, 0px) + 12px); border-radius: 24px; box-shadow: var(--glass-shadow); }
+  :root[data-glass] body.mon-dock .main { margin-right: calc(var(--panel) + 12px); }
+  /* The rim: a one-pixel gradient border drawn over the glass. */
+  :root[data-glass] .side::after,
+  :root[data-glass] .dock::after,
+  :root[data-glass] .player::after,
+  :root[data-glass] .mon-pill::after,
+  :root[data-glass] .mon-sheet::after,
+  :root[data-glass] .toasts .notif::after {
+    content: ""; position: absolute; inset: 0; border-radius: inherit; padding: 1px; pointer-events: none;
+    background: var(--glass-rim);
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor;
+    mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
+  }
+  :root[data-glass] .toasts .notif { position: relative; }
+  /* The sidebar and the player float free of the window's edges. */
+  :root[data-glass] .side { top: 12px; left: 12px; bottom: calc(var(--player-h, 0px) + 12px); width: calc(var(--side) - 24px); border-radius: 24px; }
+  :root[data-glass] .player { left: 12px; right: 12px; bottom: 12px; border-radius: 24px; }
+  :root[data-glass] .tabs button:hover, :root[data-glass] .side-item:hover { background: color-mix(in srgb, var(--txt) 6%, transparent); }
+  /* The tab you are on: a bubble in the glass, as in Apple's bars. */
+  :root[data-glass] .tabs button.on { background: var(--glass-cell); box-shadow: inset 0 0 0 1px var(--glass-cell-rim); }
+  :root[data-glass] .status { background: color-mix(in srgb, var(--txt) 6%, transparent); }
+  @media (max-width: 900px) {
+    :root[data-glass] .side { left: 12px; right: 12px; top: auto; bottom: calc(var(--player-h, 0px) + 12px); width: auto; border-radius: 26px; }
   }
 </style>
 </head>
@@ -575,7 +673,7 @@
     </div>
   </aside>
   <main class="main" id="main">
-  <div class="page-head"><h1 id="page-title">Home</h1><p id="page-sub"></p></div>
+  <div class="page-head"><h1 id="page-title">Home</h1><p id="page-sub" hidden></p></div>
 
   <!-- ---------------------------------------------------------- home -->
   <section data-panel="home" hidden>
@@ -625,7 +723,7 @@
     </div>
 
     <div class="bar">On the phone</div>
-    <div class="card" id="files"><p class="empty">Nothing here yet.</p></div>
+    <div class="card" id="files"><p class="empty">Nothing yet</p></div>
   </section>
 
   <!-- ---------------------------------------------------------- phone storage -->
@@ -708,64 +806,54 @@
     <div class="card">
       <div class="card-title">
         <span class="appicon purple"><svg viewBox="0 0 24 24"><path d="M12 3.5a8.5 8.5 0 1 1 0 17a8.5 8.5 0 1 1 0-17Z"/><path d="M12 3.5v17"/><path d="M12 7.5h4.5M12 11.5h5.5M12 15.5h4.5"/></svg></span>
-        <div class="grow"><h3>Appearance</h3><p>The phone and every open page follow this</p></div>
+        <div class="grow"><h3>Appearance</h3></div>
       </div>
       <div class="seg" id="theme-seg">
         <button data-theme-choice="system">Automatic</button>
         <button data-theme-choice="light">Light</button>
         <button data-theme-choice="dark">Dark</button>
       </div>
+      <button class="set-row" id="look-glass" type="button"><span class="grow"><b>Glass</b><span>Frosted sidebar and floating bars</span></span><i class="switch"></i></button>
+      <button class="set-row" id="look-oled" type="button"><span class="grow"><b>OLED black</b><span>Pure black in dark mode</span></span><i class="switch"></i></button>
     </div>
 
     <div class="card">
       <div class="card-title">
         <span class="appicon purple"><svg viewBox="0 0 24 24"><path d="M5.5 5.5h13a1 1 0 0 1 1 1V16h-15V6.5a1 1 0 0 1 1-1Z"/><path d="M2.5 18.5h19"/></svg></span>
-        <div class="grow"><h3>Laptop helper</h3><p>Full speed, the direct link, and the phone as a trackpad</p></div>
+        <div class="grow"><h3>Laptop helper</h3><p>Full speed, the fastest link, and the phone as a trackpad</p></div>
+        <a class="btn sm" href="/blazeit-pc.bat" download="blazeit-pc.bat">Download</a>
       </div>
       <div class="banner" id="helper-state"></div>
-      <div class="actions"><a class="btn" href="/blazeit-pc.bat" download="blazeit-pc.bat">Get the laptop helper</a></div>
-      <p class="note">
-        Double-click <b>blazeit-pc.bat</b> (Windows may ask you to confirm once). It finds the phone, asks you to allow
-        it there, and opens this page at <span class="kv">http://localhost:8787</span>. From then on downloads use every
-        connection, the clipboard works directly, it joins the direct link when you start one, and the phone's
-        <b>Control</b> tab drives this laptop. Nothing is installed; close its window to stop it.
-      </p>
+      <p class="note">Run <b>blazeit-pc.bat</b>. Nothing is installed; close its window to stop it.</p>
     </div>
 
     <div class="card">
       <div class="card-title">
         <span class="appicon grey"><svg viewBox="0 0 24 24"><path d="M12 3v14"/><path d="m9 6 3-3 3 3"/><path d="M12 13 7.5 10.5V8"/><path d="M12 15l4.5-2.5V10"/><circle cx="12" cy="19" r="2"/></svg></span>
-        <div class="grow"><h3>USB-C cable</h3><p>No radio at all</p></div>
+        <div class="grow"><h3>USB-C cable</h3><p>The fastest link</p></div>
       </div>
       <ol class="steps">
-        <li>Plug the phone into this laptop with a USB-C cable.</li>
+        <li>Plug the phone into this laptop.</li>
         <li>On the phone: <b>Settings &rarr; USB-C cable &rarr; Set up</b>, and turn on <b>USB tethering</b>.</li>
-        <li>BlazeIt's Home on the phone then shows the cable's address. Open that one here.</li>
+        <li>Open the cable's address from the phone's Home.</li>
       </ol>
     </div>
 
     <div class="card">
       <div class="card-title">
         <span class="appicon green"><svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></svg></span>
-        <div class="grow"><h3>Parallel connections</h3><p>Per file, both ways</p></div>
+        <div class="grow"><h3>Connections per file</h3><p>Four suits most links; one or two on a cable</p></div>
       </div>
       <div class="seg" id="streams-seg"></div>
-      <p class="note">
-        One connection rarely fills a Wi-Fi link: every loss shrinks its window. Several stumble at different moments,
-        so the total stays near the link's capacity. Four is the usual sweet spot; on a cable one or two is enough.
-      </p>
     </div>
 
     <div class="card">
       <div class="card-title">
         <span class="appicon red"><svg viewBox="0 0 24 24"><path d="M2 12h4l3-7 5 14 3-9 2 2h3"/></svg></span>
-        <div class="grow"><h3>Measure the link</h3><p>Network only, five seconds each way</p></div>
-        <button id="measure" class="btn sm">Measure now</button>
+        <div class="grow"><h3>Measure the link</h3><p>Five seconds each way, storage left out</p></div>
+        <button id="measure" class="btn sm">Measure</button>
       </div>
-      <p class="note" id="bench-result" style="margin-top:0">
-        The phone generates and discards the data, so storage is out of the picture. A real transfer close to this number
-        is limited by the network; far below it, by storage.
-      </p>
+      <p class="note" id="bench-result" style="margin-top:0"></p>
     </div>
   </section>
   </main>
@@ -883,11 +971,11 @@ var transfers = [];
 var events = null;
 var ticker = null;
 var TABS = [
-  { id: "home", sub: "Clipboard and files, both ways", label: "Home", icon: "<path d=\"M3.5 10.5 12 3.5l8.5 7\"/><path d=\"M5.5 9v10a1.5 1.5 0 0 0 1.5 1.5h10a1.5 1.5 0 0 0 1.5-1.5V9\"/><path d=\"M10 20.5V15a2 2 0 0 1 4 0v5.5\"/>" },
-  { id: "phone", sub: "The phone's folders, to look through and download from", label: "Phone", icon: "<path d=\"M9 2.5h6A2.5 2.5 0 0 1 17.5 5v14a2.5 2.5 0 0 1-2.5 2.5H9A2.5 2.5 0 0 1 6.5 19V5A2.5 2.5 0 0 1 9 2.5Z\"/><path d=\"M11 18.5h2\"/>" },
-  { id: "music", sub: "Your phone's library, streamed over the local link", label: "Music", icon: "<path d=\"M9 18V5.5l11-2V16\"/><circle cx=\"6.5\" cy=\"18\" r=\"2.5\"/><circle cx=\"17.5\" cy=\"16\" r=\"2.5\"/>" },
+  { id: "home", label: "Home", icon: "<path d=\"M3.5 10.5 12 3.5l8.5 7\"/><path d=\"M5.5 9v10a1.5 1.5 0 0 0 1.5 1.5h10a1.5 1.5 0 0 0 1.5-1.5V9\"/><path d=\"M10 20.5V15a2 2 0 0 1 4 0v5.5\"/>" },
+  { id: "phone", label: "Phone", icon: "<path d=\"M9 2.5h6A2.5 2.5 0 0 1 17.5 5v14a2.5 2.5 0 0 1-2.5 2.5H9A2.5 2.5 0 0 1 6.5 19V5A2.5 2.5 0 0 1 9 2.5Z\"/><path d=\"M11 18.5h2\"/>" },
+  { id: "music", label: "Music", icon: "<path d=\"M9 18V5.5l11-2V16\"/><circle cx=\"6.5\" cy=\"18\" r=\"2.5\"/><circle cx=\"17.5\" cy=\"16\" r=\"2.5\"/>" },
   { id: "alerts", label: "Alerts", icon: "<path d=\"M6 16.5V11a6 6 0 0 1 12 0v5.5l1.5 2h-15Z\"/><path d=\"M10 20.5a2 2 0 0 0 4 0\"/>" },
-  { id: "settings", sub: "Appearance, speed and the laptop helper", label: "Settings", icon: "<path d=\"M3.5 7.5H13M18 7.5h2.5M3.5 16.5H6M11 16.5h9.5\"/><circle cx=\"15.5\" cy=\"7.5\" r=\"2.5\"/><circle cx=\"8.5\" cy=\"16.5\" r=\"2.5\"/>" },
+  { id: "settings", label: "Settings", icon: "<path d=\"M3.5 7.5H13M18 7.5h2.5M3.5 16.5H6M11 16.5h9.5\"/><circle cx=\"15.5\" cy=\"7.5\" r=\"2.5\"/><circle cx=\"8.5\" cy=\"16.5\" r=\"2.5\"/>" },
 ];
 
 function $(id) { return document.getElementById(id); }
@@ -1182,7 +1270,7 @@ function selectTab(id) {
   var tab = TABS.filter(function (t) { return t.id === id; })[0];
   if (tab) {
     $("page-title").textContent = tab.label;
-    $("page-sub").textContent = tab.sub || "";
+    $("page-sub").textContent = "";
   }
   Array.prototype.forEach.call($("tabs").children, function (b) {
     b.classList.toggle("on", b.dataset.tab === id);
@@ -2233,7 +2321,7 @@ function updateDock(active, totalBps) {
   dock.hidden = transfers.length === 0;
   $("dock-rate").textContent = active ? rate(totalBps) : "-";
   $("hero-rate").textContent = active ? rate(totalBps) : "Idle";
-  $("hero-rate-sub").textContent = active ? (active + (active === 1 ? " transfer" : " transfers")) : "Nothing moving";
+  $("hero-rate-sub").textContent = active ? (active + (active === 1 ? " transfer" : " transfers")) : "";
   $("dock-label").textContent = active
     ? (active + (active === 1 ? " transfer" : " transfers"))
     : (transfers.length ? "Idle" : "");
@@ -2322,7 +2410,7 @@ function updateTransferRow(d, row) {
 
 function renderFiles() {
   var host = $("files");
-  if (!state.files.length) { host.innerHTML = '<p class="empty">Nothing here yet. Files you send from the phone, and files the phone receives, appear here.</p>'; return; }
+  if (!state.files.length) { host.innerHTML = '<p class="empty">Nothing yet</p>'; return; }
   host.innerHTML = "";
   state.files.forEach(function (f) {
     var d = document.createElement("div");
@@ -2400,7 +2488,7 @@ function renderFs(d) {
   var parts = d.path ? d.path.split("/") : [];
   function crumb(label, path, last) {
     var b = document.createElement("button");
-    b.type = "button"; b.textContent = label;
+    b.type = "button"; b.textContent = label; b.title = label;
     if (!last) b.onclick = function () { fsOpen(path); };
     crumbs.appendChild(b);
     if (!last) { var sep = document.createElement("i"); sep.textContent = "/"; crumbs.appendChild(sep); }
@@ -2628,8 +2716,8 @@ function renderHelperState() {
   var local = location.hostname === "localhost" || location.hostname === "127.0.0.1";
   el.className = "banner" + (local ? "" : " bad");
   el.textContent = local
-    ? "Running through the laptop helper: full speed, and the direct link joins by itself."
-    : "Not running. Without it, downloads from the phone use one connection and the direct link has to be joined by hand.";
+    ? "Running. Full speed, on the fastest link."
+    : "Not running: downloads use one connection, and no faster link is picked for you.";
 }
 
 async function measure() {
@@ -2699,7 +2787,9 @@ function connectEvents() {
     $("hero-state").textContent = "Reconnecting"; $("hero-dot").classList.remove("on");
   });
   events.addEventListener("theme", function (e) { applyTheme(e.data); });
-  events.addEventListener("direct", function () { refreshDirect(); });
+  events.addEventListener("look", function (e) { try { applyLook(JSON.parse(e.data)); } catch (err) {} });
+  // The phone's links changed: the helper may be moving this page onto another one.
+  events.addEventListener("direct", function () { setTimeout(refreshRoute, 1500); setTimeout(refreshRoute, 5000); });
   events.addEventListener("files", function (e) {
     try { state.files = JSON.parse(e.data); renderFiles(); } catch (err) {}
   });
@@ -2731,6 +2821,7 @@ async function refreshState() {
   state.files = s.files || [];
   state.device = s.deviceName || "";
   applyTheme(s.theme || "system");
+  applyLook({ glass: s.glass, oled: s.oled });
   state.parallelThreshold = s.parallelThreshold || state.parallelThreshold;
 
   var saved = null;
@@ -2761,6 +2852,41 @@ function applyTheme(theme) {
   });
   try { localStorage.setItem("blazeit.theme", theme); } catch (e) {}
   if (!$("mon-sheet").hidden) pollMonitor();
+}
+
+/** Glass floating parts and pure-black dark: shared with the phone like the theme. */
+var look = { glass: false, oled: false };
+
+function applyLook(l) {
+  if (!l) return;
+  look = { glass: !!l.glass, oled: !!l.oled };
+  var root = document.documentElement;
+  if (look.glass) root.setAttribute("data-glass", ""); else root.removeAttribute("data-glass");
+  if (look.oled) root.setAttribute("data-oled", ""); else root.removeAttribute("data-oled");
+  $("look-glass").classList.toggle("on", look.glass);
+  $("look-oled").classList.toggle("on", look.oled);
+  setPlayerSpace();
+  try { localStorage.setItem("blazeit.look", JSON.stringify(look)); } catch (e) {}
+}
+
+async function setLook(change) {
+  var next = { glass: look.glass, oled: look.oled };
+  for (var k in change) next[k] = change[k];
+  applyLook(next);
+  try {
+    await api("/api/look", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(change),
+    });
+  } catch (e) {}
+}
+
+/** What the player takes from the bottom, for the sidebar, the dock and the page; glass floats it 12px up. */
+function setPlayerSpace() {
+  var pl = $("player");
+  var h = pl && !pl.hidden ? pl.offsetHeight + (look.glass ? 12 : 0) : 0;
+  document.documentElement.style.setProperty("--player-h", h + "px");
 }
 
 async function setTheme(theme) {
@@ -3221,7 +3347,7 @@ function showPlayer(t) {
   img.onload = function () { art.innerHTML = ""; art.appendChild(img); };
   img.src = artUrl(t.albumId);
   showDeck(t);
-  document.documentElement.style.setProperty("--player-h", pl.offsetHeight + "px");
+  setPlayerSpace();
   document.body.style.paddingBottom = (pl.offsetHeight + 110) + "px";
 
   if ("mediaSession" in navigator && typeof MediaMetadata !== "undefined") {
@@ -3455,6 +3581,8 @@ function showApp() {
     Array.prototype.forEach.call(document.querySelectorAll("[data-theme-choice]"), function (b) {
       b.addEventListener("click", function () { setTheme(b.dataset.themeChoice); });
     });
+    $("look-glass").addEventListener("click", function () { setLook({ glass: !look.glass }); });
+    $("look-oled").addEventListener("click", function () { setLook({ oled: !look.oled }); });
     renderPending();
   } else setMonitor(monitorWanted());
   refreshState();
@@ -3571,6 +3699,7 @@ $("pair-cancel").addEventListener("click", pairReset);
   var saved = "system";
   try { saved = localStorage.getItem("blazeit.theme") || "system"; } catch (e) {}
   applyTheme(saved);
+  try { applyLook(JSON.parse(localStorage.getItem("blazeit.look") || "null")); } catch (e) {}
   try {
     var res = await fetch("/api/ping", { credentials: "same-origin" });
     var info = await res.json();

@@ -633,6 +633,11 @@ class BridgeServer(
             config.setTheme(body.theme)
             call.respond(ApiResult(true))
         }
+        post("/api/look") {
+            val body = runCatching { call.receive<LookRequest>() }.getOrDefault(LookRequest())
+            config.setLook(body.glass, body.oled)
+            call.respond(ApiResult(true))
+        }
     }
 
     // ------------------------------------------------------------------ page + auth
@@ -723,6 +728,8 @@ class BridgeServer(
                     deviceName = config.deviceName,
                     uploadStreams = config.uploadStreams(),
                     theme = config.theme(),
+                    glass = config.look().glass,
+                    oled = config.look().oled,
                     clipSync = config.clipSync(),
                     clip = clipboard.meta.value,
                 )
@@ -897,6 +904,7 @@ class BridgeServer(
             send(data = clipboard.metaJson(), event = "clip")
             send(data = clipboard.historyJson(), event = "cliphistory")
             send(data = config.theme(), event = "theme")
+            send(data = config.look().json(), event = "look")
 
             val pump = CoroutineScope(coroutineContext).launch {
                 EventBus.events.collect { send(data = it.data, event = it.name) }

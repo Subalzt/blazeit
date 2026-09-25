@@ -4,6 +4,7 @@ import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.isSystemInDarkTheme
@@ -57,8 +58,9 @@ import androidx.compose.ui.unit.sp
  * BlazeIt's look: plain, quick, and at home next to the phone's own apps.
  *
  * Solid surfaces on a quiet background, large confident type, and colour used the way a
- * home screen uses it: small bright tiles that say what a thing is. Nothing is blurred or
- * refracted, so nothing costs a frame. Light or dark follows the phone unless chosen.
+ * home screen uses it: small bright tiles that say what a thing is. Light or dark follows the
+ * phone unless chosen; dark is graphite, or pure black with OLED black on. With Glass on, the
+ * floating bars are frosted glass over the content (see Glass.kt); the cards stay solid.
  */
 @Immutable
 data class Palette(
@@ -98,11 +100,31 @@ val LightPalette = Palette(
     red = Color(0xFFF23B30),
 )
 
+/** Dark as a soft graphite, the phone's own dark mode. */
 val DarkPalette = Palette(
     dark = true,
+    bg = Color(0xFF111113),
+    surface = Color(0xFF1C1C1F),
+    surface2 = Color(0xFF2A2A2F),
+    text = Color(0xFFF5F5F7),
+    muted = Color(0xFF9C9CA5),
+    faint = Color(0xFF5E5E66),
+    outline = Color(0x1FFFFFFF),
+    yellow = Color(0xFFFFC933),
+    onYellow = Color(0xFF15120A),
+    blue = Color(0xFF3D8BFF),
+    green = Color(0xFF30D158),
+    orange = Color(0xFFFF8A2A),
+    purple = Color(0xFF9079FF),
+    red = Color(0xFFFF453A),
+)
+
+/** Dark as pure black, for OLED screens (Settings, Appearance, OLED black). */
+val OledPalette = Palette(
+    dark = true,
     bg = Color(0xFF000000),
-    surface = Color(0xFF151518),
-    surface2 = Color(0xFF232328),
+    surface = Color(0xFF121214),
+    surface2 = Color(0xFF212125),
     text = Color(0xFFF5F5F7),
     muted = Color(0xFF9C9CA5),
     faint = Color(0xFF5A5A62),
@@ -118,17 +140,22 @@ val DarkPalette = Palette(
 
 val LocalPalette = staticCompositionLocalOf { DarkPalette }
 
-/** Picks the palette from the shared setting: "system", "light" or "dark". */
+/** Picks the palette from the shared settings: "system", "light" or "dark", and the look. */
 @Composable
-fun BlazeTheme(theme: String, content: @Composable () -> Unit) {
+fun BlazeTheme(theme: String, look: dev.periy.bridge.Look = dev.periy.bridge.Look(), content: @Composable () -> Unit) {
     val dark = when (theme) {
         "dark" -> true
         "light" -> false
         else -> isSystemInDarkTheme()
     }
-    val p = if (dark) DarkPalette else LightPalette
+    val p = when {
+        !dark -> LightPalette
+        look.oled -> OledPalette
+        else -> DarkPalette
+    }
     CompositionLocalProvider(
         LocalPalette provides p,
+        LocalGlass provides look.glass,
         LocalTextStyle provides TextStyle(color = p.text),
         content = content,
     )
@@ -202,8 +229,9 @@ fun SectionBar(
     modifier: Modifier = Modifier,
     trailing: @Composable RowScope.() -> Unit = {},
 ) {
+    // Title in line with the text inside the cards; anything on the right in line with their edge.
     Row(
-        modifier.fillMaxWidth().padding(start = 28.dp, end = 24.dp, top = 22.dp, bottom = 8.dp),
+        modifier.fillMaxWidth().heightIn(min = 32.dp + 30.dp).padding(start = 28.dp, end = 18.dp, top = 22.dp, bottom = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(
@@ -327,7 +355,7 @@ fun Tile(
     icon: ImageVector,
     color: Color,
     title: String,
-    detail: String,
+    detail: String?,
     modifier: Modifier = Modifier,
     active: Boolean = false,
     onClick: () -> Unit,
@@ -348,13 +376,16 @@ fun Tile(
             ) { Icon(icon, null, tint = fg, modifier = Modifier.size(21.dp)) }
         } else AppIcon(icon, color)
         Spacer(Modifier.height(18.dp))
+        Spacer(Modifier.weight(1f))
         Text(title, style = TitleStyle, color = fg, maxLines = 1, overflow = TextOverflow.Ellipsis)
-        Spacer(Modifier.height(2.dp))
-        Text(
-            detail, style = BodyStyle.copy(fontSize = 13.sp, lineHeight = 17.sp),
-            color = if (active) fg.copy(alpha = 0.75f) else Bridge.Muted,
-            maxLines = 2, overflow = TextOverflow.Ellipsis,
-        )
+        if (!detail.isNullOrBlank()) {
+            Spacer(Modifier.height(2.dp))
+            Text(
+                detail, style = BodyStyle.copy(fontSize = 13.sp, lineHeight = 17.sp),
+                color = if (active) fg.copy(alpha = 0.75f) else Bridge.Muted,
+                maxLines = 1, overflow = TextOverflow.Ellipsis,
+            )
+        }
     }
 }
 
@@ -512,9 +543,13 @@ fun SignalBars(level: Int, modifier: Modifier = Modifier) {
     }
 }
 
+/** How much of the bottom a floating glass tab bar covers, above the navigation inset. */
+val GlassTabBarSpace = 64.dp + 12.dp
+
 /**
- * The tab bar: flat, on the surface colour, with a pill behind the current tab's icon.
- * It sits on the bottom edge like the phone's own navigation, not floating over content.
+ * The tab bar. Plain: flat, on the surface colour, on the bottom edge like the phone's own
+ * navigation, with a pill behind the current tab's icon. Glass: a floating capsule over the
+ * content, the current tab lit inside it.
  */
 @Composable
 fun TabBar(
@@ -524,6 +559,10 @@ fun TabBar(
     modifier: Modifier = Modifier,
     onSelect: (Int) -> Unit,
 ) {
+    if (LocalGlass.current) {
+        GlassTabBar(items, selected, bottomInset, modifier, onSelect)
+        return
+    }
     Column(modifier.fillMaxWidth().background(Bridge.Surface)) {
         Box(Modifier.fillMaxWidth().height(0.5.dp).background(Bridge.Outline))
         Row(Modifier.fillMaxWidth().padding(top = 8.dp, bottom = 8.dp + bottomInset, start = 8.dp, end = 8.dp)) {
@@ -547,6 +586,57 @@ fun TabBar(
                         color = if (lit) Bridge.Text else Bridge.Muted,
                     )
                 }
+            }
+        }
+    }
+}
+
+@Composable
+private fun GlassTabBar(
+    items: List<Pair<String, ImageVector>>,
+    selected: Int,
+    bottomInset: Dp,
+    modifier: Modifier,
+    onSelect: (Int) -> Unit,
+) {
+    val shape = RoundedCornerShape(32.dp)
+    Row(
+        modifier
+            .fillMaxWidth()
+            .padding(start = 20.dp, end = 20.dp, bottom = bottomInset + 12.dp)
+            .height(64.dp)
+            .glassBar(shape, 32.dp)
+            .padding(5.dp),
+    ) {
+        items.forEachIndexed { i, (label, icon) ->
+            val lit = i == selected
+            // The tab you are on is a bubble of glass inside the bar, with its own lit rim.
+            val cell by animateColorAsState(
+                if (lit) (if (Bridge.Dark) Color.White.copy(alpha = 0.13f) else Color.Black.copy(alpha = 0.06f)) else Color.Transparent,
+                tween(180), label = "cell",
+            )
+            val edge by animateColorAsState(
+                if (lit) Color.White.copy(alpha = if (Bridge.Dark) 0.14f else 0.6f) else Color.Transparent,
+                tween(180), label = "edge",
+            )
+            Column(
+                Modifier
+                    .weight(1f)
+                    .fillMaxHeight()
+                    .clip(RoundedCornerShape(27.dp))
+                    .background(cell)
+                    .border(1.dp, edge, RoundedCornerShape(27.dp))
+                    .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) { onSelect(i) },
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center,
+            ) {
+                Icon(icon, label, tint = if (lit) Bridge.Text else Bridge.Muted, modifier = Modifier.size(22.dp))
+                Spacer(Modifier.height(2.dp))
+                Text(
+                    label,
+                    style = TextStyle(fontSize = 11.sp, fontWeight = if (lit) FontWeight.SemiBold else FontWeight.Medium),
+                    color = if (lit) Bridge.Text else Bridge.Muted,
+                )
             }
         }
     }

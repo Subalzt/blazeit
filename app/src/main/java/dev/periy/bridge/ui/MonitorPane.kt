@@ -100,7 +100,7 @@ fun MonitorOverlay(m: MonitorSnapshot, running: Boolean, onClose: () -> Unit) {
                         dy = (dy + drag.y).coerceIn(-50f, maxY)
                     }
                 }
-                .floating()
+                .glassBar(ButtonShape, 22.dp)
                 .clickable { expanded = true }
                 .padding(horizontal = 14.dp, vertical = 9.dp)
         ) { Capsule(m, running) }
@@ -147,7 +147,7 @@ private fun Sheet(m: MonitorSnapshot, running: Boolean, onHide: () -> Unit, onCl
             .padding(horizontal = 12.dp, vertical = 56.dp)
             .fillMaxWidth()
             .heightIn(max = 640.dp)
-            .floating(CardShape)
+            .glassBar(CardShape, 26.dp)
             .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) {}
             .verticalScroll(rememberScrollState())
             .padding(vertical = 14.dp)
