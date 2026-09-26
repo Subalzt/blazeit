@@ -35,7 +35,7 @@ enum class LinkKind(val label: String, val hint: String) {
         "Speed depends on the band and the distance to the router. 5 or 6 GHz is several times 2.4 GHz.",
     ),
 
-    /** BlazeIt's own offline network, started from the app. Listed after Wi-Fi so the
+    /** Localhost 8787's own offline network, started from the app. Listed after Wi-Fi so the
      *  everyday address stays the one shown; the direct link has its own card. */
     DIRECT(
         "Direct link",

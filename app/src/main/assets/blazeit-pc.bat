@@ -1,14 +1,14 @@
-<# : BlazeIt laptop helper. Double-click to run. The batch lines below hand this same file to PowerShell.
+<# : Localhost 8787 laptop helper. Double-click to run. The batch lines below hand this same file to PowerShell.
 @echo off
-title BlazeIt laptop helper
+title Localhost 8787 laptop helper
 powershell -NoProfile -ExecutionPolicy Bypass -Command "$f='%~f0'; iex ([IO.File]::ReadAllText($f))"
 if errorlevel 1 pause
 exit /b
 #>
 
 # What this does, all on this laptop, nothing installed:
-#  1. Finds the phone running BlazeIt on the network (and again whenever its address changes).
-#  2. Serves the BlazeIt page at http://localhost:8787. Chrome treats localhost as secure, so
+#  1. Finds the phone running Localhost 8787 on the network (and again whenever its address changes).
+#  2. Serves the Localhost 8787 page at http://localhost:8787. Chrome treats localhost as secure, so
 #     downloads use every connection and the clipboard works without extra clicks.
 #  3. Turns the phone's Control tab into this laptop's trackpad and keyboard.
 #  4. Joins the phone's direct link (its own offline Wi-Fi) when you start it, or its hotspot in
@@ -35,7 +35,7 @@ Get-CimInstance Win32_Process -Filter "Name='powershell.exe'" |
                 ForEach-Object { Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue }
             Stop-Process -Id $_.ProcessId -Force
             $closed++
-            Write-Host ("Closed the BlazeIt helper started at " + $_.CreationDate.ToString('HH:mm') + "; this one takes over.")
+            Write-Host ("Closed the Localhost 8787 helper started at " + $_.CreationDate.ToString('HH:mm') + "; this one takes over.")
             # Its window would otherwise sit at a prompt, or at "Press any key".
             if ($window -and $window.Name -eq 'cmd.exe' -and $window.ProcessId -ne $me.ParentProcessId) { Stop-Process -Id $window.ProcessId -Force }
         } catch { }
@@ -92,11 +92,11 @@ public static class BlazeItPc
         single = new Mutex(true, "Local\\BlazeItLaptopHelper", out first);
         if (!first)
         {
-            Say("Another BlazeIt helper is running and could not be closed (it may be running as administrator). Close it, then start this one again.");
+            Say("Another Localhost 8787 helper is running and could not be closed (it may be running as administrator). Close it, then start this one again.");
             Thread.Sleep(8000);
             return;
         }
-        Say("BlazeIt laptop helper. Keep this window open; close it to stop.");
+        Say("Localhost 8787 laptop helper. Keep this window open; close it to stop.");
         // A helper closed while the phone was a second screen left the virtual display on the
         // desktop, with windows on it that nobody can see: take it off.
         try
@@ -236,7 +236,7 @@ public static class BlazeItPc
     /**
      * This laptop's network adapter that reaches the phone: the one with an address on the
      * phone's subnet (the cable, the phone's hotspot or direct link, or the Wi-Fi the router
-     * shares with it). Its byte counters include everything on that link, not only BlazeIt.
+     * shares with it). Its byte counters include everything on that link, not only Localhost 8787.
      */
     static NetworkInterface LinkAdapter(string host)
     {
@@ -355,7 +355,7 @@ public static class BlazeItPc
             }
             if (firstTime)
             {
-                Console.Write("Could not find the phone. Is BlazeIt started? Type the address it shows (or press Enter to search again): ");
+                Console.Write("Could not find the phone. Is Localhost 8787 started? Type the address it shows (or press Enter to search again): ");
                 string typed = (Console.ReadLine() ?? "").Trim();
                 Match m = Regex.Match(typed, @"(\d{1,3}(\.\d{1,3}){3})");
                 if (m.Success && Ping(m.Groups[1].Value))
@@ -368,7 +368,7 @@ public static class BlazeItPc
             }
             else if (!told)
             {
-                Say("Waiting for the phone. Start BlazeIt on it, or check both are on the same Wi-Fi.");
+                Say("Waiting for the phone. Start Localhost 8787 on it, or check both are on the same Wi-Fi.");
                 told = true;
             }
             Thread.Sleep(2000);
@@ -736,7 +736,7 @@ public static class BlazeItPc
     //
     // One clipboard for this laptop and the phone. Copy text, a picture (a screenshot, say) or
     // a single file up to 50 MB here and it is on the phone, ready to paste; copy on the phone
-    // and it lands here (the phone sends it when BlazeIt opens or its tile is tapped): a picture
+    // and it lands here (the phone sends it when Localhost 8787 opens or its tile is tapped): a picture
     // pastes into apps and as a file into a folder, a file pastes into a folder. The phone's
     // Settings can turn it off.
 
@@ -1132,7 +1132,7 @@ public static class BlazeItPc
                         relayReady.WaitOne(3000);
                         if (localPort > 0)
                         {
-                            Say("Opening the BlazeIt page at http://localhost:" + localPort + "/ for full-speed transfers.");
+                            Say("Opening the Localhost 8787 page at http://localhost:" + localPort + "/ for full-speed transfers.");
                             try { Process.Start("http://localhost:" + localPort + "/"); } catch { }
                             Say("To send a YouTube video to the phone: get the Play on phone bookmark from http://localhost:" + localPort + "/blazeit/video");
                         }
@@ -1230,7 +1230,7 @@ public static class BlazeItPc
             else { Say("Plug the phone in with a USB cable (USB debugging on), then try again."); return; }
 
             var psi = new ProcessStartInfo(exe,
-                target + " --window-title=\"Phone (BlazeIt)\" --stay-awake --video-bit-rate=16M --max-fps=60");
+                target + " --window-title=\"Phone (Localhost 8787)\" --stay-awake --video-bit-rate=16M --max-fps=60");
             psi.UseShellExecute = false;
             psi.CreateNoWindow = true;
             psi.RedirectStandardError = true;
@@ -1568,7 +1568,7 @@ public static class BlazeItPc
     {
         string gain = (80.0 / white).ToString("0.0#####", System.Globalization.CultureInfo.InvariantCulture);
         return
-            "//!HOOK MAIN\n//!BIND HOOKED\n//!DESC BlazeIt: HDR desktop to SDR\n" +
+            "//!HOOK MAIN\n//!BIND HOOKED\n//!DESC Localhost 8787: HDR desktop to SDR\n" +
             "vec4 hook() {\n" +
             "    vec3 l = max(HOOKED_texOff(0).rgb * " + gain + ", 0.0);\n" +
             "    vec3 k = 0.9 + 0.1 * (1.0 - exp(-(l - 0.9) / 0.1));\n" +
@@ -2089,9 +2089,9 @@ if(window.__blazeit){window.__blazeit.stop();return;}
 var vs=[].slice.call(document.querySelectorAll('video')).filter(function(x){return x.readyState>1&&x.videoWidth>0;});
 vs.sort(function(a,b){return b.videoWidth*b.videoHeight-a.videoWidth*a.videoHeight;});
 var v=vs[0];
-if(!v){alert('BlazeIt: start the video first, then click Play on phone.');return;}
+if(!v){alert('Localhost 8787: start the video first, then click Play on phone.');return;}
 var grab=v.captureStream||v.mozCaptureStream;
-if(!grab||!window.MediaRecorder){alert('BlazeIt: this browser cannot hand the video over.');return;}
+if(!grab||!window.MediaRecorder){alert('Localhost 8787: this browser cannot hand the video over.');return;}
 var ac=v.__bzAc,src=v.__bzSrc;
 if(!src){try{ac=new AudioContext();src=ac.createMediaElementSource(v);src.connect(ac.destination);v.__bzAc=ac;v.__bzSrc=src;}catch(e){src=null;}}
 if(ac&&ac.state!=='running')ac.resume();
@@ -2111,13 +2111,13 @@ function post(p,b){return fetch(H+p,{method:'POST',body:b||''}).then(function(r)
 function stop(){if(done)return;done=true;try{rec.stop();}catch(e){}cap.getVideoTracks().forEach(function(t){t.stop();});setLocal(true);try{if(src)src.disconnect(dest);}catch(e){}if(id)post('/blazeit/video/stop?t='+T+'&id='+id).catch(function(){});window.__blazeit=null;if(badge.parentNode)badge.parentNode.removeChild(badge);}
 window.__blazeit={stop:stop};
 post('/blazeit/video/open?t='+T+'&codec='+(/h264|avc1/.test(mime)?'h264':'vp')).then(function(r){
-if(!r.ok){stop();alert('BlazeIt: '+(r.message||'the phone did not take it'));return;}
+if(!r.ok){stop();alert('Localhost 8787: '+(r.message||'the phone did not take it'));return;}
 id=r.id;document.body.appendChild(badge);
 rec.ondataavailable=function(e){if(done||!e.data||!e.data.size)return;var b=new Blob([e.data]),n=seq++;
 q=q.then(function(){return done?null:post('/blazeit/video/chunk?t='+T+'&id='+id+'&s='+n,b);}).then(function(r){if(!r)return;if(!r.ok){stop();return;}setLocal(!r.sound);if(r.toggle){if(v.paused)v.play();else v.pause();}}).catch(function(){stop();});};
 rec.onstop=function(){stop();};
 rec.start(200);
-}).catch(function(){stop();alert('BlazeIt: the laptop helper is not running, or the browser blocked it from reaching it.');});
+}).catch(function(){stop();alert('Localhost 8787: the laptop helper is not running, or the browser blocked it from reaching it.');});
 })();";
         js = js.Replace("PORT", localPort.ToString()).Replace("TOKEN", VideoToken());
         string href = "javascript:" + Uri.EscapeDataString(js);

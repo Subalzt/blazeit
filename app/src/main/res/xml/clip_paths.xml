@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- The one folder BlazeIt shares through its FileProvider: the picture or file on the shared
+<!-- The one folder Localhost 8787 shares through its FileProvider: the picture or file on the shared
      clipboard, so other apps on the phone can paste it. Read-only, and nothing else. -->
 <paths>
     <files-path name="clip" path="clip/" />

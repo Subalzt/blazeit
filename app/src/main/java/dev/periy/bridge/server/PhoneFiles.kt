@@ -53,7 +53,7 @@ data class FsListDto(
  * The phone's shared storage, read-only, for the laptop to browse: the folder with DCIM,
  * Download, Documents and the rest.
  *
- * Nothing is reachable until the owner turns on Android's "All files access" for BlazeIt,
+ * Nothing is reachable until the owner turns on Android's "All files access" for Localhost 8787,
  * and every path is resolved against the storage root and refused if it would climb out.
  * Nothing here writes, renames or deletes.
  */

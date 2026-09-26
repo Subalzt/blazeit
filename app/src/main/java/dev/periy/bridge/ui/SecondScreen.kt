@@ -73,7 +73,7 @@ class SecondScreenActivity : Activity(), SurfaceHolder.Callback {
         surface = SurfaceView(this)
         note = TextView(this).apply {
             setTextColor(0xFFBBBBBB.toInt()); textSize = 16f; gravity = Gravity.CENTER
-            text = "Waiting for the laptop...\nThe BlazeIt helper must be running there."
+            text = "Waiting for the laptop...\nThe Localhost 8787 helper must be running there."
         }
         root.addView(surface, FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT, Gravity.CENTER))
         root.addView(note, FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT))

@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">BlazeIt</string>
-    <string name="channel_server_name">BlazeIt server</string>
-    <string name="channel_server_desc">Shows the address while BlazeIt is running.</string>
+    <string name="app_name">Localhost 8787</string>
+    <string name="channel_server_name">Localhost 8787 server</string>
+    <string name="channel_server_desc">Shows the address while Localhost 8787 is running.</string>
 </resources>

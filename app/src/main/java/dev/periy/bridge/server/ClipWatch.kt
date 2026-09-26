@@ -11,19 +11,19 @@ import android.provider.Settings
 import android.util.Log
 
 /**
- * Sends what you copy in any app to the laptop, with BlazeIt in the background.
+ * Sends what you copy in any app to the laptop, with Localhost 8787 in the background.
  *
  * Android 10 and later let only the keyboard and the app on screen read the clipboard, and do
  * not even tell a background app that it changed. They do write it down, though: every time a
  * copy is made, the system tries to tell each listener and logs "Denying clipboard access to
  * <app>" for those in the background. So this listens (to be one of those told), watches the
- * system log for that line about BlazeIt, and at that moment opens a tiny invisible window for a
- * blink, which gives BlazeIt the focus it needs to read the copy and send it. This is how KDE
+ * system log for that line about Localhost 8787, and at that moment opens a tiny invisible window for a
+ * blink, which gives Localhost 8787 the focus it needs to read the copy and send it. This is how KDE
  * Connect does it.
  *
  * It needs two permissions an app cannot give itself: reading the system log (granted once over
  * USB: `adb shell pm grant <app> android.permission.READ_LOGS`) and "Display over other apps",
- * which lets the window open from the background. Android 13+ also asks once, with BlazeIt on
+ * which lets the window open from the background. Android 13+ also asks once, with Localhost 8787 on
  * screen, to allow it to read the logs; the watch starts then.
  */
 object ClipWatch {
@@ -35,7 +35,7 @@ object ClipWatch {
     private var listener: ClipboardManager.OnPrimaryClipChangedListener? = null
     private val main = Handler(Looper.getMainLooper())
 
-    /** BlazeIt itself just put something on the clipboard (from the laptop): that is no copy to send. */
+    /** Localhost 8787 itself just put something on the clipboard (from the laptop): that is no copy to send. */
     fun ownWrite() { lastOwnWrite = SystemClock.elapsedRealtime() }
 
     fun canReadLogs(ctx: Context) =
@@ -47,7 +47,7 @@ object ClipWatch {
 
     val running: Boolean get() = process?.isAlive == true
 
-    /** Starts watching, if allowed and not already watching. Call with BlazeIt on screen the first time. */
+    /** Starts watching, if allowed and not already watching. Call with Localhost 8787 on screen the first time. */
     @Synchronized
     fun ensure(ctx: Context, enabled: Boolean) {
         val app = ctx.applicationContext

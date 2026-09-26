@@ -11,7 +11,7 @@ import android.util.Log
 
 /**
  * Puts every new screenshot on the shared clipboard, so it is on the laptop's a moment after
- * you take it, BlazeIt open or not.
+ * you take it, Localhost 8787 open or not.
  *
  * Android lets an app read the clipboard only while it is on screen, so a screenshot copied in
  * the background cannot be picked up that way. It does not have to be: a keyboard's "recent
@@ -97,7 +97,7 @@ class ScreenshotWatcher(
     }
 }
 
-/** Whether BlazeIt may read the photo library: "All files access", or the photos permission. */
+/** Whether Localhost 8787 may read the photo library: "All files access", or the photos permission. */
 fun canReadPhotos(ctx: Context): Boolean =
     (android.os.Build.VERSION.SDK_INT >= 30 && android.os.Environment.isExternalStorageManager()) ||
         ctx.checkSelfPermission(

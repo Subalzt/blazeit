@@ -50,7 +50,7 @@ object OemBatterySetup {
         Candidate(
             listOf("xiaomi", "redmi", "poco"),
             "Set battery saver to No restrictions",
-            "Find BlazeIt in the list and choose No restrictions rather than Battery saver.",
+            "Find Localhost 8787 in the list and choose No restrictions rather than Battery saver.",
             "com.miui.powerkeeper",
             "com.miui.powerkeeper.ui.HiddenAppsConfigActivity",
         ),
@@ -177,7 +177,7 @@ object OemBatterySetup {
             add(
                 Step(
                     "Set battery usage to Unrestricted",
-                    "The platform's own setting. Find BlazeIt in the list and allow it to run in the background.",
+                    "The platform's own setting. Find Localhost 8787 in the list and allow it to run in the background.",
                     batteryIntent,
                 )
             )

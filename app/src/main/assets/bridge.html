@@ -640,7 +640,7 @@
 
 <!-- ------------------------------------------------------------------ login -->
 <section id="login" hidden>
-  <div class="logo"><span class="mark"><svg viewBox="0 0 24 24"><path d="M13.5 2.5 5 13.5h6.5l-1 8 8.5-11h-6.5l1-8Z"/></svg></span>BlazeIt</div>
+  <div class="logo"><span class="mark"><svg viewBox="0 0 24 24"><path d="M13.5 2.5 5 13.5h6.5l-1 8 8.5-11h-6.5l1-8Z"/></svg></span>Localhost 8787</div>
   <h1>Connect this computer</h1>
   <p id="login-device">The phone will ask you to allow it.</p>
   <div class="pad">
@@ -660,7 +660,7 @@
 <!-- -------------------------------------------------------------------- app -->
 <div class="shell" id="app" hidden>
   <aside class="side">
-    <div class="logo"><span class="mark"><svg viewBox="0 0 24 24"><path d="M13.5 2.5 5 13.5h6.5l-1 8 8.5-11h-6.5l1-8Z"/></svg></span><span>BlazeIt</span></div>
+    <div class="logo"><span class="mark"><svg viewBox="0 0 24 24"><path d="M13.5 2.5 5 13.5h6.5l-1 8 8.5-11h-6.5l1-8Z"/></svg></span><span>Localhost 8787</span></div>
     <nav class="tabs" id="tabs"></nav>
     <div class="side-foot">
       <button class="side-item mon-toggle" id="mon-toggle" title="Monitor: live speed, ping and the Wi-Fi link">
@@ -1054,7 +1054,7 @@ function buildTabs() {
 
 // ------------------------------------------------------------------ monitor
 //
-// A glass capsule floating over every tab: speed each way, ping and signal, once a
+// A capsule floating over every tab: speed each way, ping and signal, once a
 // second. Click it for the sheet -- a minute of history drawn as two lines, the session's
 // totals and gaps, and both ends of the Wi-Fi link. Ping is measured from this page and
 // handed to the phone, so its own monitor shows it too.
@@ -1193,7 +1193,7 @@ function renderMonitor(m, rtt) {
  * How full the link in use is, and with what. The whole is what that link can carry (the
  * cable's USB generation, or the Wi-Fi hop's link rate), never the fastest second seen: that
  * is the peak, on the right. Files, music and speed tests share it, and so does traffic that
- * is not BlazeIt's (the laptop's internet through the phone, other apps), which the laptop
+ * is not Localhost 8787's (the laptop's internet through the phone, other apps), which the laptop
  * helper measures.
  */
 function renderChannel(m, used, cap, pct) {
@@ -2940,7 +2940,7 @@ function renderRoute() {
   if (hint.hidden) return;
   if (viaHelper) {
     hint.textContent = "A USB cable is plugged in, but the laptop helper is not using it. " +
-      "Close every BlazeIt helper window and run the latest one (Settings); it moves to the cable by itself.";
+      "Close every Localhost 8787 helper window and run the latest one (Settings); it moves to the cable by itself.";
   } else {
     var url = "http://" + r.usb + ":" + (location.port || "8787") + "/";
     hint.innerHTML = "A USB cable is plugged in and several times faster. Open <a></a> to use it (it asks to pair once), or run the laptop helper (Settings).";

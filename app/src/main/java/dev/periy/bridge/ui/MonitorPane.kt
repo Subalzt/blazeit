@@ -100,7 +100,7 @@ fun MonitorOverlay(m: MonitorSnapshot, running: Boolean, onClose: () -> Unit) {
                         dy = (dy + drag.y).coerceIn(-50f, maxY)
                     }
                 }
-                .glassBar(ButtonShape, 22.dp)
+                .floating(ButtonShape)
                 .clickable { expanded = true }
                 .padding(horizontal = 14.dp, vertical = 9.dp)
         ) { Capsule(m, running) }
@@ -147,7 +147,7 @@ private fun Sheet(m: MonitorSnapshot, running: Boolean, onHide: () -> Unit, onCl
             .padding(horizontal = 12.dp, vertical = 56.dp)
             .fillMaxWidth()
             .heightIn(max = 640.dp)
-            .glassBar(CardShape, 26.dp)
+            .floating(CardShape)
             .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) {}
             .verticalScroll(rememberScrollState())
             .padding(vertical = 14.dp)
@@ -159,7 +159,7 @@ private fun Sheet(m: MonitorSnapshot, running: Boolean, onHide: () -> Unit, onCl
             IconChip(BlazeIcons.Close, "Close", tint = Bridge.Muted, onClick = onHide)
         }
         if (!running) {
-            Text("Turn BlazeIt on to see live traffic.", style = BodyStyle, color = Bridge.Muted, modifier = Modifier.padding(20.dp))
+            Text("Turn Localhost 8787 on to see live traffic.", style = BodyStyle, color = Bridge.Muted, modifier = Modifier.padding(20.dp))
             return@Column
         }
 
@@ -183,7 +183,7 @@ private fun Sheet(m: MonitorSnapshot, running: Boolean, onHide: () -> Unit, onCl
         Stat(
             "Gaps",
             if (m.gaps == 0) "None" else "${m.gaps} s" + (if (m.lastGapAt > 0) " · last " + ago(m.lastGapAt) else ""),
-            if (m.gaps == 0) Bridge.Good else Bridge.Yellow,
+            if (m.gaps == 0) Bridge.Good else Bridge.Orange,
         )
         Stat("Open requests · transfers", "${m.requests} · ${m.activeTransfers}")
         Stat("Server up", uptime(m.uptimeSec))
@@ -195,7 +195,7 @@ private fun Sheet(m: MonitorSnapshot, running: Boolean, onHide: () -> Unit, onCl
 /**
  * How full the link in use is, and with what. The whole is what that link can carry (the
  * cable's USB generation, or the Wi-Fi hop's link rate), not the fastest second seen. Files,
- * music and speed tests share it, and so does traffic that is not BlazeIt's, which the laptop
+ * music and speed tests share it, and so does traffic that is not Localhost 8787's, which the laptop
  * helper measures.
  */
 @Composable

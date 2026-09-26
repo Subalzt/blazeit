@@ -37,7 +37,7 @@ import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicLong
 
-/** Another phone running BlazeIt, seen on the local network. */
+/** Another phone running Localhost 8787, seen on the local network. */
 data class NearbyPhone(val name: String, val host: String, val port: Int)
 
 /** A phone this one has been allowed into. */

@@ -26,13 +26,13 @@ object SystemClipboard {
         ClipWatch.ownWrite()
         runCatching {
             val cm = ctx.getSystemService(Context.CLIPBOARD_SERVICE) as? ClipboardManager ?: return
-            cm.setPrimaryClip(ClipData.newPlainText("BlazeIt", text))
+            cm.setPrimaryClip(ClipData.newPlainText("Localhost 8787", text))
         }
     }
 
     /**
      * Puts a picture or file on the phone's clipboard, as a content link other apps can paste
-     * from (Gallery, WhatsApp, a notes app...). The file stays in BlazeIt's clipboard folder,
+     * from (Gallery, WhatsApp, a notes app...). The file stays in Localhost 8787's clipboard folder,
      * shared read-only through its FileProvider.
      */
     fun writeFile(ctx: Context, file: java.io.File, name: String, mime: String) {

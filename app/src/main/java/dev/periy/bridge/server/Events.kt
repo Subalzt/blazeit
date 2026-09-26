@@ -32,9 +32,9 @@ object EventBus {
  *
  * This is the app's own buffer, not the Android system clipboard. On API 29+ an app cannot read
  * the system clipboard unless it has focus, so the phone side feeds it from what it can see:
- * BlazeIt opening, the tile, the text-selection menu, the share sheet, and new screenshots.
+ * Localhost 8787 opening, the tile, the text-selection menu, the share sheet, and new screenshots.
  * Writing to the system clipboard is unrestricted, so whatever the laptop sends lands there,
- * even with BlazeIt closed (the server runs in its foreground service).
+ * even with Localhost 8787 closed (the server runs in its foreground service).
  */
 class ClipboardStore(ctx: Context) {
 
@@ -43,7 +43,7 @@ class ClipboardStore(ctx: Context) {
 
     /**
      * Pictures and files, current and in the history: each in a folder named by its version,
-     * under its own name with the right extension. Other apps paste it through BlazeIt's
+     * under its own name with the right extension. Other apps paste it through Localhost 8787's
      * FileProvider, which tells them its type from that extension: "12.bin" would read as
      * unknown data, and WhatsApp or Gboard would not take it as a picture.
      */

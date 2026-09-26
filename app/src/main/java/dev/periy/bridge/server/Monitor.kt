@@ -53,7 +53,7 @@ data class LaptopLink(
     val usbMbps: Int = 0,
     /**
      * The laptop's network adapter that reaches the phone, and its byte counters so far: all of
-     * its traffic, BlazeIt's and everything else's (the laptop's internet through the phone, say).
+     * its traffic, Localhost 8787's and everything else's (the laptop's internet through the phone, say).
      */
     val iface: String = "",
     val rxBytes: Long = 0,
@@ -86,7 +86,7 @@ data class MonitorSnapshot(
     val musicBps: Long = 0,
     val testBps: Long = 0,
     /**
-     * Traffic on the same link that is not BlazeIt's, both directions: the laptop's internet
+     * Traffic on the same link that is not Localhost 8787's, both directions: the laptop's internet
      * through the phone's hotspot or cable, other apps on the laptop. Needs the laptop helper.
      */
     val otherBps: Long = 0,
@@ -120,7 +120,7 @@ object Monitor {
     @Volatile private var via = ""
     @Volatile private var otherBps = 0L
     @Volatile private var otherAt = 0L
-    /** The previous helper report and BlazeIt's own byte count at that moment, to tell the rest apart. */
+    /** The previous helper report and Localhost 8787's own byte count at that moment, to tell the rest apart. */
     private var prevReport: LaptopLink? = null
     private var prevOwnBytes = 0L
     private var job: Job? = null
@@ -163,9 +163,9 @@ object Monitor {
         laptop = stamped
         if (link.rttMs >= 0) reportRtt(link.rttMs)
 
-        // Everything the laptop's adapter moved, less what BlazeIt moved, is someone else's use
+        // Everything the laptop's adapter moved, less what Localhost 8787 moved, is someone else's use
         // of the same link. Headers and acknowledgements make the adapter count a few per cent
-        // more than the payload, so BlazeIt's share is scaled up by that much before subtracting.
+        // more than the payload, so Localhost 8787's share is scaled up by that much before subtracting.
         val own = bytesIn.get() + bytesOut.get()
         val prev = prevReport
         if (prev != null && prev.iface == link.iface && link.iface.isNotEmpty() &&

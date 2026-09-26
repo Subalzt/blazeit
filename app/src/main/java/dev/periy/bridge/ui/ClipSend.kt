@@ -80,7 +80,7 @@ class ClipTileService : TileService() {
 }
 
 object ClipSync {
-    /** The last picture or file sent from the phone's clipboard, so reopening BlazeIt does not send it again. */
+    /** The last picture or file sent from the phone's clipboard, so reopening Localhost 8787 does not send it again. */
     @Volatile private var lastUri: String? = null
 
     /**
