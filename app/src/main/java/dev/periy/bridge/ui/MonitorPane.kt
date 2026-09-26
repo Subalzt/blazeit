@@ -212,7 +212,7 @@ private fun ChannelUse(m: MonitorSnapshot) {
             )
         }
         Spacer(Modifier.height(8.dp))
-        val parts = listOf(m.filesBps to Bridge.Orange, m.musicBps to LaneMusic, m.testBps to Bridge.Blue, m.otherBps to Bridge.Purple)
+        val parts = listOf(m.filesBps to Bridge.Orange, m.musicBps to LaneMusic, m.testBps to Bridge.Blue, m.otherBps to LaneOther)
         Row(Modifier.fillMaxWidth().height(10.dp).clip(ButtonShape).background(Bridge.Chip)) {
             if (cap > 0) {
                 var left = 1f
@@ -224,11 +224,15 @@ private fun ChannelUse(m: MonitorSnapshot) {
             }
         }
         Spacer(Modifier.height(8.dp))
-        Row(horizontalArrangement = Arrangement.spacedBy(14.dp), verticalAlignment = Alignment.CenterVertically) {
+        // Wraps to a second line when all four are there, rather than squeezing the last.
+        @OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
+        androidx.compose.foundation.layout.FlowRow(
+            horizontalArrangement = Arrangement.spacedBy(14.dp), verticalArrangement = Arrangement.spacedBy(4.dp),
+        ) {
             Legend("Files", Bridge.Orange, m.filesBps)
             Legend("Music", LaneMusic, m.musicBps)
             if (m.testBps > 0) Legend("Test", Bridge.Blue, m.testBps)
-            if (m.otherBps > 0) Legend("Other", Bridge.Purple, m.otherBps)
+            if (m.otherBps > 0) Legend("Other", LaneOther, m.otherBps)
         }
         Text(
             if (cap > 0) "Of what ${m.capacityLabel} can carry."
@@ -242,11 +246,15 @@ private fun ChannelUse(m: MonitorSnapshot) {
 private fun Legend(label: String, color: Color, bps: Long) {
     Row(verticalAlignment = Alignment.CenterVertically) {
         Dot(color)
-        Text("  $label ${mbps(bps)}", style = LabelStyle.copy(fontSize = 12.sp, fontFeatureSettings = "tnum"), color = Bridge.Muted)
+        Text("  $label ${mbps(bps)}", style = LabelStyle.copy(fontSize = 12.sp, fontFeatureSettings = "tnum"), color = Bridge.Muted,
+            maxLines = 1, softWrap = false)
     }
 }
 
-private val LaneMusic = Color(0xFFBF5AF2)
+/** Music's pink, as on the page. */
+private val LaneMusic = Color(0xFFFF2D55)
+/** Traffic that is not Localhost 8787's: a neutral grey, so it never reads as one of the app's own. */
+private val LaneOther = Color(0xFF8E8E93)
 
 @Composable
 private fun Rate(label: String, bps: Long, color: Color, modifier: Modifier) {
