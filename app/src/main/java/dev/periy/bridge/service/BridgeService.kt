@@ -63,6 +63,13 @@ class BridgeService : Service() {
     override fun onCreate() {
         super.onCreate()
         createChannel()
+        // Notification access can be allowed yet not running (after an update, or once HyperOS has
+        // stopped it); ask Android to start it again so the laptop gets the phone's notifications.
+        if (dev.periy.bridge.server.Notifs.service == null) runCatching {
+            android.service.notification.NotificationListenerService.requestRebind(
+                android.content.ComponentName(this, dev.periy.bridge.server.NotifyListener::class.java)
+            )
+        }
     }
 
     private fun watchScreenshots() {
@@ -109,7 +116,7 @@ class BridgeService : Service() {
             scope.launch {
                 runCatching {
                     container.newServer().start()
-                    // Let other phones running BlazeIt find this one on the network.
+                    // Let other phones running Localhost 8787 find this one on the network.
                     container.peers.advertise(container.prefs.port)
                 }
                     .onFailure {
@@ -213,7 +220,7 @@ class BridgeService : Service() {
             it.state == dev.periy.bridge.server.TransferState.ACTIVE
         }
 
-        val title = if (active.isEmpty()) "BlazeIt is ready" else {
+        val title = if (active.isEmpty()) "Localhost 8787 is ready" else {
             val rate = active.sumOf { it.bytesPerSec }
             "Transferring ${active.size} file${if (active.size == 1) "" else "s"} - ${formatRate(rate)}"
         }

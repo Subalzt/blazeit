@@ -348,6 +348,22 @@
   .notif .n-reply input { flex: 1; min-width: 0; height: 34px; padding: 0 12px; border-radius: 17px; font-size: 14px; }
   .notif .n-x { border: 0; background: none; color: var(--sub); cursor: pointer; font-size: 19px; line-height: 1; padding: 2px 6px; border-radius: 8px; }
   .notif .n-x:hover { background: var(--surface-2); color: var(--bad); }
+  /* On the tab, as Android draws them: each its own rounded card, folded to one line, a tap to open. */
+  #notif-list .notif { background: var(--surface-2); border-radius: 22px; padding: 12px 14px; }
+  #notif-list .notif + .notif { border-top: 0; margin-top: 8px; }
+  #notif-list .notif > img { width: 36px; height: 36px; flex-basis: 36px; border-radius: 50%; }
+  #notif-list .n-group { margin: 18px 6px 8px; font-size: 12.5px; font-weight: 700; letter-spacing: .4px; text-transform: uppercase; color: var(--sub); }
+  #notif-list .n-group:first-child { margin-top: 0; }
+  #notif-list .n-group + .notif { margin-top: 0; }
+  .notif.foldable { cursor: pointer; }
+  .notif.foldable:not(.open) .n-title { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .notif.foldable:not(.open) .n-text { -webkit-line-clamp: 1; white-space: normal; }
+  .notif.foldable:not(.open) .n-acts { display: none; }
+  .notif.open .n-text { -webkit-line-clamp: unset; display: block; }
+  .notif .n-more { flex: 0 0 auto; align-self: center; width: 28px; height: 22px; padding: 0; border: 0; border-radius: 11px; cursor: pointer;
+    display: grid; place-items: center; color: var(--txt); background: color-mix(in srgb, var(--txt) 9%, transparent); }
+  .notif .n-more svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; transition: transform .2s ease; }
+  .notif.open .n-more svg { transform: rotate(180deg); }
   .toasts { position: fixed; z-index: 55; top: 14px; right: 14px; width: min(380px, calc(100vw - 28px)); display: flex; flex-direction: column; gap: 10px; pointer-events: none; }
   .toasts .notif { pointer-events: auto; background: var(--surface); border-radius: 18px; box-shadow: var(--float-shadow); padding: 12px 12px 12px 14px;
     animation: toast-in .18s ease-out; }
@@ -1796,7 +1812,7 @@ function renderHistory() {
 // (a desktop notification when this page is in the background, a card on it otherwise).
 // Reply, press their own buttons ("Mark as read"), or dismiss them, on the phone too.
 
-var notifs = {}, notifAllowed = true, alertsSeen = false, alertsUnread = 0;
+var notifs = {}, notifAllowed = true, alertsSeen = false, alertsUnread = 0, notifOpen = {};
 var NOTIF_POP_KEY = "blazeit.notifpop";
 
 function notifPopOn() { try { return localStorage.getItem(NOTIF_POP_KEY) !== "0"; } catch (e) { return true; } }
@@ -1835,6 +1851,8 @@ function notifEl(n, inToast) {
     if (inToast) { d.remove(); return; }
     api("/api/notifications/dismiss", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ key: n.key }) });
   };
+  // The phone will not let this one go (a running service): nothing to dismiss.
+  if (!inToast && n.clearable === false) x.hidden = true;
   head.appendChild(x);
   body.appendChild(head);
   if (n.title) { var ti = document.createElement("div"); ti.className = "n-title"; ti.textContent = n.title; body.appendChild(ti); }
@@ -1866,6 +1884,24 @@ function notifEl(n, inToast) {
   });
   if (acts.children.length) body.appendChild(acts);
   d.appendChild(body);
+  // On the tab, folded to one line as Android shows them; a tap opens the rest and the
+  // buttons, another folds it back. Which are open survives the list being redrawn.
+  if (!inToast && (n.text || acts.children.length)) {
+    d.classList.add("foldable");
+    d.classList.toggle("open", !!notifOpen[n.key]);
+    var more = document.createElement("button"); more.className = "n-more"; more.type = "button";
+    more.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9.5l6 6 6-6"/></svg>';
+    head.insertBefore(more, x);
+    var sync = function () { more.title = d.classList.contains("open") ? "Fold" : "Open"; more.setAttribute("aria-expanded", d.classList.contains("open")); };
+    sync();
+    d.addEventListener("click", function (e) {
+      if (e.target.closest("input, form, .n-acts, .n-x")) return;
+      var open = !d.classList.contains("open");
+      d.classList.toggle("open", open);
+      if (open) notifOpen[n.key] = true; else delete notifOpen[n.key];
+      sync();
+    });
+  }
   return d;
 }
 
@@ -1880,7 +1916,14 @@ function renderNotifs() {
     return;
   }
   if (!list.length) { host.innerHTML = '<p class="empty">Nothing new on the phone.</p>'; return; }
-  list.forEach(function (n) { host.appendChild(notifEl(n, false)); });
+  // As the phone's shade: the ones to read first, then what is running, under its own heading.
+  var ongoing = list.filter(function (n) { return n.ongoing; });
+  list.filter(function (n) { return !n.ongoing; }).forEach(function (n) { host.appendChild(notifEl(n, false)); });
+  if (ongoing.length) {
+    var h = document.createElement("div"); h.className = "n-group"; h.textContent = "Ongoing";
+    host.appendChild(h);
+    ongoing.forEach(function (n) { host.appendChild(notifEl(n, false)); });
+  }
   renderAlertCount();
 }
 
@@ -3086,7 +3129,8 @@ function connectEvents() {
     var n; try { n = JSON.parse(e.data); } catch (err) { return; }
     var fresh = !notifs[n.key] || notifs[n.key].at !== n.at || notifs[n.key].text !== n.text;
     notifs[n.key] = n; renderNotifs();
-    if (fresh) popNotif(n);
+    // An ongoing one (music, a download) changes all the time: listed, never popped up.
+    if (fresh && !n.ongoing) popNotif(n);
   });
   events.addEventListener("notifgone", function (e) {
     delete notifs[e.data]; renderNotifs();

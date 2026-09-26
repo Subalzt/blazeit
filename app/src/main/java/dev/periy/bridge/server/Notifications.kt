@@ -7,6 +7,7 @@ import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.os.Bundle
+import android.os.Build
 import android.service.notification.NotificationListenerService
 import android.service.notification.StatusBarNotification
 import android.util.Log
@@ -31,6 +32,8 @@ data class NotifDto(
     val actions: List<String> = emptyList(),
     /** Can be swiped away (dismissed) on the phone. */
     val clearable: Boolean = true,
+    /** Stays while something runs (music, a download, a service); listed apart, as Android does. */
+    val ongoing: Boolean = false,
 )
 
 @Serializable data class NotifKey(val key: String = "")
@@ -41,7 +44,7 @@ data class NotifDto(
  * The phone's notifications, for the page: kept while they are on the phone, announced as they
  * arrive ("notif") and go ("notifgone"), and answerable from the laptop: reply, press one of
  * their buttons, dismiss. Fed by [NotifyListener], which Android runs in the background once
- * "Notification access" is allowed for BlazeIt, whether BlazeIt is open or not.
+ * "Notification access" is allowed for Localhost 8787, whether Localhost 8787 is open or not.
  */
 object Notifs {
     private const val TAG = "Notifs"
@@ -59,11 +62,12 @@ object Notifs {
 
     fun posted(ctx: Context, sbn: StatusBarNotification) {
         val n = sbn.notification ?: return
-        // Not worth a laptop's attention: BlazeIt's own, and the ongoing kind (music players,
-        // downloads, "running in background"), and a group's summary when its messages come too.
+        // Everything the phone shows, the ongoing kind too (music, downloads, services), which the
+        // page lists apart. Left out: Localhost 8787's own, and a group's summary, which only
+        // repeats the messages that come with it.
         if (sbn.packageName == ctx.packageName) return
-        if (n.flags and (Notification.FLAG_ONGOING_EVENT or Notification.FLAG_FOREGROUND_SERVICE) != 0) return
         if (n.flags and Notification.FLAG_GROUP_SUMMARY != 0) return
+        val ongoing = n.flags and (Notification.FLAG_ONGOING_EVENT or Notification.FLAG_FOREGROUND_SERVICE) != 0
         val e = n.extras ?: return
         val title = (e.getCharSequence(Notification.EXTRA_CONVERSATION_TITLE) ?: e.getCharSequence(Notification.EXTRA_TITLE))
             ?.toString().orEmpty()
@@ -80,6 +84,7 @@ object Notifs {
             canReply = actions.any { it.remoteInputs?.isNotEmpty() == true },
             actions = actions.filter { it.remoteInputs.isNullOrEmpty() }.mapNotNull { it.title?.toString() }.take(3),
             clearable = sbn.isClearable,
+            ongoing = ongoing,
         )
         live[sbn.key] = sbn
         if (shown[sbn.key] == dto) return
@@ -94,10 +99,10 @@ object Notifs {
 
     /** A chat's last few messages; otherwise the long text, the inbox lines, or the text. */
     private fun body(e: Bundle): String {
-        val msgs = runCatching {
+        val msgs = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) runCatching {
             @Suppress("DEPRECATION")
             Notification.MessagingStyle.Message.getMessagesFromBundleArray(e.getParcelableArray(Notification.EXTRA_MESSAGES))
-        }.getOrNull().orEmpty()
+        }.getOrNull().orEmpty() else emptyList()
         if (msgs.isNotEmpty()) {
             val group = e.getBoolean(Notification.EXTRA_IS_GROUP_CONVERSATION)
             return msgs.takeLast(4).joinToString("\n") { m ->
