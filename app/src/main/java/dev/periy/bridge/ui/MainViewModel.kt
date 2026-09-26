@@ -57,13 +57,13 @@ data class UiState(
     val clipSync: Boolean = true,
     /** Videos popped out into picture-in-picture on the laptop play here. */
     val videoPip: Boolean = true,
-    /** New screenshots go on the shared clipboard; and whether BlazeIt may read the photos for it. */
+    /** New screenshots go on the shared clipboard; and whether Localhost 8787 may read the photos for it. */
     val screenshotClip: Boolean = true,
     val canReadPhotos: Boolean = false,
     /** Copies in any app reach the laptop at once: the log permission and the overlay (see ClipWatch). */
     val watchLogs: Boolean = false,
     val watchOverlay: Boolean = false,
-    /** Android's "Notification access" is on for BlazeIt, so the laptop page shows the phone's notifications. */
+    /** Android's "Notification access" is on for Localhost 8787, so the laptop page shows the phone's notifications. */
     val notifAccess: Boolean = false,
     /** Music permission granted, and how many tracks the library holds. */
     val musicGranted: Boolean = false,
@@ -229,7 +229,9 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     val look: StateFlow<dev.periy.bridge.Look>
         get() = getApplication<Application>().container.look
 
-    fun setLook(glass: Boolean? = null, oled: Boolean? = null) = getApplication<Application>().container.setLook(glass, oled)
+    fun setStyle(style: String) = getApplication<Application>().container.setLook(style = style)
+
+    fun setAccent(accent: String) = getApplication<Application>().container.setLook(accent = accent)
 
     // ------------------------------------------------------------------ direct link
 
@@ -237,7 +239,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     val direct: StateFlow<dev.periy.bridge.net.DirectLink.State>
         get() = getApplication<Application>().container.direct.state
 
-    /** Starts BlazeIt too if it is off: the link is only useful with the server behind it. */
+    /** Starts Localhost 8787 too if it is off: the link is only useful with the server behind it. */
     fun startDirect() {
         val app = getApplication<Application>()
         dev.periy.bridge.service.BridgeService.start(app)
@@ -301,10 +303,10 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         refresh()
     }
 
-    /** Android's "Notification access" screen, where BlazeIt is allowed to see notifications. */
+    /** Android's "Notification access" screen, where Localhost 8787 is allowed to see notifications. */
     fun notifAccessIntent(): Intent = Intent(android.provider.Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS)
 
-    /** Android's "Display over other apps" screen for BlazeIt, which the copy watch needs. */
+    /** Android's "Display over other apps" screen for Localhost 8787, which the copy watch needs. */
     fun overlayIntent(): Intent =
         Intent(android.provider.Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:" + getApplication<Application>().packageName))
 
@@ -320,6 +322,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         refresh()
     }
 
+    @androidx.annotation.OptIn(markerClass = [androidx.media3.common.util.UnstableApi::class])
     fun setVideoPip(on: Boolean) {
         getApplication<Application>().container.prefs.videoPip = on
         if (!on) dev.periy.bridge.ui.VideoPipActivity.close()
@@ -390,6 +393,11 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     val files: StateFlow<List<dev.periy.bridge.server.FileEntry>>
         get() = getApplication<Application>().container.index.flow
 
+    /** Off the list only; the file itself stays where it is. */
+    fun forgetFile(id: String) { getApplication<Application>().container.index.remove(id) }
+
+    fun clearFiles() = getApplication<Application>().container.index.clear()
+
     private val _sendStatus = MutableStateFlow("")
     val sendStatus: StateFlow<String> = _sendStatus
 
@@ -448,7 +456,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                         val id = "share-" + System.nanoTime()
                         app.container.index.add(app.container.storage.importCopy(uri, id))
                         added++
-                    }.onFailure { android.util.Log.w("BlazeIt", "Share import failed", it) }
+                    }.onFailure { android.util.Log.w("Localhost 8787", "Share import failed", it) }
                 }
             }
             _sendStatus.value = if (added == 0) "Could not copy those files"

@@ -8,7 +8,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.vector.PathParser
 import androidx.compose.ui.unit.dp
 
-/** BlazeIt's own line icons: one 24-unit grid, one stroke weight, round ends. */
+/** Localhost 8787's own line icons: one 24-unit grid, one stroke weight, round ends. */
 object BlazeIcons {
     /** A house. */
     val Home: ImageVector = stroked(
@@ -21,12 +21,13 @@ object BlazeIcons {
     /** A phone sending out waves either side: other phones nearby. */
     val Phones: ImageVector = stroked(
         "phones",
-        "M10,3 H14 A2,2 0 0 1 16,5 V19 A2,2 0 0 1 14,21 H10 A2,2 0 0 1 8,19 V5 A2,2 0 0 1 10,3 Z",
-        "M11,17.5 H13",
-        "M5,9 A4.5,4.5 0 0 0 5,15",
-        "M2.2,6.8 A8,8 0 0 0 2.2,17.2",
-        "M19,9 A4.5,4.5 0 0 1 19,15",
-        "M21.8,6.8 A8,8 0 0 1 21.8,17.2",
+        // Drawn inside the grid with room for the stroke: the outer waves once ran past its edges and were cut.
+        "M10.6,3.5 H13.4 A2,2 0 0 1 15.4,5.5 V18.5 A2,2 0 0 1 13.4,20.5 H10.6 A2,2 0 0 1 8.6,18.5 V5.5 A2,2 0 0 1 10.6,3.5 Z",
+        "M11.2,17.3 H12.8",
+        "M6,9.2 A4,4 0 0 0 6,14.8",
+        "M3.4,7 A7.5,7.5 0 0 0 3.4,17",
+        "M18,9.2 A4,4 0 0 1 18,14.8",
+        "M20.6,7 A7.5,7.5 0 0 1 20.6,17",
     )
 
     /** A trackpad: a rounded pad with its two buttons underneath. */
@@ -114,7 +115,32 @@ object BlazeIcons {
         "M12 16v4.5",
     )
 
-    /** A power symbol: BlazeIt on and off. */
+    /** Three arcs over a dot: Wi-Fi through the router. */
+    val Wifi: ImageVector = stroked(
+        "wifi",
+        "M12 17.2a1.3 1.3 0 1 1 0 2.6a1.3 1.3 0 1 1 0-2.6Z",
+        "M8.3 14.6a5.2 5.2 0 0 1 7.4 0",
+        "M5.2 11.5a9.6 9.6 0 0 1 13.6 0",
+        "M2.3 8.4a13.8 13.8 0 0 1 19.4 0",
+    )
+
+    /** A USB plug on its cable. */
+    val Usb: ImageVector = stroked(
+        "usb",
+        "M9.5 2.5h5v4h-5Z",
+        "M7.5 6.5h9v6a2 2 0 0 1-2 2h-5a2 2 0 0 1-2-2Z",
+        "M12 14.5v7",
+    )
+
+    /** A padlock: the trackpad, locked. */
+    val Lock: ImageVector = stroked(
+        "lock",
+        "M6.5 10.5h11a1 1 0 0 1 1 1v8a1 1 0 0 1-1 1h-11a1 1 0 0 1-1-1v-8a1 1 0 0 1 1-1Z",
+        "M8.5 10.5V7.5a3.5 3.5 0 0 1 7 0v3",
+        "M12 14.5v2.5",
+    )
+
+    /** A power symbol: Localhost 8787 on and off. */
     val Power: ImageVector = stroked("power", "M12 3v8.5", "M6.9 6.4a7.5 7.5 0 1 0 10.2 0")
 
     /** A square of squares: show the QR code. */
@@ -192,6 +218,26 @@ object BlazeIcons {
         "M3.5 16l5-5 4 4 3-3 5 5",
         "M15.5 8.2a1.2 1.2 0 1 1 0 2.4a1.2 1.2 0 1 1 0-2.4Z",
     )
+
+    /** Solid shapes for the big transport buttons, as Apple Music and Apple TV draw them. */
+    val Play: ImageVector = filled("play", "M7.5 4.8v14.4a1 1 0 0 0 1.5.86l11.6-7.2a1 1 0 0 0 0-1.72L9 3.94a1 1 0 0 0-1.5.86Z")
+    val Pause: ImageVector = filled(
+        "pause",
+        "M6.5 4.5h3a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-3a1 1 0 0 1-1-1v-13a1 1 0 0 1 1-1Z",
+        "M14.5 4.5h3a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-3a1 1 0 0 1-1-1v-13a1 1 0 0 1 1-1Z",
+    )
+    val Plus: ImageVector = stroked("plus", "M12 5v14", "M5 12h14")
+    val More: ImageVector = filled(
+        "more",
+        "M5 10.3a1.7 1.7 0 1 1 0 3.4a1.7 1.7 0 1 1 0-3.4Z",
+        "M12 10.3a1.7 1.7 0 1 1 0 3.4a1.7 1.7 0 1 1 0-3.4Z",
+        "M19 10.3a1.7 1.7 0 1 1 0 3.4a1.7 1.7 0 1 1 0-3.4Z",
+    )
+
+    private fun filled(name: String, vararg paths: String): ImageVector =
+        ImageVector.Builder(name, 24.dp, 24.dp, 24f, 24f).apply {
+            paths.forEach { d -> addPath(pathData = PathParser().parsePathString(d).toNodes(), fill = SolidColor(Color.Black)) }
+        }.build()
 
     private fun stroked(name: String, vararg paths: String): ImageVector =
         ImageVector.Builder(name, 24.dp, 24.dp, 24f, 24f).apply {

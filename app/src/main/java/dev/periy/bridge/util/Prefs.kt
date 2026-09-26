@@ -49,15 +49,18 @@ class Prefs(ctx: Context) {
         get() = sp.getString(K_THEME, null) ?: if (sp.getBoolean(K_OLED, false)) "dark" else "system"
         set(v) = sp.edit { putString(K_THEME, v) }
 
-    /** Frosted glass on the floating bars (tab bar, monitor), shared with every page. */
-    var glass: Boolean
-        get() = sp.getBoolean(K_GLASS, false)
-        set(v) = sp.edit { putBoolean(K_GLASS, v) }
+    /**
+     * The style, shared with every page: "studio" or "theatre" (older names are mapped by
+     * styleName in BridgeApp).
+     */
+    var style: String
+        get() = sp.getString(K_STYLE, null) ?: "studio"
+        set(v) = sp.edit { putString(K_STYLE, v) }
 
-    /** Dark as pure black, for OLED screens; off, dark is a soft graphite. Shared with every page. */
-    var oled: Boolean
-        get() = sp.getBoolean(K_OLED, false)
-        set(v) = sp.edit { putBoolean(K_OLED, v) }
+    /** The colour, shared with every page: "auto" (the style's own) or a system colour's name. */
+    var accent: String
+        get() = sp.getString(K_ACCENT, null) ?: "auto"
+        set(v) = sp.edit { putString(K_ACCENT, v) }
 
     /** Sends to another phone set up a direct link first (Android asks once per send). */
     var phoneDirect: Boolean
@@ -88,7 +91,7 @@ class Prefs(ctx: Context) {
     /**
      * Clipboard follows between the phone and a laptop running the helper without pressing
      * Send: copy on the laptop, paste on the phone, and the phone's latest copy goes over
-     * whenever BlazeIt opens or its quick-settings tile is tapped.
+     * whenever Localhost 8787 opens or its quick-settings tile is tapped.
      */
     var clipSync: Boolean
         get() = sp.getBoolean(K_CLIP_SYNC, true)
@@ -99,7 +102,7 @@ class Prefs(ctx: Context) {
         get() = sp.getBoolean(K_VIDEO_PIP, true)
         set(v) = sp.edit { putBoolean(K_VIDEO_PIP, v) }
 
-    /** New screenshots go on the shared clipboard by themselves, BlazeIt open or not. */
+    /** New screenshots go on the shared clipboard by themselves, Localhost 8787 open or not. */
     var screenshotClip: Boolean
         get() = sp.getBoolean(K_SHOT_CLIP, true)
         set(v) = sp.edit { putBoolean(K_SHOT_CLIP, v) }
@@ -108,6 +111,11 @@ class Prefs(ctx: Context) {
     var showMonitor: Boolean
         get() = sp.getBoolean(K_MONITOR, false)
         set(v) = sp.edit { putBoolean(K_MONITOR, v) }
+
+    /** Albums with no cover of their own are looked up in Apple's public catalogue (CoverFinder). */
+    var coverLookup: Boolean
+        get() = sp.getBoolean(K_COVER_LOOKUP, true)
+        set(v) = sp.edit { putBoolean(K_COVER_LOOKUP, v) }
 
     var uploadStreams: Int
         get() = sp.getInt(K_STREAMS, 4).coerceIn(1, 8)
@@ -136,7 +144,8 @@ class Prefs(ctx: Context) {
         const val K_FORCE_STAGE = "force_staged_copy"
         const val K_STREAMS = "upload_streams"
         const val K_OLED = "oled"
-        const val K_GLASS = "glass"
+        const val K_STYLE = "style"
+        const val K_ACCENT = "accent"
         const val K_THEME = "theme"
         const val K_PHONE_DIRECT = "phone_direct"
         const val K_LAPTOP_LINK = "laptop_link"
@@ -146,5 +155,6 @@ class Prefs(ctx: Context) {
         const val K_HOTSPOT_SSID = "hotspot_ssid"
         const val K_HOTSPOT_PASS = "hotspot_pass"
         const val K_MONITOR = "show_monitor"
+        const val K_COVER_LOOKUP = "cover_lookup"
     }
 }

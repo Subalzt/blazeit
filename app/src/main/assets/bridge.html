@@ -4,50 +4,81 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="color-scheme" content="light dark">
-<title>BlazeIt</title>
+<title>Localhost 8787</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%23FFC21A'/%3E%3Cpath d='M36 10 17 36h14l-3 18 19-26H33l3-18Z' fill='%2315120A'/%3E%3C/svg%3E">
 <style>
-  /* BlazeIt on a laptop: the same look as the app on the phone.
-     Solid surfaces on a quiet background, big clear type, and colour used the way a home
-     screen uses it: small bright tiles that say what a thing is. Nothing is blurred, so
-     nothing costs a frame. Light or dark follows the computer, unless the phone's
-     Settings (or this page's) picks one; the choice is shared by every screen. */
+  /* Localhost 8787 on a laptop, in the same two styles as the app on the phone, shared with it:
+       Studio  -- after Apple Music: white or black, one bold colour, a sidebar of coloured
+                 glyphs, a featured card of artwork at the top of Home;
+       Theatre -- after the Apple TV app: the tabs as pills along the top, a big dark hero,
+                 white capsule buttons.
+     Studio and Theatre are drawn with depth: covers and artwork cast soft shadows, text laid on artwork
+     carries its own, and what can be clicked lifts a little under the pointer.
+     Light or dark follows the computer, unless the phone's Settings (or this page's) picks
+     one; both choices are shared by every screen. Colours are tokens; each style and each
+     of light and dark sets them, and the rest of the sheet only reads them. */
   :root {
-    --bg: #F2F2F5; --surface: #FFFFFF; --surface-2: #EFEFF3; --surface-3: #E4E4EA;
-    --txt: #0B0B0D; --sub: #6C6C75; --faint: #ABABB4; --line: rgba(0,0,0,.08);
-    --accent: #FFC21A; --on-accent: #15120A;
-    --blue: #1F78FF; --good: #1FB855; --orange: #FF7A1A; --purple: #7B5CFF; --bad: #F23B30; --music: #FF2D55;
-    --shadow: 0 1px 2px rgba(0,0,0,.04), 0 6px 20px rgba(0,0,0,.05);
+    --bg: #FFFFFF; --surface: #F5F5F7; --surface-2: #E9E9EE; --surface-3: #DCDCE2;
+    --txt: #000000; --sub: #86868B; --faint: #C7C7CC; --line: rgba(60,60,67,.14);
+    --accent: #1D1D1F; --on-accent: #FFFFFF;
+    --hero: linear-gradient(160deg, #2A7BE8 0%, #0B2F66 52%, #05070D 100%);
+    --blue: #007AFF; --good: #34C759; --orange: #FF9500; --purple: #AF52DE; --bad: #FF3B30; --music: #FA2D48;
+    --side-bg: #F5F5F7;
+    --shadow: none;
     --float-shadow: 0 10px 40px rgba(0,0,0,.14), 0 1px 3px rgba(0,0,0,.06);
     --scrim: rgba(0,0,0,.28);
     --side: 244px; --panel: 400px;
-    --r-card: 24px; --r: 14px;
+    --r-card: 14px; --r: 10px; --r-btn: 9px;
     --mono: ui-monospace, "Cascadia Mono", "SF Mono", Menlo, Consolas, monospace;
     color-scheme: light;
   }
   @media (prefers-color-scheme: dark) {
     :root:not([data-theme="light"]) {
-      --bg: #111113; --surface: #1C1C1F; --surface-2: #2A2A2F; --surface-3: #36363C;
-      --txt: #F5F5F7; --sub: #9C9CA5; --faint: #5E5E66; --line: rgba(255,255,255,.09);
-      --accent: #FFC933; --blue: #3D8BFF; --good: #30D158; --orange: #FF8A2A; --purple: #9079FF; --bad: #FF453A; --music: #FF375F;
-      --shadow: none; --float-shadow: 0 0 0 1px rgba(255,255,255,.08), 0 18px 50px rgba(0,0,0,.6); --scrim: rgba(0,0,0,.6);
+      --bg: #141414; --surface: #1F1F21; --surface-2: #2C2C2E; --surface-3: #3A3A3C;
+      --txt: #FFFFFF; --sub: #8D8D93; --faint: #48484A; --line: rgba(255,255,255,.09);
+      --accent: #FFFFFF; --on-accent: #000000;
+      --blue: #0A84FF; --good: #30D158; --orange: #FF9F0A; --purple: #BF5AF2; --bad: #FF453A;
+      --side-bg: #1C1C1E;
+      --float-shadow: 0 0 0 1px rgba(255,255,255,.08), 0 18px 50px rgba(0,0,0,.6); --scrim: rgba(0,0,0,.6);
       color-scheme: dark;
     }
   }
   :root[data-theme="dark"] {
-    --bg: #111113; --surface: #1C1C1F; --surface-2: #2A2A2F; --surface-3: #36363C;
-    --txt: #F5F5F7; --sub: #9C9CA5; --faint: #5E5E66; --line: rgba(255,255,255,.09);
-    --accent: #FFC933; --blue: #3D8BFF; --good: #30D158; --orange: #FF8A2A; --purple: #9079FF; --bad: #FF453A; --music: #FF375F;
-    --shadow: none; --float-shadow: 0 0 0 1px rgba(255,255,255,.08), 0 18px 50px rgba(0,0,0,.6); --scrim: rgba(0,0,0,.6);
+    --bg: #141414; --surface: #1F1F21; --surface-2: #2C2C2E; --surface-3: #3A3A3C;
+    --txt: #FFFFFF; --sub: #8D8D93; --faint: #48484A; --line: rgba(255,255,255,.09);
+    --accent: #FFFFFF; --on-accent: #000000;
+    --blue: #0A84FF; --good: #30D158; --orange: #FF9F0A; --purple: #BF5AF2; --bad: #FF453A;
+    --side-bg: #1C1C1E;
+    --float-shadow: 0 0 0 1px rgba(255,255,255,.08), 0 18px 50px rgba(0,0,0,.6); --scrim: rgba(0,0,0,.6);
     color-scheme: dark;
   }
-  /* OLED black (Settings, Appearance): dark as pure black. */
-  @media (prefers-color-scheme: dark) {
-    :root[data-oled]:not([data-theme="light"]) { --bg: #000000; --surface: #121214; --surface-2: #212125; --surface-3: #2C2C31; --faint: #5A5A62; }
+
+  /* Theatre: Apple's greys in light; near-black with lifted cards in dark; the button colour is the text colour. */
+  :root[data-style="theatre"] {
+    --bg: #F5F5F7; --surface: #FFFFFF; --surface-2: #E8E8ED; --surface-3: #DADADF;
+    --txt: #1D1D1F; --sub: #6E6E73; --line: rgba(0,0,0,.08);
+    --accent: #1D1D1F; --on-accent: #FFFFFF; --music: #FF2D55;
+    --hero: linear-gradient(160deg, #2A7BE8 0%, #0B2F66 52%, #05070D 100%);
+    --shadow: 0 1px 2px rgba(0,0,0,.04), 0 8px 24px rgba(0,0,0,.06);
+    --r-card: 16px; --r: 12px; --r-btn: 999px;
   }
-  :root[data-theme="dark"][data-oled] { --bg: #000000; --surface: #121214; --surface-2: #212125; --surface-3: #2C2C31; --faint: #5A5A62; }
+  @media (prefers-color-scheme: dark) {
+    :root[data-style="theatre"]:not([data-theme="light"]) {
+      --bg: #000000; --surface: #1A1A1C; --surface-2: #2B2B2F; --surface-3: #3A3A3F;
+      --txt: #FFFFFF; --sub: #A1A1A6; --faint: #4A4A4F; --line: rgba(255,255,255,.09);
+      --accent: #FFFFFF; --on-accent: #000000; --shadow: none;
+    }
+  }
+  :root[data-style="theatre"][data-theme="dark"] {
+    --bg: #000000; --surface: #1A1A1C; --surface-2: #2B2B2F; --surface-3: #3A3A3F;
+    --txt: #FFFFFF; --sub: #A1A1A6; --faint: #4A4A4F; --line: rgba(255,255,255,.09);
+    --accent: #FFFFFF; --on-accent: #000000; --shadow: none;
+  }
+
   * { box-sizing: border-box; }
   html, body { margin: 0; padding: 0; }
+  /* Room for the scrollbar kept on every tab, so a short tab and a long one line up exactly. */
+  html { scrollbar-gutter: stable; }
   body {
     min-height: 100vh; background: var(--bg); color: var(--txt);
     font: 15px/1.45 system-ui, -apple-system, "Segoe UI Variable Text", "Segoe UI", Roboto, "MiSans", sans-serif;
@@ -68,9 +99,8 @@
   .appicon.sm { width: 34px; height: 34px; flex-basis: 34px; border-radius: 10px; }
   .appicon.sm svg { width: 19px; height: 19px; }
   .blue { --tint: var(--blue); } .green { --tint: var(--good); } .orange { --tint: var(--orange); }
-  .purple { --tint: var(--purple); } .red { --tint: var(--bad); } .yellow { --tint: var(--accent); } .grey { --tint: var(--faint); }
+  .purple { --tint: var(--purple); } .red { --tint: var(--bad); } .yellow { --tint: var(--orange); } .grey { --tint: var(--faint); }
   .appicon[class*=" "] { background: var(--tint, var(--blue)); }
-  .appicon.yellow { color: var(--on-accent); }
 
   /* ---------------------------------------------------------------- shell */
   .side {
@@ -78,8 +108,9 @@
     display: flex; flex-direction: column; padding: 22px 14px 16px; background: var(--surface); border-right: 1px solid var(--line);
   }
   .logo { display: flex; align-items: center; gap: 10px; font-size: 19px; font-weight: 750; letter-spacing: -.3px; padding: 0 8px 26px; }
-  .logo .mark { width: 32px; height: 32px; border-radius: 10px; background: var(--accent); display: grid; place-items: center; }
-  .logo .mark svg { width: 20px; height: 20px; fill: var(--on-accent); }
+  /* The mark in the text colour, as the app's name is: it does not take the chosen colour. */
+  .logo .mark { width: 32px; height: 32px; border-radius: 10px; background: var(--txt); display: grid; place-items: center; }
+  .logo .mark svg { width: 20px; height: 20px; fill: var(--bg); }
   .tabs { display: flex; flex-direction: column; gap: 4px; }
   .tabs button, .side-item {
     position: relative; display: flex; align-items: center; gap: 12px; width: 100%; padding: 10px 12px; border: 0; border-radius: 12px;
@@ -544,96 +575,229 @@
     .dock { right: 12px; left: 12px; width: auto; bottom: calc(var(--player-h, 0px) + 76px); }
     .player { grid-template-columns: minmax(0, 1fr) auto; gap: 12px; padding: 8px 12px; }
     .pl-right, .pl-bar, #pl-shuffle, #pl-repeat { display: none; }
-    .deck { flex-direction: column; align-items: stretch; }
-    .tt { width: min(280px, 70vw); align-self: center; }
     .mon-rates b { font-size: 22px; }
-    .album-head { flex-direction: column; align-items: flex-start; }
   }
 
-  /* ---------------------------------------------------------------- settings: rows with a switch */
-  .set-row { display: flex; align-items: center; gap: 14px; width: 100%; margin-top: 14px; padding: 14px 2px 0; border: 0;
-    border-top: 1px solid var(--line); background: none; color: var(--txt); text-align: left; cursor: pointer; }
-  .set-row .grow { display: flex; flex-direction: column; line-height: 1.35; }
-  .set-row b { font-size: 15px; font-weight: 600; }
-  .set-row .grow span { font-size: 13px; color: var(--sub); }
-  .set-row.on .switch { background: var(--good); }
-  .set-row.on .switch::after { left: 17px; }
   .card-title p:empty, .note:empty, .page-head p:empty { display: none; }
   .card-title .btn { flex: 0 0 auto; }
 
-  /* ---------------------------------------------------------------- glass (Settings, Appearance, Glass)
-     The floating parts (sidebar, transfer dock, player, monitor, pop-ups) turn to frosted glass
-     over a softly coloured page: what is behind them shows through, blurred and a little richer,
-     under a lit top edge and a thin rim tinted pink and blue where light bends at the edge.
-     The cards stay solid. */
-  :root[data-glass] {
-    --glass: rgba(239,239,242,.58);
-    --glass-strong: rgba(242,242,245,.82);
-    --glass-blur: blur(10px) saturate(1.8);
-    --glass-shadow: 0 12px 34px rgba(0,0,0,.12), 0 0 0 .6px rgba(0,0,0,.12);
-    --glass-rim: linear-gradient(135deg, rgba(255,255,255,.95), rgba(255,255,255,.55) 35%, rgba(255,255,255,.5) 65%, rgba(255,255,255,.9));
-    --glass-cell: rgba(0,0,0,.06); --glass-cell-rim: rgba(255,255,255,.6);
-  }
-  @media (prefers-color-scheme: dark) {
-    :root[data-glass]:not([data-theme="light"]) {
-      --glass: rgba(0,0,0,.28); --glass-strong: rgba(18,18,22,.8);
-      --glass-shadow: 0 14px 40px rgba(0,0,0,.5);
-      --glass-rim: linear-gradient(135deg, rgba(255,255,255,.42), rgba(255,255,255,.12) 35%, rgba(255,255,255,.10) 65%, rgba(255,255,255,.30));
-      --glass-cell: rgba(255,255,255,.13); --glass-cell-rim: rgba(255,255,255,.14);
-    }
-  }
-  :root[data-glass][data-theme="dark"] {
-    --glass: rgba(0,0,0,.28); --glass-strong: rgba(18,18,22,.8);
-    --glass-shadow: 0 14px 40px rgba(0,0,0,.5);
-    --glass-rim: linear-gradient(135deg, rgba(255,255,255,.42), rgba(255,255,255,.12) 35%, rgba(255,255,255,.10) 65%, rgba(255,255,255,.30));
-    --glass-cell: rgba(255,255,255,.13); --glass-cell-rim: rgba(255,255,255,.14);
-  }
-  :root[data-glass] body {
-    background-color: var(--bg);
-    background-image:
-      radial-gradient(900px 620px at 8% 0%, color-mix(in srgb, var(--accent) 14%, transparent), transparent 62%),
-      radial-gradient(820px 640px at 96% 12%, color-mix(in srgb, var(--purple) 16%, transparent), transparent 62%),
-      radial-gradient(900px 700px at 50% 108%, color-mix(in srgb, var(--blue) 14%, transparent), transparent 62%);
-    background-attachment: fixed;
-  }
-  :root[data-glass] .side,
-  :root[data-glass] .dock,
-  :root[data-glass] .player,
-  :root[data-glass] .mon-pill,
-  :root[data-glass] .mon-sheet,
-  :root[data-glass] .toasts .notif {
-    background: var(--glass); border: 0;
-    -webkit-backdrop-filter: var(--glass-blur); backdrop-filter: var(--glass-blur);
-    box-shadow: var(--glass-shadow);
-  }
-  /* Text over busy content needs more glass under it. */
-  :root[data-glass] .toasts .notif, :root[data-glass] .dock { background: var(--glass-strong); }
-  :root[data-glass] .mon-sheet { background: var(--glass-strong); box-shadow: var(--glass-shadow), 0 0 0 100vmax var(--scrim); }
-  :root[data-glass] body.mon-dock .mon-sheet { top: 12px; right: 12px; bottom: calc(var(--player-h, 0px) + 12px); border-radius: 24px; box-shadow: var(--glass-shadow); }
-  :root[data-glass] body.mon-dock .main { margin-right: calc(var(--panel) + 12px); }
-  /* The rim: a one-pixel gradient border drawn over the glass. */
-  :root[data-glass] .side::after,
-  :root[data-glass] .dock::after,
-  :root[data-glass] .player::after,
-  :root[data-glass] .mon-pill::after,
-  :root[data-glass] .mon-sheet::after,
-  :root[data-glass] .toasts .notif::after {
-    content: ""; position: absolute; inset: 0; border-radius: inherit; padding: 1px; pointer-events: none;
-    background: var(--glass-rim);
-    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor;
-    mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
-  }
-  :root[data-glass] .toasts .notif { position: relative; }
-  /* The sidebar and the player float free of the window's edges. */
-  :root[data-glass] .side { top: 12px; left: 12px; bottom: calc(var(--player-h, 0px) + 12px); width: calc(var(--side) - 24px); border-radius: 24px; }
-  :root[data-glass] .player { left: 12px; right: 12px; bottom: 12px; border-radius: 24px; }
-  :root[data-glass] .tabs button:hover, :root[data-glass] .side-item:hover { background: color-mix(in srgb, var(--txt) 6%, transparent); }
-  /* The tab you are on: a bubble in the glass, as in Apple's bars. */
-  :root[data-glass] .tabs button.on { background: var(--glass-cell); box-shadow: inset 0 0 0 1px var(--glass-cell-rim); }
-  :root[data-glass] .status { background: color-mix(in srgb, var(--txt) 6%, transparent); }
+  /* ================================================================ the styles
+     Everything above is shared. Below: what the two styles change beyond colour. Studio
+     is the default; Theatre overrides it. */
+
+  /* ---------------------------------------------------------------- shared: Apple's type */
+  .btn, .btn.sm { border-radius: var(--r-btn); }
+  .page-head h1 { font-size: 34px; font-weight: 800; letter-spacing: -1px; }
+  .bar { margin: 36px 2px 12px; font-size: 22px; font-weight: 750; letter-spacing: -.4px; color: var(--txt); }
+  .bar .act { font-size: 14.5px; font-weight: 600; letter-spacing: 0; color: var(--accent); }
+  .card-title h3 { font-size: 18px; font-weight: 750; letter-spacing: -.3px; }
+
+  /* ---------------------------------------------------------------- Music: the sidebar */
+  .side { background: var(--side-bg); }
+  .tabs button, .side-item { color: var(--txt); font-weight: 500; border-radius: 8px; padding: 8px 10px; }
+  .tabs button svg { color: var(--sub); }
+  .tabs button.on svg { color: var(--accent); }
+  .tabs button:hover, .side-item:hover { background: color-mix(in srgb, var(--txt) 6%, transparent); }
+  .tabs button.on { background: var(--surface-3); color: var(--txt); font-weight: 600; }
+  .tabs .count { background: var(--accent); color: var(--on-accent); }
+  .status { background: transparent; border: 1px solid var(--line); }
   @media (max-width: 900px) {
-    :root[data-glass] .side { left: 12px; right: 12px; top: auto; bottom: calc(var(--player-h, 0px) + 12px); width: auto; border-radius: 26px; }
+    .tabs button, .side-item { color: var(--sub); }
+    .tabs button.on { background: none; color: var(--accent); }
+    .tabs button svg { color: inherit; }
+    .tabs button.on svg { background: none; }
   }
+
+  /* ---------------------------------------------------------------- the hero at the top of Home
+     The phone, how this page reaches it, and what is moving. Music: a featured card of
+     artwork; Theatre: a big dark banner. A bolt, large and faint, is the art. */
+  .status-line {
+    --hero-txt: #FFFFFF; --hero-sub: rgba(255,255,255,.78);
+    position: relative; overflow: hidden; flex-wrap: wrap; align-items: flex-end; gap: 12px 16px;
+    min-height: 132px; padding: 30px 26px 20px; margin-bottom: 22px;
+    border-radius: calc(var(--r-card) + 4px); color: var(--hero-txt);
+    /* It glows onto the page in its own colour, as lit artwork does. */
+    box-shadow: 0 24px 48px -26px color-mix(in srgb, var(--hero-glow, #0B2F66) 80%, transparent), 0 2px 6px rgba(0,0,0,.12);
+    /* Studio's artwork is the colour in use, lit top-left and deepening; Theatre sets its own. */
+    background: var(--hero, linear-gradient(135deg, color-mix(in srgb, var(--accent) 58%, #fff) 0%, var(--accent) 42%, color-mix(in srgb, var(--accent) 55%, #000) 100%));
+  }
+  .status-line::before {
+    content: ""; position: absolute; right: -30px; top: -40px; width: 300px; height: 300px; pointer-events: none;
+    background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M13.5 2.5 5 13.5h6.5l-1 8 8.5-11h-6.5l1-8Z' fill='none' stroke='white' stroke-width='1.6' stroke-linejoin='round' stroke-opacity='.18'/%3E%3C/svg%3E") center / contain no-repeat;
+  }
+  .status-line::after {
+    content: none; position: absolute; left: 46px; top: 24px;
+    font: 750 12px/1 system-ui, -apple-system, "Segoe UI", sans-serif; letter-spacing: 1.4px; color: var(--hero-sub);
+  }
+  .status-line .dot { display: none; position: absolute; left: 28px; top: 25px; width: 10px; height: 10px; margin: 0; background: color-mix(in srgb, var(--hero-txt) 40%, transparent); }
+  .status-line .dot.on { background: var(--hero-txt); box-shadow: 0 0 0 4px color-mix(in srgb, var(--hero-txt) 22%, transparent); }
+  .status-line .who { position: relative; flex-direction: column; align-items: flex-start; gap: 3px; flex: 1 1 260px; }
+  .status-line .who b { font-size: 32px; font-weight: 800; letter-spacing: -.9px; line-height: 1.1; color: var(--hero-txt); white-space: normal; }
+  .status-line .who span { font-size: 14.5px; color: var(--hero-sub); }
+  .status-line #hero-state { display: inline; }
+  /* As tall as the buttons beside it, its words centred on theirs. */
+  .status-line .rate { position: relative; color: var(--hero-txt); min-height: 40px; display: flex; flex-direction: column; justify-content: center; align-items: flex-end; }
+  .status-line .rate b { font-size: 22px; line-height: 1.05; }
+  .status-line .rate span:empty { display: none; }
+  .status-line .rate span { color: var(--hero-sub); }
+  .status-line .btn { position: relative; height: 40px; background: #FFFFFF; color: #111114; }
+  .status-line .btn.ghost { background: rgba(255,255,255,.2); color: #FFFFFF; -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); }
+  .status-line .btn.ghost:hover:not(:disabled) { background: rgba(255,255,255,.3); }
+  @media (max-width: 900px) {
+    .status-line { min-height: 120px; padding: 26px 20px 18px; align-items: flex-end; }
+    .status-line .who { flex-basis: 100%; }
+    .status-line .who b { font-size: 26px; }
+    .status-line .dot { margin: 0; }
+  }
+
+  /* ---------------------------------------------------------------- the style picker (Settings) */
+  .style-pick { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; max-width: 400px; margin-bottom: 18px; }
+  .style-pick button { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 0; border: 0; background: none; color: var(--txt); cursor: pointer; }
+  .style-pick b { font-size: 14px; font-weight: 600; }
+  .style-pick .tick { width: 20px; height: 20px; border-radius: 50%; border: 1.5px solid var(--faint); }
+  .style-pick button.on .tick { border-color: var(--blue); background: var(--blue) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M5 12.5 10 17.5 19 7' fill='none' stroke='white' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center / 13px no-repeat; }
+  .pv { position: relative; display: block; width: 100%; aspect-ratio: 16 / 10; overflow: hidden; border-radius: 12px; box-shadow: 0 0 0 1px var(--line); transition: box-shadow .15s, transform .15s; }
+  .style-pick button:hover .pv { transform: translateY(-2px); }
+  .style-pick button.on .pv { box-shadow: 0 0 0 2.5px var(--blue); }
+  .pv i { position: absolute; display: block; border-radius: 3px; }
+  .pv-studio { background: #141414; }
+  .pv-studio .t { left: 0; top: 0; bottom: 0; width: 26%; border-radius: 0; background: #1F1F21; }
+  .pv-studio .h { left: 32%; top: 12%; right: 6%; height: 40%; border-radius: 5px; background: var(--hero); }
+  .pv-studio .a { left: 32%; top: 60%; width: 18%; height: 28%; background: #0A84FF; }
+  .pv-studio .b { left: 54%; top: 60%; width: 18%; height: 28%; background: #30D158; }
+  .pv-studio .l { left: 5%; top: 14%; width: 15%; height: 5%; background: #FFFFFF; }
+  .pv-studio .l.s { top: 26%; background: #48484A; }
+  .pv-theatre { background: #000; }
+  .pv-theatre .h { left: 0; top: 0; right: 0; height: 62%; border-radius: 0; background: linear-gradient(160deg, #2A7BE8, #0B2F66 52%, #05070D); }
+  .pv-theatre .p { top: 8%; width: 10%; height: 9%; border-radius: 99px; background: rgba(255,255,255,.28); }
+  .pv-theatre .p:nth-child(1) { left: 32%; background: #fff; } .pv-theatre .p:nth-child(2) { left: 44%; } .pv-theatre .p:nth-child(3) { left: 56%; }
+  .pv-theatre .c { left: 6%; bottom: 13%; width: 20%; height: 13%; border-radius: 99px; background: #fff; }
+  .pv-theatre .t { left: 6%; top: 34%; width: 36%; height: 7%; background: #fff; }
+  .pv-theatre .a { left: 6%; top: 70%; width: 42%; height: 24%; background: #0A84FF; }
+  .pv-theatre .b { left: 52%; top: 70%; width: 42%; height: 24%; background: #30D158; }
+  #theme-seg { margin-top: 2px; }
+  /* The colour: round swatches, the one in use ringed; the first is the style's own, half and half. */
+  .accent-head { display: flex; align-items: baseline; gap: 10px; max-width: 560px; margin: 4px 0 10px; }
+  .accent-head b { font-size: 15px; font-weight: 650; }
+  .accent-head span { font-size: 13.5px; color: var(--sub); }
+  /* One line: Automatic and seven colours; on a narrow screen they shrink rather than wrap. */
+  .swatches { display: flex; flex-wrap: nowrap; gap: 12px; margin-bottom: 18px; padding: 5px 5px 0; }
+  @media (max-width: 420px) { .swatches { gap: 8px; } .swatch { flex-basis: 30px !important; width: 30px !important; height: 30px !important; } }
+  .swatch { position: relative; flex: 0 0 34px; width: 34px; height: 34px; padding: 0; border: 0; border-radius: 50%; cursor: pointer;
+    background: var(--sw); box-shadow: inset 0 0 0 1px rgba(0,0,0,.08); transition: transform .12s; }
+  .swatch:hover { transform: scale(1.08); }
+  .swatch.auto { background: linear-gradient(135deg, #FFFFFF 50%, #1D1D1F 50%); box-shadow: inset 0 0 0 1px rgba(142,142,147,.45); }
+  .swatch.on { box-shadow: 0 0 0 2px var(--bg), 0 0 0 4.5px var(--txt); }
+  .swatch.on::after { content: ""; position: absolute; inset: 0; border-radius: 50%;
+    background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M5 12.5 10 17.5 19 7' fill='none' stroke='white' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center / 15px no-repeat; }
+
+  /* ================================================================ Theatre
+     The Apple TV app: the tabs as pills in a row along the top, over the page; Home opens
+     on a big dark banner; buttons are capsules in the text colour. */
+  :root[data-style="theatre"] .side {
+    top: 0; left: 0; right: 0; bottom: auto; width: auto; height: 72px; z-index: 32;
+    flex-direction: row; align-items: center; gap: 16px; padding: 0 22px;
+    border: 0; background: linear-gradient(var(--bg) 58%, color-mix(in srgb, var(--bg) 0%, transparent));
+  }
+  :root[data-style="theatre"] .logo { padding: 0; font-size: 18px; flex: 1 1 0; }
+  :root[data-style="theatre"] .tabs {
+    flex: 0 0 auto; flex-direction: row; gap: 2px; padding: 4px; border-radius: 999px;
+    background: color-mix(in srgb, var(--txt) 9%, transparent); -webkit-backdrop-filter: blur(20px) saturate(1.6); backdrop-filter: blur(20px) saturate(1.6);
+  }
+  :root[data-style="theatre"] .tabs button {
+    width: auto; flex: 0 0 auto; flex-direction: row; gap: 6px; padding: 8px 18px; border-radius: 999px;
+    font-size: 14.5px; font-weight: 600; color: var(--txt); background: none;
+  }
+  :root[data-style="theatre"] .tabs button svg { display: none; }
+  :root[data-style="theatre"] .tabs button:hover:not(.on) { background: color-mix(in srgb, var(--txt) 8%, transparent); }
+  :root[data-style="theatre"] .tabs button.on { background: var(--accent); color: var(--on-accent); }
+  :root[data-style="theatre"] .tabs .eq, :root[data-style="theatre"] .tabs .count { position: static; margin: 0 0 0 4px; }
+  :root[data-style="theatre"] .side-foot { flex: 1 1 0; flex-direction: row; justify-content: flex-end; align-items: center; gap: 8px; margin: 0; }
+  :root[data-style="theatre"] .side-item { width: auto; flex-direction: row; padding: 8px 14px; border-radius: 999px; font-size: 14px; font-weight: 600;
+    background: color-mix(in srgb, var(--txt) 8%, transparent); }
+  :root[data-style="theatre"] .side-item svg { background: none; padding: 0; }
+  :root[data-style="theatre"] .side-item .switch { display: none; }
+  :root[data-style="theatre"] .mon-toggle.on { background: var(--accent); color: var(--on-accent); }
+  :root[data-style="theatre"] .status { padding: 7px 14px 7px 12px; border: 0; border-radius: 999px; background: color-mix(in srgb, var(--txt) 8%, transparent); }
+  :root[data-style="theatre"] .status .lbl { display: none; }
+  :root[data-style="theatre"] .main { margin-left: 0; padding-top: 96px; }
+  :root[data-style="theatre"] .main > * { max-width: 1240px; margin-left: auto; margin-right: auto; }
+  :root[data-style="theatre"] body[data-tab="home"] .page-head { display: none; }
+  :root[data-style="theatre"] .dock { width: min(560px, calc(100vw - 48px)); }
+  :root[data-style="theatre"] body.mon-dock .mon-sheet { top: 72px; }
+  :root[data-style="theatre"] .mon-pill { top: 84px; }
+  :root[data-style="theatre"] .status-line { min-height: 236px; padding: 36px 36px 26px; border-radius: 22px; box-shadow: 0 30px 60px -34px rgba(0,0,0,.7); }
+  :root[data-style="theatre"] .status-line::before { width: 340px; height: 340px; right: -30px; top: -30px; }
+  :root[data-style="theatre"] .status-line::after { left: 58px; top: 34px; }
+  :root[data-style="theatre"] .status-line .dot { left: 40px; top: 35px; }
+  :root[data-style="theatre"] .status-line .who b { font-size: 38px; letter-spacing: -1.2px; }
+  :root[data-style="theatre"] .status-line .who span { font-size: 16px; }
+  :root[data-style="theatre"] .status-line .btn { height: 46px; padding: 0 24px; font-size: 15.5px; }
+  /* A shade under the banner's text, as a poster darkens to its title. */
+  :root[data-style="theatre"] .status-line { background: linear-gradient(transparent 40%, rgba(0,0,0,.55)), var(--hero); }
+  :root[data-style="theatre"] .card { box-shadow: var(--shadow); }
+  @media (max-width: 900px) {
+    :root[data-style="theatre"] .side { height: 64px; padding: 0 12px; gap: 8px; }
+    :root[data-style="theatre"] .side .logo, :root[data-style="theatre"] .side .status { display: none; }
+    :root[data-style="theatre"] .tabs { flex: 0 1 auto; overflow-x: auto; }
+    :root[data-style="theatre"] .tabs button { padding: 7px 12px; font-size: 13.5px; }
+    :root[data-style="theatre"] .side-foot { flex: 0 0 auto; }
+    :root[data-style="theatre"] .side-item span { display: none; }
+    :root[data-style="theatre"] .main { padding-top: 80px; padding-bottom: calc(var(--player-h, 0px) + 40px); }
+    :root[data-style="theatre"] .status-line { min-height: 200px; padding: 28px 22px 20px; }
+    :root[data-style="theatre"] .status-line .who b { font-size: 28px; }
+    :root[data-style="theatre"] .dock { left: 12px; right: 12px; width: auto; bottom: calc(var(--player-h, 0px) + 12px); }
+  }
+
+  /* ================================================================ depth
+     What makes it feel made rather than laid out: things sit at different heights. Cards
+     float a little off the page, icons and the main buttons glow faintly in their own
+     colour, covers cast real shadows, text laid on colour carries its own, and what can be
+     clicked lifts under the pointer and gives when pressed. */
+  :root { --card-shadow: 0 1px 2px rgba(0,0,0,.03), 0 14px 34px -24px rgba(0,0,0,.22); }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) { --card-shadow: inset 0 0 0 1px rgba(255,255,255,.05), 0 22px 44px -32px rgba(0,0,0,.9); }
+  }
+  :root[data-theme="dark"] { --card-shadow: inset 0 0 0 1px rgba(255,255,255,.05), 0 22px 44px -32px rgba(0,0,0,.9); }
+  ::selection { background: color-mix(in srgb, var(--accent) 32%, transparent); }
+  * { scrollbar-width: thin; scrollbar-color: color-mix(in srgb, var(--txt) 22%, transparent) transparent; }
+
+  .card { box-shadow: var(--card-shadow); }
+  .appicon { background-image: linear-gradient(180deg, rgba(255,255,255,.2), rgba(255,255,255,0) 60%);
+    box-shadow: 0 6px 14px -7px color-mix(in srgb, var(--tint, var(--blue)) 85%, transparent), inset 0 1px 0 rgba(255,255,255,.22); }
+  .logo .mark { box-shadow: 0 4px 10px -4px rgba(0,0,0,.35); }
+  .btn { transition: filter .15s, background .15s, transform .18s cubic-bezier(.25,.8,.3,1), box-shadow .2s; }
+  /* Flat as the phone's: a quiet shadow for lift, never a coloured glow. */
+  .btn:not(.ghost):not(:disabled) { box-shadow: 0 1px 2px rgba(0,0,0,.12); }
+  .btn:not(.ghost):hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 4px 10px -4px rgba(0,0,0,.25); }
+  .btn:active:not(:disabled) { transform: scale(.96); }
+  .tabs button { transition: background .15s, color .15s, transform .18s cubic-bezier(.25,.8,.3,1); }
+  .tabs button:active { transform: scale(.97); }
+  #files .row, #transfers .row { border-radius: 12px; padding-left: 8px; padding-right: 8px; transition: background .15s; }
+  #files .row:hover { background: color-mix(in srgb, var(--txt) 4%, transparent); }
+  #files .row .appicon, #fs-list .appicon { box-shadow: 0 5px 12px -6px color-mix(in srgb, var(--tint, var(--blue)) 90%, transparent); }
+  .drop { transition: border-color .15s, background .15s, transform .25s cubic-bezier(.25,.8,.3,1); }
+  .drop:hover, .drop.over { transform: translateY(-2px); }
+  .status-line .who b, .status-line .rate b { text-shadow: 0 3px 18px rgba(0,0,0,.28), 0 1px 2px rgba(0,0,0,.18); }
+  .status-line .who span, .status-line::after { text-shadow: 0 1px 8px rgba(0,0,0,.25); }
+  /* How the page reaches the phone, as a badge: white when it is the cable, the fastest. */
+  #route-badge { display: inline-flex; align-items: center; gap: 7px; margin-top: 10px; padding: 8px 16px 8px 12px;
+    border-radius: 999px; font-size: 15.5px; font-weight: 700; letter-spacing: -.1px; text-shadow: none;
+    color: #fff; background: rgba(255,255,255,.16); box-shadow: inset 0 0 0 1px rgba(255,255,255,.18); }
+  #route-badge svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  #route-badge.fast { color: #0b0b0f; background: #fff; box-shadow: 0 6px 18px -6px rgba(0,0,0,.45); }
+  #route-badge em { font-style: normal; font-weight: 600; opacity: .62; }
+  #route-badge span, #route-badge em { color: inherit; font-size: inherit; text-shadow: none; }
+  #route-badge[hidden] { display: none; }
+  .mon-pill { transition: transform .2s cubic-bezier(.25,.8,.3,1); }
+  .mon-pill:hover { transform: translateY(-1px); }
+  .swatch { box-shadow: inset 0 0 0 1px rgba(0,0,0,.08), 0 4px 10px -5px var(--sw, transparent); }
+
+  /* The player bar floats over the page, its cover and play button with weight of their own. */
+  .player { box-shadow: 0 -20px 44px -28px rgba(0,0,0,.5); }
+  .player .cover { border-radius: 10px; box-shadow: 0 10px 20px -10px rgba(0,0,0,.6); }
+  .pl-btn.play { box-shadow: 0 10px 20px -10px rgba(0,0,0,.55); }
+
 </style>
 </head>
 <body>
@@ -808,13 +972,23 @@
         <span class="appicon purple"><svg viewBox="0 0 24 24"><path d="M12 3.5a8.5 8.5 0 1 1 0 17a8.5 8.5 0 1 1 0-17Z"/><path d="M12 3.5v17"/><path d="M12 7.5h4.5M12 11.5h5.5M12 15.5h4.5"/></svg></span>
         <div class="grow"><h3>Appearance</h3></div>
       </div>
+      <div class="style-pick" id="style-pick">
+        <button type="button" data-style-choice="studio" title="Artwork and one bold colour">
+          <span class="pv pv-studio"><i class="t"></i><i class="h"></i><i class="a"></i><i class="b"></i><i class="l"></i><i class="l s"></i></span>
+          <b>Studio</b><span class="tick"></span>
+        </button>
+        <button type="button" data-style-choice="theatre" title="A big dark hero, the tabs along the top">
+          <span class="pv pv-theatre"><i class="h"><i class="p"></i><i class="p"></i><i class="p"></i><i class="c"></i></i><i class="t"></i><i class="a"></i><i class="b"></i></span>
+          <b>Theatre</b><span class="tick"></span>
+        </button>
+      </div>
+      <div class="accent-head"><b>Colour</b><span id="accent-name">Automatic</span></div>
+      <div class="swatches" id="accent-pick"></div>
       <div class="seg" id="theme-seg">
         <button data-theme-choice="system">Automatic</button>
         <button data-theme-choice="light">Light</button>
         <button data-theme-choice="dark">Dark</button>
       </div>
-      <button class="set-row" id="look-glass" type="button"><span class="grow"><b>Glass</b><span>Frosted sidebar and floating bars</span></span><i class="switch"></i></button>
-      <button class="set-row" id="look-oled" type="button"><span class="grow"><b>OLED black</b><span>Pure black in dark mode</span></span><i class="switch"></i></button>
     </div>
 
     <div class="card">
@@ -1267,6 +1441,7 @@ function drawMonitor(samples) {
 }
 
 function selectTab(id) {
+  document.body.dataset.tab = id;
   var tab = TABS.filter(function (t) { return t.id === id; })[0];
   if (tab) {
     $("page-title").textContent = tab.label;
@@ -2821,7 +2996,7 @@ async function refreshState() {
   state.files = s.files || [];
   state.device = s.deviceName || "";
   applyTheme(s.theme || "system");
-  applyLook({ glass: s.glass, oled: s.oled });
+  applyLook({ style: s.style, accent: s.accent });
   state.parallelThreshold = s.parallelThreshold || state.parallelThreshold;
 
   var saved = null;
@@ -2854,25 +3029,78 @@ function applyTheme(theme) {
   if (!$("mon-sheet").hidden) pollMonitor();
 }
 
-/** Glass floating parts and pure-black dark: shared with the phone like the theme. */
-var look = { glass: false, oled: false };
+/**
+ * The style and the colour, shared with the phone like the theme. Styles: "studio" (artwork
+ * and one bold colour) or "theatre" (a big dark hero, the tabs as pills along the top).
+ * The colour: "auto" (the style's own) or one of
+ * the system colours below, which then stands in for the accent everywhere.
+ */
+var STYLES = ["studio", "theatre"];
+var OLD_STYLES = { music: "studio", tv: "theatre", signal: "studio" };
+var ACCENTS = [
+  // Apple Music's pink-red as Red; Automatic uses each style's own palette.
+  ["red", "#FA2D48"], ["orange", "#FF9500"], ["yellow", "#FFCC00"], ["green", "#34C759"], ["mint", "#00C7BE"],
+  ["blue", "#0A84FF"], ["purple", "#AF52DE"],
+];
+var look = { style: "studio", accent: "auto" };
 
 function applyLook(l) {
   if (!l) return;
-  look = { glass: !!l.glass, oled: !!l.oled };
+  var style = OLD_STYLES[l.style] || l.style;
+  if (STYLES.indexOf(style) < 0) style = "studio";
+  var accent = l.accent || "auto";
+  var hex = null;
+  ACCENTS.forEach(function (a) { if (a[0] === accent) hex = a[1]; });
+  if (!hex) accent = "auto";
+  look = { style: style, accent: accent };
   var root = document.documentElement;
-  if (look.glass) root.setAttribute("data-glass", ""); else root.removeAttribute("data-glass");
-  if (look.oled) root.setAttribute("data-oled", ""); else root.removeAttribute("data-oled");
-  $("look-glass").classList.toggle("on", look.glass);
-  $("look-oled").classList.toggle("on", look.oled);
+  root.setAttribute("data-style", style);
+  // A chosen colour outranks every style's own, light or dark, so it goes on the element itself.
+  if (hex) {
+    root.style.setProperty("--accent", hex);
+    root.style.setProperty("--on-accent", accent === "yellow" ? "#1C1C1E" : "#FFFFFF");
+  } else {
+    root.style.removeProperty("--accent");
+    root.style.removeProperty("--on-accent");
+  }
+  // The banner is night blue of its own; with a colour chosen, it takes that colour instead:
+  // Studio as lit artwork, Theatre fading to its black.
+  if (hex) root.style.setProperty("--hero-glow", hex); else root.style.removeProperty("--hero-glow");
+  if (hex && style === "studio") {
+    root.style.setProperty("--hero", "linear-gradient(135deg, color-mix(in srgb, " + hex + " 58%, #fff) 0%, " + hex + " 42%, color-mix(in srgb, " + hex + " 55%, #000) 100%)");
+  } else if (hex && style === "theatre") {
+    root.style.setProperty("--hero", "linear-gradient(160deg, color-mix(in srgb, " + hex + " 88%, #fff) 0%, color-mix(in srgb, " + hex + " 42%, #000) 52%, #05070D 100%)");
+  } else root.style.removeProperty("--hero");
+  Array.prototype.forEach.call(document.querySelectorAll("[data-style-choice]"), function (b) {
+    b.classList.toggle("on", b.dataset.styleChoice === style);
+  });
+  Array.prototype.forEach.call(document.querySelectorAll("[data-accent-choice]"), function (b) {
+    b.classList.toggle("on", b.dataset.accentChoice === accent);
+  });
+  var label = $("accent-name");
+  if (label) label.textContent = accent === "auto" ? "Automatic" : accent.charAt(0).toUpperCase() + accent.slice(1);
   setPlayerSpace();
   try { localStorage.setItem("blazeit.look", JSON.stringify(look)); } catch (e) {}
 }
 
+/** The colour swatches in Settings: the style's own first, then the system colours. */
+function buildSwatches() {
+  var host = $("accent-pick");
+  host.innerHTML = "";
+  [["auto", ""]].concat(ACCENTS).forEach(function (a) {
+    var b = document.createElement("button");
+    b.type = "button";
+    b.className = "swatch" + (a[0] === "auto" ? " auto" : "");
+    b.dataset.accentChoice = a[0];
+    b.title = a[0] === "auto" ? "Automatic: the style's own colour" : a[0].charAt(0).toUpperCase() + a[0].slice(1);
+    if (a[1]) b.style.setProperty("--sw", a[1]);
+    b.addEventListener("click", function () { setLook({ accent: a[0] }); });
+    host.appendChild(b);
+  });
+}
+
 async function setLook(change) {
-  var next = { glass: look.glass, oled: look.oled };
-  for (var k in change) next[k] = change[k];
-  applyLook(next);
+  applyLook({ style: change.style || look.style, accent: change.accent || look.accent });
   try {
     await api("/api/look", {
       method: "POST",
@@ -2882,10 +3110,12 @@ async function setLook(change) {
   } catch (e) {}
 }
 
-/** What the player takes from the bottom, for the sidebar, the dock and the page; glass floats it 12px up. */
+function setStyle(style) { return setLook({ style: style }); }
+
+/** What the player takes from the bottom, for the sidebar, the dock and the page. */
 function setPlayerSpace() {
   var pl = $("player");
-  var h = pl && !pl.hidden ? pl.offsetHeight + (look.glass ? 12 : 0) : 0;
+  var h = pl && !pl.hidden ? pl.offsetHeight : 0;
   document.documentElement.style.setProperty("--player-h", h + "px");
 }
 
@@ -3581,8 +3811,11 @@ function showApp() {
     Array.prototype.forEach.call(document.querySelectorAll("[data-theme-choice]"), function (b) {
       b.addEventListener("click", function () { setTheme(b.dataset.themeChoice); });
     });
-    $("look-glass").addEventListener("click", function () { setLook({ glass: !look.glass }); });
-    $("look-oled").addEventListener("click", function () { setLook({ oled: !look.oled }); });
+    Array.prototype.forEach.call(document.querySelectorAll("[data-style-choice]"), function (b) {
+      b.addEventListener("click", function () { setStyle(b.dataset.styleChoice); });
+    });
+    buildSwatches();
+    applyLook(look);
     renderPending();
   } else setMonitor(monitorWanted());
   refreshState();

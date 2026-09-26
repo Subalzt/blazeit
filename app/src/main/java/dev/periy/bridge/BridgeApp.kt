@@ -32,7 +32,7 @@ class Container(ctx: Context) {
     val tus = TusStore(app, storage, index)
     val devices = DeviceRegistry(app)
     val pairing = PairingManager(app, devices)
-    val music = MusicLibrary(app)
+    val music = MusicLibrary(app) { prefs.coverLookup }
     val direct = dev.periy.bridge.net.DirectLink(app)
     val peers = PeerManager(app, ::deviceName, { prefs.uploadStreams }, direct) { prefs.phoneDirect }
 
@@ -48,15 +48,24 @@ class Container(ctx: Context) {
         EventBus.emit("theme", v)
     }
 
-    private val _look = MutableStateFlow(Look(prefs.glass, prefs.oled))
+    private val _look = MutableStateFlow(Look(styleName(prefs.style) ?: "studio", prefs.accent.takeIf { it in ACCENT_NAMES } ?: "auto"))
 
-    /** Glass on the floating bars, and dark as pure black: shared like the theme. */
+    init {
+        // A removed style must not remain in preferences after the next app launch.
+        if (prefs.style != _look.value.style) prefs.style = _look.value.style
+    }
+
+    /** The style (Studio or Theatre) and the colour: shared like the theme. */
     val look: StateFlow<Look> = _look
 
-    fun setLook(glass: Boolean? = null, oled: Boolean? = null) {
-        val v = Look(glass ?: _look.value.glass, oled ?: _look.value.oled)
-        prefs.glass = v.glass
-        prefs.oled = v.oled
+    /** Either or both; an unknown value leaves that half as it is. */
+    fun setLook(style: String? = null, accent: String? = null) {
+        val v = Look(
+            style?.let(::styleName) ?: _look.value.style,
+            accent?.takeIf { it in ACCENT_NAMES } ?: _look.value.accent,
+        )
+        prefs.style = v.style
+        prefs.accent = v.accent
         _look.value = v
         EventBus.emit("look", v.json())
     }
@@ -80,7 +89,7 @@ class Container(ctx: Context) {
             theme = { _theme.value },
             setTheme = ::setTheme,
             look = { _look.value },
-            setLook = { g, o -> setLook(g, o) },
+            setLook = { s, a -> setLook(s, a) },
             laptopLink = { prefs.laptopLink },
             hotspot = { prefs.hotspotSsid to prefs.hotspotPass },
             clipSync = { prefs.clipSync },
@@ -99,9 +108,26 @@ class Container(ctx: Context) {
 
 val THEMES = setOf("system", "light", "dark")
 
-/** How the app and the pages look beyond light and dark. */
-data class Look(val glass: Boolean = false, val oled: Boolean = false) {
-    fun json() = """{"glass":$glass,"oled":$oled}"""
+/**
+ * The style, beyond light and dark: "studio" (artwork and one bold colour) or "theatre" (a big
+ * dark hero, tabs as pills).
+ */
+val STYLES = setOf("studio", "theatre")
+
+/** "auto" is the style's own colour; the rest are the system colours (Theme.kt, ACCENTS). */
+/** Colours no longer offered (pink, indigo, graphite, black) fall back to "auto". */
+val ACCENT_NAMES = setOf("auto", "red", "orange", "yellow", "green", "mint", "blue", "purple")
+
+/** A style by its name, including names from before; removed styles fall back to Studio. */
+fun styleName(s: String): String? = when (s) {
+    "music", "glass", "signal" -> "studio"
+    "tv" -> "theatre"
+    in STYLES -> s
+    else -> null
+}
+
+data class Look(val style: String = "studio", val accent: String = "auto") {
+    fun json() = """{"style":"$style","accent":"$accent"}"""
 }
 
 class BridgeApp : Application() {

@@ -18,22 +18,24 @@ import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
-import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.IntrinsicSize
-import androidx.compose.foundation.layout.fillMaxHeight
-import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -41,6 +43,7 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.isImeVisible
 import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
@@ -48,6 +51,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -55,6 +59,7 @@ import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
@@ -68,20 +73,34 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.graphics.lerp
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.IntentCompat
 import androidx.core.view.WindowCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.periy.bridge.container
+import androidx.compose.animation.core.spring
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.foundation.layout.widthIn
 import dev.periy.bridge.net.DirectLink
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.snapshotFlow
+import androidx.compose.runtime.derivedStateOf
+import dev.periy.bridge.net.LinkKind
 import dev.periy.bridge.net.Reach
 import dev.periy.bridge.server.Direction
 import dev.periy.bridge.server.FileEntry
@@ -124,11 +143,11 @@ class MainActivity : ComponentActivity() {
     override fun onResume() {
         super.onResume()
         vm.refresh()
-        // On screen now, so Android can ask (once) to let BlazeIt read the log the watch needs.
+        // On screen now, so Android can ask (once) to let Localhost 8787 read the log the watch needs.
         if (BridgeService.running.value) dev.periy.bridge.server.ClipWatch.ensure(this, container.prefs.clipSync)
     }
 
-    /** With clipboard sync on, opening BlazeIt sends what was last copied on the phone. */
+    /** With clipboard sync on, opening Localhost 8787 sends what was last copied on the phone. */
     override fun onWindowFocusChanged(hasFocus: Boolean) {
         super.onWindowFocusChanged(hasFocus)
         if (!hasFocus) return
@@ -214,13 +233,33 @@ private fun BlazeItUi(vm: MainViewModel) {
     var showMonitor by remember { mutableStateOf(ctx.container.prefs.showMonitor) }
     val setMonitor = { on: Boolean -> showMonitor = on; ctx.container.prefs.showMonitor = on }
 
+    val style = Bridge.Style
+    val tv = style == Style.THEATRE
+    val bottomTabs = style != Style.THEATRE
+    // The Theatre style's home runs its hero under the status bar, and the hero is always dark.
+    // By the page mostly on screen, so the header changes look halfway through a swipe, not at its start.
+    val heroUnderBar = tv && kotlin.math.round(pagePos).toInt() == TAB_HOME && !showOem
+    // The header is drawn for the dark hero only while the hero is still under it; scrolled
+    // past, it takes the page's own colours, or its tabs would vanish on light cards.
+    val headerBottom = with(androidx.compose.ui.platform.LocalDensity.current) {
+        (WindowInsets.statusBars.asPaddingValues().calculateTopPadding() + TheatreHeaderHeight).toPx()
+    }
+    val homeList = lists[TAB_HOME]
+    val heroShowing by remember(headerBottom) {
+        derivedStateOf {
+            val first = homeList.layoutInfo.visibleItemsInfo.firstOrNull()
+            first == null || (first.key == "hero" && first.offset + first.size > headerBottom)
+        }
+    }
+    val overHero = heroUnderBar && heroShowing
+
     // Status and navigation bar icons follow the palette, whichever way it was chosen.
     val dark = Bridge.Dark
     val view = LocalView.current
     SideEffect {
         val window = (view.context as? android.app.Activity)?.window ?: return@SideEffect
         WindowCompat.getInsetsController(window, view).apply {
-            isAppearanceLightStatusBars = !dark
+            isAppearanceLightStatusBars = !dark && !overHero
             isAppearanceLightNavigationBars = !dark
         }
     }
@@ -250,7 +289,7 @@ private fun BlazeItUi(vm: MainViewModel) {
     }
     // The direct link needs "nearby devices" (Android 13+) or location (older) to start a hotspot.
     val requestNearby = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { ok ->
-        if (ok) vm.startDirect() else Toast.makeText(ctx, "BlazeIt needs Nearby devices to start the direct link", Toast.LENGTH_LONG).show()
+        if (ok) vm.startDirect() else Toast.makeText(ctx, "Localhost 8787 needs Nearby devices to start the direct link", Toast.LENGTH_LONG).show()
     }
     // In hotspot mode only the phone's own settings can switch the hotspot on or off.
     val openHotspot = {
@@ -269,6 +308,7 @@ private fun BlazeItUi(vm: MainViewModel) {
             }
         }
     }
+    val toggleServer = { if (running) BridgeService.stop(ctx) else BridgeService.start(ctx) }
 
     // Other phones are looked for only while the Phones tab is open.
     if (tab == TAB_PHONES) {
@@ -370,27 +410,63 @@ private fun musicPermission(): String =
 
 // ---------------------------------------------------------------------- chrome
 
-/** A large title and, on the right, the live monitor switch. */
+/** A large title, as Apple's apps begin a screen, and on the right the live monitor switch. */
 @Composable
-private fun Header(title: String, running: Boolean, monitorOn: Boolean, toggleMonitor: () -> Unit) {
+private fun Header(title: String, monitorOn: Boolean, toggleMonitor: () -> Unit) {
     Row(
         Modifier
             .fillMaxWidth()
             .windowInsetsPadding(WindowInsets.statusBars)
-            .padding(start = 24.dp, end = 16.dp, top = 14.dp, bottom = 4.dp),
+            .padding(start = 20.dp, end = 16.dp, top = 12.dp, bottom = 2.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(title, style = LargeTitleStyle, color = Bridge.Text, modifier = Modifier.weight(1f))
-        if (running) {
-            Box(Modifier.size(8.dp).clip(CircleShape).background(Bridge.Good))
-            Spacer(Modifier.width(12.dp))
+        MonitorButton(monitorOn, toggleMonitor)
+    }
+}
+
+@Composable
+private fun MonitorButton(on: Boolean, toggle: () -> Unit) {
+    val music = Bridge.Style != Style.THEATRE
+    IconChip(
+        BlazeIcons.Pulse, if (on) "Hide monitor" else "Show monitor",
+        tint = when {
+            on -> Bridge.OnAccent
+            music -> Bridge.Accent
+            else -> Bridge.Text
+        },
+        bg = if (on) Bridge.Accent else Bridge.Chip,
+        size = 36.dp,
+        onClick = toggle,
+    )
+}
+
+/**
+ * The Theatre style's header, floating over the top of the screen: the tabs as pills, the monitor
+ * on the right. Over the home hero it is drawn in the dark palette, as the hero is dark; on
+ * the other tabs it fades the content out under it.
+ */
+@Composable
+private fun TheatreHeader(tab: Int, position: Float, overHero: Boolean, monitorOn: Boolean, onMonitor: () -> Unit, onSelect: (Int) -> Unit) {
+    val palette = if (overHero) TheatreDark else LocalPalette.current
+    CompositionLocalProvider(LocalPalette provides palette) {
+        val bg = Bridge.Bg
+        Row(
+            Modifier
+                .fillMaxWidth()
+                .background(
+                    if (overHero) Brush.verticalGradient(listOf(Color.Black.copy(alpha = 0.55f), Color.Transparent))
+                    else Brush.verticalGradient(0.75f to bg, 1f to bg.copy(alpha = 0f))
+                )
+                .windowInsetsPadding(WindowInsets.statusBars)
+                .height(TheatreHeaderHeight)
+                .padding(horizontal = 14.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            TopTabs(TABS, tab, solid = !overHero, position = position, onSelect = onSelect)
+            Spacer(Modifier.weight(1f))
+            MonitorButton(monitorOn, onMonitor)
         }
-        IconChip(
-            BlazeIcons.Pulse, if (monitorOn) "Hide monitor" else "Show monitor",
-            tint = if (monitorOn) Bridge.OnYellow else Bridge.Text,
-            bg = if (monitorOn) Bridge.Yellow else Bridge.Surface,
-            onClick = toggleMonitor,
-        )
     }
 }
 
@@ -480,7 +556,7 @@ private fun LazyListScope.homeTab(
 
     item {
         SectionBar("Connected") {
-            if (live.isNotEmpty()) Text("${live.size} live", style = LabelStyle, color = Bridge.Good)
+            if (live.isNotEmpty()) Text("${live.size} live", style = LabelStyle.copy(fontWeight = FontWeight.SemiBold), color = Bridge.Lit)
         }
     }
     item {
@@ -488,15 +564,44 @@ private fun LazyListScope.homeTab(
             if (devices.isEmpty()) SettingRow("None yet", first = true, titleColor = Bridge.Muted)
             devices.forEachIndexed { i, d ->
                 val isLive = (live[d.id] ?: 0) > 0
-                SettingRow(
+                val phone = d.name.startsWith("BlazeItPhone") || d.name.contains("phone", ignoreCase = true)
+                MediaRow(
                     d.name, (if (isLive) "Live now · " else lastSeen(d.lastSeenAt) + " · ") + d.lastIp,
+                    icon = if (phone) BlazeIcons.Phones else BlazeIcons.Laptop,
+                    color = Color(0xFF5E5CE6),
+                    dim = !isLive,
                     first = i == 0,
-                    icon = if (d.name.startsWith("BlazeItPhone") || d.name.contains("phone", ignoreCase = true)) BlazeIcons.Phones else BlazeIcons.Laptop,
-                    iconColor = if (isLive) Bridge.Purple else Bridge.Faint,
                 ) {
-                    IconChip(BlazeIcons.Close, "Remove ${d.name}", tint = Bridge.Muted) { vm.removeDevice(d.id) }
+                    IconChip(BlazeIcons.Close, "Remove ${d.name}", tint = Bridge.Muted, size = 32.dp) { vm.removeDevice(d.id) }
                 }
             }
+        }
+    }
+}
+
+private data class Quick(
+    val icon: ImageVector,
+    val color: Color,
+    val title: String,
+    val detail: String,
+    val active: Boolean,
+    val onClick: () -> Unit,
+)
+
+/**
+ * The four things done most, as a shelf drawn the style's way: square artwork (Studio) or wide
+ * cards (Theatre), each glowing a little in its own colour.
+ */
+@Composable
+private fun QuickActions(quick: List<Quick>) {
+    val tv = Bridge.Style == Style.THEATRE
+    SectionBar("Quick actions")
+    LazyRow(
+        contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 4.dp, bottom = 12.dp),
+        horizontalArrangement = Arrangement.spacedBy(if (tv) 12.dp else 14.dp),
+    ) {
+        items(quick, key = { it.title }) { q ->
+            Tile(q.icon, q.color, q.title, q.detail, Modifier.width(if (tv) 208.dp else 128.dp), active = q.active, onClick = q.onClick)
         }
     }
 }
@@ -504,13 +609,13 @@ private fun LazyListScope.homeTab(
 /** A computer or phone asking to connect: who, the code to compare, Allow or Deny. */
 @Composable
 private fun RequestCard(req: PairRequest, vm: MainViewModel) {
-    Column(Modifier.fillMaxWidth().padding(top = 12.dp).panel().padding(18.dp)) {
+    Column(Modifier.fillMaxWidth().padding(top = 16.dp).panel().padding(18.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             AppIcon(BlazeIcons.Laptop, Bridge.Purple)
             Spacer(Modifier.width(12.dp))
             Column(Modifier.weight(1f)) {
                 Text("${req.name} wants to connect", style = TitleStyle, color = Bridge.Text)
-                Text(req.ip, style = BodyStyle.copy(fontSize = 13.sp), color = Bridge.Muted)
+                Text(req.ip, style = CaptionStyle, color = Bridge.Muted)
             }
         }
         Spacer(Modifier.height(14.dp))
@@ -608,36 +713,23 @@ private fun ServerCard(state: UiState, running: Boolean, onToggle: () -> Unit, o
                     Image(
                         bitmap = qr,
                         contentDescription = "QR code for the address",
-                        modifier = Modifier.size(190.dp).clip(RoundedCornerShape(18.dp)).background(Color.White).padding(10.dp),
+                        modifier = Modifier.size(200.dp).clip(RoundedCornerShape(18.dp)).background(Color.White).padding(10.dp),
                     )
                 }
             }
             state.addresses.drop(1).filter { it.kind != dev.periy.bridge.net.LinkKind.DIRECT }.forEach { a ->
                 Spacer(Modifier.height(10.dp))
-                Text(a.kind.label + "  " + a.url(state.port), style = MonoStyle.copy(fontSize = 13.sp), color = fg)
+                Text(a.kind.label + "  " + a.url(state.port), style = MonoStyle.copy(fontSize = 13.sp), color = Bridge.Text)
                 Text(
                     when (a.reach) {
                         Reach.LAN_ONLY -> "same Wi-Fi or cable only"
                         Reach.CARRIER_NAT -> "unreachable: carrier NAT"
                         Reach.PUBLIC -> "public address"
                     },
-                    style = BodyStyle.copy(fontSize = 12.sp), color = soft,
+                    style = BodyStyle.copy(fontSize = 12.sp), color = Bridge.Muted,
                 )
             }
         }
-    }
-}
-
-/** A small capsule that sits on the yellow card. */
-@Composable
-private fun OnYellowPill(label: String, icon: androidx.compose.ui.graphics.vector.ImageVector, onClick: () -> Unit) {
-    Row(
-        Modifier.clip(ButtonShape).background(Color(0x1A000000)).clickable(onClick = onClick).padding(horizontal = 14.dp, vertical = 9.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Icon(icon, null, tint = Bridge.OnYellow, modifier = Modifier.size(17.dp))
-        Spacer(Modifier.width(6.dp))
-        Text(label, style = TextStyle(fontSize = 14.sp, fontWeight = FontWeight.SemiBold), color = Bridge.OnYellow)
     }
 }
 
@@ -648,7 +740,7 @@ private fun OnYellowPill(label: String, icon: androidx.compose.ui.graphics.vecto
 @Composable
 private fun DirectCard(info: DirectLink.Info, stop: () -> Unit) {
     var showQr by remember { mutableStateOf(false) }
-    Column(Modifier.fillMaxWidth().padding(top = 12.dp).panel().animateContentSize(tween(180)).padding(18.dp)) {
+    Column(Modifier.fillMaxWidth().padding(top = 16.dp).panel().animateContentSize(tween(180)).padding(18.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             AppIcon(BlazeIcons.Bolt, Bridge.Blue)
             Spacer(Modifier.width(12.dp))
@@ -693,7 +785,7 @@ private fun CopyField(label: String, value: String, shown: String = value) {
     Row(
         Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(14.dp))
+            .clip(RoundedCornerShape(12.dp))
             .background(Bridge.Chip)
             .clickable {
                 SystemClipboard.write(ctx, value)
@@ -708,18 +800,19 @@ private fun CopyField(label: String, value: String, shown: String = value) {
     }
 }
 
-/** Anything moving right now, either way, with progress. */
+/** Anything moving right now, either way, with progress: rows like songs, with a scrubber under each. */
 private fun LazyListScope.transfersSection(transfers: List<Transfer>) {
     if (transfers.isEmpty()) return
     item {
         SectionBar("Moving") {
             Text(
-                "Clear finished", style = LabelStyle, color = Bridge.Blue,
+                "Clear finished", style = LabelStyle.copy(fontSize = 15.sp),
+                color = if (Bridge.Style == Style.STUDIO) Bridge.Accent else Bridge.Blue,
                 modifier = Modifier.clip(ButtonShape).clickable { Transfers.clearFinished() }.padding(horizontal = 8.dp, vertical = 4.dp),
             )
         }
     }
-    items(transfers, key = { "t-" + it.id }) { TransferRow(it) }
+    item { GroupCard { transfers.forEachIndexed { i, t -> TransferRow(t, first = i == 0) } } }
 }
 
 /** A picture decoded no larger than [px] on its long side: a phone photo is too big to hold whole. */
@@ -776,7 +869,7 @@ private fun ClipboardPanel(shared: String, status: String, vm: MainViewModel) {
                     Image(
                         it, meta.name,
                         contentScale = androidx.compose.ui.layout.ContentScale.Fit,
-                        modifier = Modifier.fillMaxWidth().heightIn(max = 260.dp).clip(RoundedCornerShape(14.dp)),
+                        modifier = Modifier.fillMaxWidth().heightIn(max = 260.dp).clip(RoundedCornerShape(12.dp)),
                     )
                     Spacer(Modifier.height(10.dp))
                 }
@@ -789,7 +882,7 @@ private fun ClipboardPanel(shared: String, status: String, vm: MainViewModel) {
                         Text(meta.name, style = TextStyle(fontSize = 15.sp, fontWeight = FontWeight.SemiBold), color = Bridge.Text,
                             maxLines = 1, overflow = TextOverflow.Ellipsis)
                         Text((if (meta.kind == "image") "Picture" else "File") + " · " + formatBytes(meta.size),
-                            style = BodyStyle.copy(fontSize = 13.sp), color = Bridge.Muted)
+                            style = CaptionStyle, color = Bridge.Muted)
                     }
                 }
             }
@@ -799,7 +892,7 @@ private fun ClipboardPanel(shared: String, status: String, vm: MainViewModel) {
                     value = draft,
                     onValueChange = { draft = it; pending = true },
                     textStyle = BodyStyle.copy(fontSize = 16.sp, lineHeight = 22.sp, color = Bridge.Text),
-                    cursorBrush = SolidColor(Bridge.Yellow),
+                    cursorBrush = SolidColor(if (Bridge.Style == Style.STUDIO) Bridge.Accent else Bridge.Blue),
                     modifier = Modifier.fillMaxWidth(),
                 )
             }
@@ -817,15 +910,15 @@ private fun ClipboardPanel(shared: String, status: String, vm: MainViewModel) {
  */
 @Composable
 private fun ClipHistory(items: List<dev.periy.bridge.server.ClipMeta>, current: Long, vm: MainViewModel) {
-    Column(Modifier.fillMaxWidth().padding(top = 12.dp)) {
+    Column(Modifier.fillMaxWidth().padding(top = 4.dp)) {
         if (items.isEmpty()) {
             Text("Nothing copied yet.", style = BodyStyle, color = Bridge.Muted, modifier = Modifier.padding(4.dp))
             return@Column
         }
         items.forEach { m ->
             Row(
-                Modifier.fillMaxWidth().padding(vertical = 3.dp).clip(RoundedCornerShape(12.dp))
-                    .background(if (m.v == current) Bridge.Yellow.copy(alpha = 0.18f) else Bridge.Chip)
+                Modifier.fillMaxWidth().padding(vertical = 3.dp).clip(RoundedCornerShape(10.dp))
+                    .background(if (m.v == current) Bridge.Accent.copy(alpha = 0.16f) else Bridge.Chip)
                     .clickable { vm.reuseClip(m.v) }.padding(horizontal = 12.dp, vertical = 10.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
@@ -909,7 +1002,7 @@ private fun LazyListScope.phonesTab(
             SettingRow(
                 "Send over a direct link", "Phone to phone, many times faster",
                 first = true, icon = BlazeIcons.Bolt, iconColor = Bridge.Blue,
-            ) { Toggle(phoneDirect, color = Bridge.Blue) { setPhoneDirect(it) } }
+            ) { Toggle(phoneDirect) { setPhoneDirect(it) } }
         }
     }
 
@@ -919,12 +1012,12 @@ private fun LazyListScope.phonesTab(
             GroupCard {
                 paired.forEachIndexed { i, p ->
                     val here = nearby.any { it.name == p.name }
-                    PhoneRow(p.name, routes[p.name] ?: if (here) "Nearby · ready" else "Not seen right now", here, first = i == 0) {
-                        IconChip(BlazeIcons.Upload, "Send files to ${p.name}", tint = Color.White, bg = Bridge.Good) { sendFilesTo(p) }
+                    MediaRow(p.name, routes[p.name] ?: if (here) "Nearby · ready" else "Not seen right now", BlazeIcons.Phones, Color(0xFF30D158), first = i == 0, dim = !here) {
+                        IconChip(BlazeIcons.Upload, "Send files to ${p.name}", tint = Bridge.OnAccent, bg = Bridge.Accent, size = 36.dp) { sendFilesTo(p) }
                         Spacer(Modifier.width(8.dp))
-                        IconChip(BlazeIcons.Message, "Send text to ${p.name}") { sendTextTo(p) }
+                        IconChip(BlazeIcons.Message, "Send text to ${p.name}", size = 36.dp) { sendTextTo(p) }
                         Spacer(Modifier.width(8.dp))
-                        IconChip(BlazeIcons.Close, "Forget ${p.name}", tint = Bridge.Muted) { forget(p) }
+                        IconChip(BlazeIcons.Close, "Forget ${p.name}", tint = Bridge.Muted, size = 36.dp) { forget(p) }
                     }
                 }
             }
@@ -936,14 +1029,14 @@ private fun LazyListScope.phonesTab(
             GroupCard {
                 unpaired.forEachIndexed { i, n ->
                     val s = peerStatus[n.host]
-                    PhoneRow(
+                    MediaRow(
                         n.name,
                         when (s) {
                             is PeerStatus.Waiting -> "Allow it on ${n.name} · code ${s.code}"
                             is PeerStatus.Failed -> s.message
                             null -> n.host
                         },
-                        live = true,
+                        BlazeIcons.Phones, Color(0xFF30D158),
                         first = i == 0,
                     ) {
                         if (s !is PeerStatus.Waiting) SoftButton("Connect") { connect(n) }
@@ -984,45 +1077,24 @@ private fun Searching(running: Boolean, found: Int) {
         Modifier.fillMaxWidth().padding(top = 12.dp).panel().padding(18.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        AppIcon(BlazeIcons.Phones, Bridge.Good, size = 46.dp)
+        Artwork(BlazeIcons.Phones, Color(0xFF30D158), Modifier.size(56.dp), radius = 12.dp, glyph = 28.dp, center = true)
         Spacer(Modifier.width(14.dp))
         Column(Modifier.weight(1f)) {
             Text(
                 when {
-                    !running -> "BlazeIt is off"
+                    !running -> "Localhost 8787 is off"
                     found == 0 -> "Looking for phones"
                     found == 1 -> "1 phone"
                     else -> "$found phones"
                 },
-                style = TitleStyle.copy(fontSize = 19.sp, fontWeight = FontWeight.Bold), color = Bridge.Text,
+                style = HeadlineStyle.copy(fontSize = 20.sp), color = Bridge.Text,
             )
             Text(
                 if (!running) "Turn it on from Home" else "On this Wi-Fi",
-                style = BodyStyle.copy(fontSize = 13.sp), color = Bridge.Muted,
+                style = CaptionStyle, color = Bridge.Muted,
             )
         }
-        if (running) Box(Modifier.size(10.dp).alpha(pulse).clip(CircleShape).background(Bridge.Good))
-    }
-}
-
-/** A phone in a list: its icon, name and state, and actions on the right. */
-@Composable
-private fun PhoneRow(
-    name: String,
-    detail: String,
-    live: Boolean,
-    first: Boolean,
-    trailing: @Composable RowScope.() -> Unit,
-) {
-    if (!first) Box(Modifier.fillMaxWidth().padding(start = 66.dp).height(0.5.dp).background(Bridge.Outline))
-    Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
-        AppIcon(BlazeIcons.Phones, if (live) Bridge.Good else Bridge.Faint, size = 36.dp)
-        Spacer(Modifier.width(14.dp))
-        Column(Modifier.weight(1f)) {
-            Text(name, style = TextStyle(fontSize = 15.5.sp, fontWeight = FontWeight.SemiBold), color = Bridge.Text, maxLines = 1, overflow = TextOverflow.Ellipsis)
-            Text(detail, style = BodyStyle.copy(fontSize = 13.sp), color = Bridge.Muted, maxLines = 2)
-        }
-        trailing()
+        if (running) Box(Modifier.size(10.dp).alpha(pulse).clip(CircleShape).background(Bridge.Lit))
     }
 }
 
@@ -1034,12 +1106,12 @@ private fun PhoneRow(
 private fun ConnectByAddress(connect: (NearbyPhone) -> Unit) {
     var open by remember { mutableStateOf(false) }
     var text by remember { mutableStateOf("") }
-    Column(Modifier.fillMaxWidth().panel()) {
+    GroupCard {
         if (!open) {
             SettingRow(
                 "Connect by address", first = true, icon = BlazeIcons.Link, iconColor = Bridge.Orange, onClick = { open = true },
             ) { Icon(BlazeIcons.Chevron, null, tint = Bridge.Faint, modifier = Modifier.size(18.dp)) }
-            return@Column
+            return@GroupCard
         }
         Row(Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
             BridgeTextField(text, { text = it }, Modifier.weight(1f), placeholder = "192.168.1.20", minHeight = 46.dp, mono = true)
@@ -1057,39 +1129,83 @@ private fun ConnectByAddress(connect: (NearbyPhone) -> Unit) {
 }
 
 @Composable
-private fun TransferRow(t: Transfer) {
+private fun TransferRow(t: Transfer, first: Boolean) {
     val inbound = t.direction == Direction.INBOUND
-    BridgeRow(
+    MediaRow(
         title = t.name,
+        subtitle = null,
         icon = if (inbound) BlazeIcons.Download else BlazeIcons.Upload,
-        iconColor = if (inbound) Bridge.Orange else Bridge.Good,
-        meta = when (t.state) {
-            TransferState.ACTIVE -> formatRate(t.bytesPerSec)
-            TransferState.STALLED -> "Paused"
-            TransferState.DONE -> "Done"
-            TransferState.FAILED -> "Failed"
+        color = if (inbound) Color(0xFFFF9F0A) else Color(0xFF30D158),
+        first = first,
+        below = {
+            Spacer(Modifier.height(6.dp))
+            BlockProgress(
+                t.fraction,
+                color = when (t.state) {
+                    TransferState.DONE -> Bridge.Good
+                    TransferState.FAILED -> Bridge.Danger
+                    TransferState.STALLED -> Bridge.Faint
+                    TransferState.ACTIVE -> if (Bridge.Style == Style.STUDIO) Bridge.Accent else Bridge.Text
+                },
+            )
+            Spacer(Modifier.height(4.dp))
+            Row {
+                Text(
+                    formatBytes(t.transferred) + " of " + formatBytes(t.total),
+                    style = BodyStyle.copy(fontSize = 12.sp, fontFeatureSettings = "tnum"),
+                    color = if (t.state == TransferState.FAILED) Bridge.Danger else Bridge.Muted,
+                    modifier = Modifier.weight(1f),
+                )
+                Text(
+                    when (t.state) {
+                        TransferState.ACTIVE -> formatRate(t.bytesPerSec)
+                        TransferState.STALLED -> "Paused"
+                        TransferState.DONE -> "Done"
+                        TransferState.FAILED -> "Failed"
+                    },
+                    style = BodyStyle.copy(fontSize = 12.sp, fontWeight = FontWeight.SemiBold, fontFeatureSettings = "tnum"),
+                    color = if (t.state == TransferState.DONE) Bridge.Good else Bridge.Muted,
+                )
+            }
         },
-    ) {
-        Spacer(Modifier.height(12.dp))
-        BlockProgress(
-            t.fraction,
-            color = when (t.state) {
-                TransferState.DONE -> Bridge.Good
-                TransferState.FAILED -> Bridge.Danger
-                TransferState.STALLED -> Bridge.Faint
-                TransferState.ACTIVE -> Bridge.Yellow
-            },
-        )
-        Spacer(Modifier.height(6.dp))
-        Text(
-            formatBytes(t.transferred) + " of " + formatBytes(t.total),
-            style = BodyStyle.copy(fontSize = 12.5.sp, fontFeatureSettings = "tnum"),
-            color = if (t.state == TransferState.FAILED) Bridge.Danger else Bridge.Muted,
-        )
-    }
+    )
 }
 
 // ---------------------------------------------------------------------- tab: settings
+
+/**
+ * The direct link's switch, under the choice in Settings: whether it is on, and why not when
+ * it failed. Android runs one hotspot at a time, so while the phone's own is on, this says so
+ * and offers the setting that turns it off.
+ */
+@Composable
+private fun DirectRow(direct: DirectLink.State, hotspotOn: Boolean, toggle: () -> Unit, openHotspot: () -> Unit) {
+    val blocked = hotspotOn && direct !is DirectLink.State.On && direct != DirectLink.State.Starting
+    SettingRow(
+        when (direct) {
+            is DirectLink.State.On -> "Direct link on"
+            DirectLink.State.Starting -> "Starting the direct link…"
+            else -> "Direct link off"
+        },
+        when {
+            blocked -> "The phone's hotspot is on. Turn it off first: Android runs one at a time."
+            direct is DirectLink.State.Failed -> direct.reason
+            direct is DirectLink.State.On -> direct.info.ssid + " · the laptop helper joins by itself"
+            else -> "The laptop helper joins it by itself; the laptop is offline meanwhile"
+        },
+        titleColor = if (direct is DirectLink.State.On) Bridge.Lit else Bridge.Text,
+        onClick = if (blocked) openHotspot else toggle,
+    ) {
+        Action(
+            when {
+                blocked -> "Hotspot"
+                direct is DirectLink.State.On || direct == DirectLink.State.Starting -> "Stop"
+                direct is DirectLink.State.Failed -> "Retry"
+                else -> "Start"
+            }
+        )
+    }
+}
 
 private fun LazyListScope.settingsTab(
     state: UiState,
@@ -1106,18 +1222,14 @@ private fun LazyListScope.settingsTab(
 ) {
     item { SectionBar("Appearance") }
     item {
-        GroupCard {
-            // Shared with every open page.
-            Box(Modifier.padding(16.dp)) {
-                val themes = listOf("system", "light", "dark")
-                SegmentedRow(listOf("Automatic", "Light", "Dark"), themes.indexOf(theme)) { vm.setTheme(themes[it]) }
-            }
-            SettingRow("Glass", "Frosted tab bar and monitor", icon = BlazeIcons.Contrast, iconColor = Bridge.Blue) {
-                Toggle(look.glass) { vm.setLook(glass = it) }
-            }
-            SettingRow("OLED black", "Pure black in dark mode", icon = BlazeIcons.Moon, iconColor = Color(0xFF3A3A40)) {
-                Toggle(look.oled) { vm.setLook(oled = it) }
-            }
+        // Shared with every open page.
+        StylePicker(Style.of(look.style)) { vm.setStyle(it) }
+    }
+    item { ColourPicker(look.accent) { vm.setAccent(it) } }
+    item {
+        Box(Modifier.padding(horizontal = 16.dp).padding(top = 16.dp)) {
+            val themes = listOf("system", "light", "dark")
+            SegmentedRow(listOf("Automatic", "Light", "Dark"), themes.indexOf(theme)) { vm.setTheme(themes[it]) }
         }
     }
 
@@ -1133,7 +1245,7 @@ private fun LazyListScope.settingsTab(
                 },
                 first = true, icon = BlazeIcons.File, iconColor = Bridge.Orange,
                 onClick = pickFolder,
-            ) { Text("Change", style = LabelStyle, color = Bridge.Blue) }
+            ) { Action("Change") }
             SettingRow("Always stage in app storage", "Slower; only if files arrive damaged") {
                 Toggle(state.forceStagedCopy) { vm.setForceStagedCopy(it) }
             }
@@ -1165,7 +1277,7 @@ private fun LazyListScope.settingsTab(
             SettingRow(
                 "USB-C cable", "Needs USB tethering on",
                 onClick = { vm.tetherSettingsIntent()?.let(openSettings) },
-            ) { Text("Set up", style = LabelStyle, color = Bridge.Blue) }
+            ) { Action("Set up") }
         }
     }
 
@@ -1177,8 +1289,8 @@ private fun LazyListScope.settingsTab(
                 if (Build.VERSION.SDK_INT < 30) "Needs Android 11" else "Read-only",
                 first = true, icon = BlazeIcons.File, iconColor = Bridge.Orange,
                 onClick = { vm.allFilesIntent()?.let(openSettings) },
-            ) { if (state.browsable) Check(true) else Text("Allow", style = LabelStyle, color = Bridge.Blue) }
-            SettingRow("Sync clipboard", icon = BlazeIcons.Paste, iconColor = Bridge.Yellow) {
+            ) { if (state.browsable) Check(true) else Action("Allow") }
+            SettingRow("Sync clipboard", icon = BlazeIcons.Paste, iconColor = Bridge.Teal) {
                 Toggle(state.clipSync) { vm.setClipSync(it) }
             }
             SettingRow(
@@ -1190,7 +1302,7 @@ private fun LazyListScope.settingsTab(
                 if (state.notifAccess) null else "Needs notification access",
                 icon = BlazeIcons.Message, iconColor = Bridge.Danger,
                 onClick = { openSettings(vm.notifAccessIntent()) },
-            ) { if (state.notifAccess) Check(true) else Text("Allow", style = LabelStyle, color = Bridge.Blue) }
+            ) { if (state.notifAccess) Check(true) else Action("Allow") }
             SettingRow(
                 "Copies from any app, at once",
                 when {
@@ -1203,7 +1315,7 @@ private fun LazyListScope.settingsTab(
             ) {
                 when {
                     state.watchLogs && state.watchOverlay -> Check(true)
-                    state.watchLogs -> Text("Allow", style = LabelStyle, color = Bridge.Blue)
+                    state.watchLogs -> Action("Allow")
                     else -> Text("USB", style = LabelStyle, color = Bridge.Muted)
                 }
             }
@@ -1225,13 +1337,20 @@ private fun LazyListScope.settingsTab(
             if (state.musicGranted) {
                 SettingRow(
                     if (state.musicTracks > 0) "${state.musicTracks} songs" else "No music found",
-                    first = true, icon = BlazeIcons.Pulse, iconColor = Bridge.Danger,
+                    first = true, icon = BlazeIcons.Pulse, iconColor = Bridge.Pink,
                 )
             } else {
                 SettingRow(
                     "Music library", "Audio only",
-                    first = true, icon = BlazeIcons.Pulse, iconColor = Bridge.Danger, onClick = requestMusic,
-                ) { Text("Allow", style = LabelStyle, color = Bridge.Blue) }
+                    first = true, icon = BlazeIcons.Pulse, iconColor = Bridge.Pink, onClick = requestMusic,
+                ) { Action("Allow") }
+            }
+            // Albums without a cover of their own get one from Apple's catalogue; only the
+            // album and artist names are sent.
+            val prefs = LocalContext.current.container.prefs
+            var lookup by remember { mutableStateOf(prefs.coverLookup) }
+            SettingRow("Find missing covers", "Looks up album and artist in Apple's catalogue", icon = BlazeIcons.Image, iconColor = Bridge.Purple) {
+                Toggle(lookup) { lookup = it; prefs.coverLookup = it }
             }
         }
     }
@@ -1248,7 +1367,7 @@ private fun LazyListScope.settingsTab(
                 "Battery optimisation", if (state.batteryExempt) "Off" else "Tap to turn off",
                 onClick = if (!state.batteryExempt) ({ vm.batteryOptimizationIntent()?.let(openSettings) ?: showOem() }) else null,
             ) { Check(state.batteryExempt) }
-            SettingRow("Manufacturer settings", "If BlazeIt gets stopped", onClick = showOem) {
+            SettingRow("Manufacturer settings", "If Localhost 8787 gets stopped", onClick = showOem) {
                 Icon(BlazeIcons.Chevron, null, tint = Bridge.Faint, modifier = Modifier.size(18.dp))
             }
         }
@@ -1258,6 +1377,163 @@ private fun LazyListScope.settingsTab(
     item {
         GroupCard {
             SettingRow("Unpair everything", first = true, titleColor = Bridge.Danger, onClick = { vm.unpairAll() })
+        }
+    }
+}
+
+/** A word on the right of a setting that does something: in the accent (Studio) or blue. */
+@Composable
+private fun Action(label: String) {
+    Text(label, style = TextStyle(fontSize = 16.sp), color = if (Bridge.Style == Style.THEATRE) Bridge.Blue else Bridge.Accent)
+}
+
+/**
+ * The two styles side by side, each drawn as a small phone showing it, in the light or dark
+ * of the moment, with a round check under the one in use: the way iOS picks Light or Dark.
+ */
+@Composable
+private fun StylePicker(current: Style, onPick: (String) -> Unit) {
+    val dark = Bridge.Dark
+    Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+        listOf(Style.STUDIO to "Studio", Style.THEATRE to "Theatre").forEach { (s, label) ->
+            val on = s == current
+            Column(
+                Modifier.weight(1f).clip(RoundedCornerShape(16.dp))
+                    .clickable { onPick(s.name.lowercase()) }.padding(vertical = 4.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                val ring = if (on) (if (Bridge.Style == Style.THEATRE) Bridge.Blue else Bridge.Accent) else Bridge.Outline
+                Box(Modifier.fillMaxWidth().aspectRatio(0.56f).clip(RoundedCornerShape(16.dp)).border(if (on) 2.5.dp else 1.dp, ring, RoundedCornerShape(16.dp)).padding(if (on) 4.dp else 1.dp)) {
+                    StylePreview(s, dark)
+                }
+                Spacer(Modifier.height(8.dp))
+                Text(label, style = TextStyle(fontSize = 15.sp, fontWeight = FontWeight.Medium), color = Bridge.Text)
+                Spacer(Modifier.height(6.dp))
+                Box(
+                    Modifier.size(22.dp).clip(CircleShape)
+                        .background(if (on) ring else Color.Transparent)
+                        .border(1.5.dp, if (on) ring else Bridge.Faint, CircleShape),
+                    contentAlignment = Alignment.Center,
+                ) { if (on) Icon(BlazeIcons.Check, null, tint = Color.White, modifier = Modifier.size(14.dp)) }
+            }
+        }
+    }
+}
+
+/**
+ * The colour: a row of round swatches, the one in use ringed. The first is the style's own
+ * colour (Studio's pink-red, Theatre in black and white), drawn half and half.
+ */
+@Composable
+private fun ColourPicker(current: String, onPick: (String) -> Unit) {
+    val name = if (current == "auto") "Automatic" else current.replaceFirstChar { it.uppercase() }
+    Column(Modifier.fillMaxWidth().padding(top = 18.dp)) {
+        Row(Modifier.padding(horizontal = 20.dp), verticalAlignment = Alignment.CenterVertically) {
+            Text("Colour", style = TextStyle(fontSize = 17.sp, fontWeight = FontWeight.SemiBold), color = Bridge.Text, modifier = Modifier.weight(1f))
+            Text(name, style = TextStyle(fontSize = 15.sp), color = Bridge.Muted)
+        }
+        Spacer(Modifier.height(10.dp))
+        // All on one line, sharing the width: Automatic (black and white, as Theatre), then the colours.
+        Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Swatch(
+                Brush.linearGradient(0.5f to Color.White, 0.5f to Color(0xFF1D1D1F)),
+                "Automatic", current == "auto", Modifier.weight(1f),
+            ) { onPick("auto") }
+            ACCENTS.forEach { (id, c) ->
+                Swatch(SolidColor(c), id, current == id, Modifier.weight(1f)) { onPick(id) }
+            }
+        }
+    }
+}
+
+@Composable
+private fun Swatch(fill: androidx.compose.ui.graphics.Brush, description: String, on: Boolean, modifier: Modifier = Modifier, onClick: () -> Unit) {
+    Box(
+        modifier.widthIn(max = 44.dp).aspectRatio(1f).clip(CircleShape)
+            .border(if (on) 2.5.dp else 0.dp, if (on) Bridge.Text else Color.Transparent, CircleShape)
+            .clickable(onClick = onClick)
+            .padding(if (on) 5.dp else 2.dp)
+            .clip(CircleShape)
+            .background(fill)
+            // Half black, half white: a fine ring keeps its edge on either background.
+            .then(if (description == "Automatic") Modifier.border(1.dp, Color(0x5A8E8E93), CircleShape) else Modifier),
+        contentAlignment = Alignment.Center,
+    ) {
+        if (on) Icon(
+            BlazeIcons.Check, description, modifier = Modifier.size(16.dp),
+            // Over the white half of Automatic, and over yellow, a white tick would not show.
+            tint = if (description == "Automatic" || description == "yellow") Color(0xFF1D1D1F) else Color.White,
+        )
+    }
+}
+
+/** A tiny phone screen in a style: enough of its shapes to recognise it. */
+@Composable
+private fun StylePreview(style: Style, dark: Boolean) {
+    // The colour in use, read before this preview puts its own palette in place: Studio's card shows it.
+    val chosen = Bridge.Accent
+    val card = if (chosen == Color.White || chosen == Color(0xFF1D1D1F)) Color(0xFF15428C) else chosen
+    val p = paletteFor(style, dark)
+    CompositionLocalProvider(LocalPalette provides p, LocalStyle provides style) {
+        Box(Modifier.fillMaxSize().clip(RoundedCornerShape(12.dp))) {
+            StyleBackground()
+            val bar = @Composable { w: Float, h: Dp, c: Color -> Box(Modifier.fillMaxWidth(w).height(h).clip(RoundedCornerShape(2.dp)).background(c)) }
+            when (style) {
+                Style.STUDIO -> Column(Modifier.fillMaxSize().padding(7.dp)) {
+                    Spacer(Modifier.height(6.dp))
+                    bar(0.55f, 7.dp, p.text)
+                    Spacer(Modifier.height(7.dp))
+                    Artwork(BlazeIcons.Bolt, card, Modifier.fillMaxWidth().weight(1f), radius = 5.dp, glyph = 0.dp)
+                    Spacer(Modifier.height(6.dp))
+                    Row(horizontalArrangement = Arrangement.spacedBy(5.dp)) {
+                        Box(Modifier.weight(1f).aspectRatio(1f).clip(RoundedCornerShape(4.dp)).background(Color(0xFF0A84FF)))
+                        Box(Modifier.weight(1f).aspectRatio(1f).clip(RoundedCornerShape(4.dp)).background(Color(0xFF30D158)))
+                    }
+                    Spacer(Modifier.height(6.dp))
+                    bar(1f, 3.dp, p.surface2)
+                    Spacer(Modifier.height(4.dp))
+                    bar(0.8f, 3.dp, p.surface2)
+                    Spacer(Modifier.height(8.dp))
+                    Box(Modifier.fillMaxWidth().height(14.dp).clip(RoundedCornerShape(4.dp)).background(p.surface)) {
+                        Box(Modifier.padding(3.dp).size(8.dp).clip(RoundedCornerShape(2.dp)).background(p.accent))
+                    }
+                    Spacer(Modifier.height(4.dp))
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
+                        repeat(4) { i -> Box(Modifier.size(6.dp).clip(CircleShape).background(if (i == 0) p.accent else p.faint)) }
+                    }
+                }
+
+                Style.THEATRE -> Column(Modifier.fillMaxSize()) {
+                    Box(
+                        Modifier.fillMaxWidth().weight(1.1f)
+                            .background(Brush.linearGradient(listOf(Color(0xFF1E6BD6), Color(0xFF0B2F66), Color(0xFF05070D))))
+                    ) {
+                        Row(Modifier.padding(6.dp), horizontalArrangement = Arrangement.spacedBy(3.dp)) {
+                            Box(Modifier.width(16.dp).height(6.dp).clip(ButtonShape).background(Color.White))
+                            Box(Modifier.width(12.dp).height(6.dp).clip(ButtonShape).background(Color.White.copy(alpha = 0.25f)))
+                            Box(Modifier.width(12.dp).height(6.dp).clip(ButtonShape).background(Color.White.copy(alpha = 0.25f)))
+                        }
+                        Column(Modifier.align(Alignment.BottomStart).padding(7.dp)) {
+                            Box(Modifier.width(40.dp).height(6.dp).clip(RoundedCornerShape(2.dp)).background(Color.White))
+                            Spacer(Modifier.height(5.dp))
+                            Box(Modifier.width(26.dp).height(9.dp).clip(ButtonShape).background(Color.White))
+                        }
+                    }
+                    Column(Modifier.padding(7.dp).weight(1f)) {
+                        bar(0.4f, 4.dp, p.text)
+                        Spacer(Modifier.height(5.dp))
+                        Row(horizontalArrangement = Arrangement.spacedBy(5.dp)) {
+                            Box(Modifier.weight(1f).aspectRatio(16f / 9f).clip(RoundedCornerShape(3.dp)).background(Color(0xFF0A84FF)))
+                            Box(Modifier.weight(0.5f).aspectRatio(8f / 9f).clip(RoundedCornerShape(3.dp)).background(Color(0xFF30D158)))
+                        }
+                        Spacer(Modifier.height(6.dp))
+                        bar(0.4f, 4.dp, p.text)
+                        Spacer(Modifier.height(5.dp))
+                        bar(1f, 14.dp, p.surface)
+                    }
+                }
+
+            }
         }
     }
 }
@@ -1278,7 +1554,7 @@ private fun HotspotFields(link: MainViewModel.LaptopLink, vm: MainViewModel, ope
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(
                 "As in the hotspot settings",
-                style = BodyStyle.copy(fontSize = 13.sp), color = Bridge.Muted, modifier = Modifier.weight(1f),
+                style = CaptionStyle, color = Bridge.Muted, modifier = Modifier.weight(1f),
             )
             Spacer(Modifier.width(10.dp))
             SoftButton("Hotspot settings", onClick = openHotspot)
@@ -1297,11 +1573,12 @@ private fun Check(ok: Boolean) {
 @Composable
 private fun OemScreen(
     steps: List<OemBatterySetup.Step>,
+    modifier: Modifier,
     onOpen: (Intent) -> Unit,
     onDone: () -> Unit,
 ) {
-    LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = 24.dp)) {
-        item { SectionBar("Keep BlazeIt running") }
+    LazyColumn(modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = 24.dp)) {
+        item { SectionBar("Keep Localhost 8787 running") }
         items(steps) { step ->
             BridgeRow(step.title) {
                 RowNote(step.detail)
