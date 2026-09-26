@@ -184,6 +184,13 @@ The pulse button shows a small floating pill: speed each way, ping and signal, o
 Tap it for the full picture: history, how full the connection is and with what, both ends of the
 Wi-Fi link. On the laptop, *Monitor* docks it beside the page.
 
+| On the phone | Docked beside the page |
+| --- | --- |
+| <img src="docs/images/phone-monitor.png" width="190"> | <img src="docs/images/web-monitor.png" width="560"> |
+
+A minute over the phone's hotspot: the laptop downloading, then uploading, then downloading
+again, filling the link at about 71 MB/s.
+
 ### 16. Measure the connection
 
 *Settings → Measure* on the page tests the connection alone for five seconds each way. Compare
