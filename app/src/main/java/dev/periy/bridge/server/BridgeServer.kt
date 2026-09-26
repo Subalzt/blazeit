@@ -522,7 +522,7 @@ class BridgeServer(
     private fun io.ktor.server.routing.Route.notificationRoutes() {
         get("/api/notifications") {
             call.response.header(HttpHeaders.CacheControl, "no-store")
-            call.respond(NotifList(Notifs.connected, Notifs.list()))
+            call.respond(NotifList(Notifs.allowed(ctx), Notifs.list()))
         }
         get("/api/notifications/icon") {
             val bytes = Notifs.icon(ctx, call.request.queryParameters["pkg"].orEmpty())
@@ -927,6 +927,8 @@ class BridgeServer(
             send(data = clipboard.historyJson(), event = "cliphistory")
             send(data = config.theme(), event = "theme")
             send(data = config.look().json(), event = "look")
+            // The phone's notifications too: any that came or went while this tab was away.
+            send(data = Notifs.snapshotJson(ctx), event = "notifs")
 
             val pump = CoroutineScope(coroutineContext).launch {
                 EventBus.events.collect { send(data = it.data, event = it.name) }

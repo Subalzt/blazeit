@@ -3332,9 +3332,20 @@ function connectEvents() {
   events.addEventListener("files", function (e) {
     try { state.files = JSON.parse(e.data); renderFiles(); } catch (err) {}
   });
+  // The whole list: on connecting (so nothing that came or went while away is missed) and
+  // whenever the phone's listener comes back. Taken as it is, with no pop-ups.
+  events.addEventListener("notifs", function (e) {
+    var d; try { d = JSON.parse(e.data); } catch (err) { return; }
+    notifAllowed = d.allowed;
+    notifs = {};
+    (d.items || []).forEach(function (n) { notifs[n.key] = n; });
+    renderNotifs();
+  });
   events.addEventListener("notif", function (e) {
     var n; try { n = JSON.parse(e.data); } catch (err) { return; }
     var fresh = !notifs[n.key] || notifs[n.key].at !== n.at || notifs[n.key].text !== n.text;
+    // One arriving is proof the phone lets this page see them.
+    notifAllowed = true;
     notifs[n.key] = n; renderNotifs();
     // An ongoing one (music, a download) changes all the time: listed, never popped up.
     if (fresh && !n.ongoing) popNotif(n);

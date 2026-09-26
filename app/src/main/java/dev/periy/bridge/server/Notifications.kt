@@ -56,11 +56,33 @@ object Notifs {
 
     val connected: Boolean get() = service != null
 
+    /**
+     * Notification access is on for Localhost 8787. Not the same as [connected]: Android binds
+     * the listener some seconds after the app starts (and may rebind it later), and until then
+     * the page should show an empty list, not ask for access that is already given.
+     */
+    fun allowed(ctx: Context): Boolean = connected ||
+        androidx.core.app.NotificationManagerCompat.getEnabledListenerPackages(ctx).contains(ctx.packageName)
+
     fun list(): List<NotifDto> = shown.values.sortedByDescending { it.at }
 
     fun listJson(): String = json.encodeToString(ListSerializer(NotifDto.serializer()), list())
 
-    fun posted(ctx: Context, sbn: StatusBarNotification) {
+    /** Everything at once, for a page that has just connected or when the listener comes back. */
+    fun snapshotJson(ctx: Context): String = json.encodeToString(NotifList.serializer(), NotifList(allowed(ctx), list()))
+
+    /**
+     * The listener is (back) on: what the phone shows now is the whole truth. Taken in quietly
+     * and sent as one list, so the page neither pops up old ones again nor keeps ones since gone.
+     */
+    fun resync(ctx: Context, active: Array<StatusBarNotification>?) {
+        live.clear()
+        shown.clear()
+        active?.forEach { posted(ctx, it, announce = false) }
+        EventBus.emit("notifs", snapshotJson(ctx))
+    }
+
+    fun posted(ctx: Context, sbn: StatusBarNotification, announce: Boolean = true) {
         val n = sbn.notification ?: return
         // Everything the phone shows, the ongoing kind too (music, downloads, services), which the
         // page lists apart. Left out: Localhost 8787's own, and a group's summary, which only
@@ -89,7 +111,7 @@ object Notifs {
         live[sbn.key] = sbn
         if (shown[sbn.key] == dto) return
         shown[sbn.key] = dto
-        EventBus.emit("notif", json.encodeToString(NotifDto.serializer(), dto))
+        if (announce) EventBus.emit("notif", json.encodeToString(NotifDto.serializer(), dto))
     }
 
     fun removed(key: String) {
@@ -163,7 +185,7 @@ object Notifs {
 class NotifyListener : NotificationListenerService() {
     override fun onListenerConnected() {
         Notifs.service = this
-        runCatching { activeNotifications?.forEach { Notifs.posted(this, it) } }
+        runCatching { Notifs.resync(this, activeNotifications) }
     }
 
     override fun onListenerDisconnected() {
