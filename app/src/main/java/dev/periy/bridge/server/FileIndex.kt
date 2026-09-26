@@ -44,6 +44,13 @@ class FileIndex(ctx: Context) {
         gone
     }
 
+    /** Empties the list. The files themselves are left alone. */
+    fun clear() = synchronized(lock) {
+        _flow.value = emptyList()
+        persist()
+        EventBus.emit("files", "[]")
+    }
+
     /** Drops entries whose backing document has vanished (user deleted it in Files). */
     fun prune(exists: (FileEntry) -> Boolean) = synchronized(lock) {
         val kept = _flow.value.filter(exists)

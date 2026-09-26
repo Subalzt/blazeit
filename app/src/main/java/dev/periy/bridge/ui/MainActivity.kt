@@ -497,7 +497,7 @@ private fun LazyListScope.homeTab(
     state: UiState,
     running: Boolean,
     direct: DirectLink.State,
-    laptopLink: MainViewModel.LaptopLink,
+    linkMode: String,
     shared: String,
     clipStatus: String,
     requests: List<PairRequest>,
@@ -507,70 +507,61 @@ private fun LazyListScope.homeTab(
     transfers: List<Transfer>,
     files: List<FileEntry>,
     sendStatus: String,
+    heroTop: Dp,
     toggleDirect: () -> Unit,
     pickFiles: () -> Unit,
     openTether: () -> Unit,
+    goTab: (Int) -> Unit,
     onToggle: () -> Unit,
 ) {
+    // The Theatre hero comes first whatever happens: it is the top of the screen.
+    item(key = "hero") { Hero(state, running, heroTop, onToggle, openTether, linkMode, direct, toggleDirect) }
+
     // Someone is asking to connect. It goes first: it is the one thing waiting on you.
     items(requests, key = { it.id }) { req -> RequestCard(req, vm) }
 
-    item { ServerCard(state, running, onToggle, openTether) }
+    // The clipboard is what Home is opened for most, so it sits right under the hero.
+    item(key = "clip") { Column { ClipboardPanel(shared, clipStatus, vm) } }
 
-    item {
-        Row(
-            Modifier.fillMaxWidth().height(IntrinsicSize.Min).padding(horizontal = 16.dp).padding(top = 12.dp),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            val tile = Modifier.weight(1f).fillMaxHeight().heightIn(min = 124.dp)
-            if (laptopLink.mode == "hotspot" && direct !is DirectLink.State.On) {
-                Tile(
-                    BlazeIcons.Hotspot, Bridge.Purple, "Hotspot",
-                    when {
-                        state.hotspotActive -> "On"
-                        laptopLink.ssid.isBlank() -> "Set up in Settings"
-                        else -> "Off"
-                    },
-                    tile,
-                    active = state.hotspotActive,
-                    onClick = toggleDirect,
-                )
-            } else Tile(
-                BlazeIcons.Bolt, Bridge.Blue, "Direct link",
-                when (direct) {
-                    DirectLink.State.Off -> "Fastest, offline"
-                    DirectLink.State.Starting -> "Starting…"
-                    is DirectLink.State.On -> direct.info.ssid
-                    is DirectLink.State.Failed -> direct.reason
-                },
-                tile,
-                active = direct is DirectLink.State.On || direct == DirectLink.State.Starting,
-                onClick = toggleDirect,
+    item(key = "quick") {
+        QuickActions(
+            listOf(
+                Quick(BlazeIcons.Upload, Color(0xFF30D158), "Send files", sendStatus.ifEmpty { "To the laptop" }, false, pickFiles),
+                Quick(BlazeIcons.Phones, Color(0xFFFF9F0A), "Phones", "Send to a phone nearby", false) { goTab(TAB_PHONES) },
+                Quick(BlazeIcons.Trackpad, Color(0xFF5E5CE6), "Control", "Trackpad and keys", false) { goTab(TAB_CONTROL) },
             )
-            Tile(BlazeIcons.Upload, Bridge.Good, "Send files", sendStatus.ifEmpty { null }, tile, onClick = pickFiles)
-        }
+        )
     }
 
     // The hotspot's details live in the phone's own settings, a tap on its tile away.
-    if (direct is DirectLink.State.On) item { DirectCard(direct.info, toggleDirect) }
-
-    item { Column { ClipboardPanel(shared, clipStatus, vm) } }
+    if (direct is DirectLink.State.On) item(key = "direct") { DirectCard(direct.info, toggleDirect) }
 
     transfersSection(transfers)
 
-    item { SectionBar("On the phone") }
+    // Clearing takes files off this list (and the laptop's), never off the phone.
+    item {
+        SectionBar("On the phone") {
+            if (files.isNotEmpty()) Text(
+                "Clear", style = LabelStyle.copy(fontWeight = FontWeight.SemiBold), color = Bridge.Danger,
+                modifier = Modifier.clip(ButtonShape).clickable { vm.clearFiles() }.padding(horizontal = 8.dp, vertical = 4.dp),
+            )
+        }
+    }
     item {
         GroupCard {
             if (files.isEmpty()) SettingRow("Nothing yet", first = true, titleColor = Bridge.Muted)
             files.forEachIndexed { i, f ->
-                SettingRow(
+                val fromPhone = f.origin == "PHONE"
+                MediaRow(
                     f.name,
-                    formatBytes(f.size) + " · " + (if (f.origin == "PHONE") "from this phone" else "received") +
+                    formatBytes(f.size) + " · " + (if (fromPhone) "from this phone" else "received") +
                         (if (!f.owned) " · original" else ""),
+                    icon = if (fromPhone) BlazeIcons.Upload else BlazeIcons.Download,
+                    color = if (fromPhone) Color(0xFF30D158) else Color(0xFFFF9F0A),
                     first = i == 0,
-                    icon = if (f.origin == "PHONE") BlazeIcons.Upload else BlazeIcons.Download,
-                    iconColor = if (f.origin == "PHONE") Bridge.Good else Bridge.Orange,
-                )
+                ) {
+                    IconChip(BlazeIcons.Close, "Take ${f.name} off the list", tint = Bridge.Muted, size = 32.dp) { vm.forgetFile(f.id) }
+                }
             }
         }
     }
@@ -654,79 +645,329 @@ private fun RequestCard(req: PairRequest, vm: MainViewModel) {
     }
 }
 
+/** What the hero says in words: the state, and the address of the connection picked. */
+private class HeroText(state: UiState, running: Boolean, val url: String?) {
+    val address = url?.removePrefix("http://")?.removeSuffix("/")
+    val headline = when {
+        !running -> "Localhost 8787 is off"
+        state.storageMode == Storage.Mode.NO_DESTINATION -> "Choose a folder"
+        url == null -> "No network"
+        else -> "Open on your computer"
+    }
+    val note: String? = when {
+        !running -> "Switch it on to reach this phone from a computer or another phone."
+        state.storageMode == Storage.Mode.NO_DESTINATION -> "Set it in Settings, Receiving."
+        url == null -> "Plug in a USB cable, join Wi-Fi, or start the hotspot."
+        state.onlyCellular -> "Mobile data can't be reached. Use USB or the hotspot."
+        else -> null
+    }
+    val showAddress = running && address != null
+}
+
+/** One way a computer reaches this phone, as the hero's picker shows it. */
+private class LinkOption(
+    val kind: LinkKind,
+    val name: String,
+    val icon: ImageVector,
+    /** Measured between this phone and the laptop; the router's depends on the router. */
+    val speed: String,
+    /** Null while this connection is not up. */
+    val url: String?,
+    /** What a tap does while it is not up: the setting that brings it up. */
+    val setUp: () -> Unit,
+)
+
 /**
- * BlazeIt's state at a glance, the way a home-screen widget shows it: bright when on, with
- * the address to open in large type, and the switch right there.
+ * The connections a computer can use, fastest first: the USB cable, the Wi-Fi both are on,
+ * and the laptop link chosen in Settings (the phone's hotspot, or the direct link).
+ */
+private fun linkOptions(
+    state: UiState, running: Boolean, linkMode: String, direct: DirectLink.State,
+    openTether: () -> Unit, openWifi: () -> Unit, toggleDirect: () -> Unit,
+): List<LinkOption> {
+    fun urlOf(k: LinkKind) = if (!running) null
+    else state.addresses.firstOrNull { !it.isIpv6 && it.kind == k && it.reach == Reach.LAN_ONLY }?.url(state.port)
+    val laptop = if (linkMode == "direct") LinkOption(
+        LinkKind.DIRECT, "Direct", BlazeIcons.Bolt,
+        if (direct == DirectLink.State.Starting) "Starting" else "100 MB/s",
+        urlOf(LinkKind.DIRECT), toggleDirect,
+    ) else LinkOption(LinkKind.HOTSPOT, "Hotspot", BlazeIcons.Hotspot, "65 MB/s", urlOf(LinkKind.HOTSPOT), openTether)
+    return listOf(
+        LinkOption(LinkKind.USB, "USB", BlazeIcons.Usb, "250 MB/s", urlOf(LinkKind.USB), openTether),
+        laptop,
+        LinkOption(LinkKind.WIFI, "Wi-Fi", BlazeIcons.Wifi, "Router", urlOf(LinkKind.WIFI), openWifi),
+    )
+}
+
+/**
+ * The app's switch, big and plain, the knob carrying the power sign; green when on. It is
+ * the first thing on Home, in both styles.
  */
 @Composable
-private fun ServerCard(state: UiState, running: Boolean, onToggle: () -> Unit, openTether: () -> Unit) {
+private fun PowerSwitch(on: Boolean, onToggle: () -> Unit) {
+    val activeColor = Color(0xFF34C759)
+    val switchShape = ButtonShape
+    val knobShape = CircleShape
+    val x by androidx.compose.animation.core.animateDpAsState(
+        if (on) 30.dp else 0.dp, androidx.compose.animation.core.spring(dampingRatio = 0.62f, stiffness = 600f), label = "power",
+    )
+    val track by androidx.compose.animation.animateColorAsState(if (on) activeColor
+        else Color.Black.copy(alpha = 0.3f), tween(180), label = "track")
+    Box(
+        Modifier.width(72.dp).height(42.dp)
+            .shadow(8.dp, switchShape, ambientColor = Color.Black, spotColor = Color.Black)
+            .pressable(switchShape, scaleTo = 0.94f, onClick = onToggle)
+            .background(track)
+            .padding(3.dp)
+    ) {
+        Box(
+            Modifier.offset(x = x).size(36.dp).shadow(4.dp, knobShape)
+                .clip(knobShape).background(Color.White),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(
+                BlazeIcons.Power, if (on) "Turn Localhost 8787 off" else "Turn Localhost 8787 on",
+                tint = if (on) activeColor else Color(0xFF8E8E93), modifier = Modifier.size(19.dp),
+            )
+        }
+    }
+}
+
+/**
+ * The connections as one segmented control: each with its speed, the picked one lit white and
+ * its address in large type above. One that is not up is dimmed, and a tap on it opens what
+ * brings it up (USB tethering, Wi-Fi, the hotspot, or the direct link).
+ */
+@Composable
+private fun LinkPicker(options: List<LinkOption>, chosen: LinkOption?, note: String?, onPick: (LinkOption) -> Unit) {
+    Column(Modifier.padding(top = 14.dp)) {
+        Row(
+            Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp))
+                .background(if (Bridge.Style == Style.STUDIO) Color.Black.copy(alpha = 0.26f) else Color.White.copy(alpha = 0.12f))
+                .padding(4.dp),
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
+        ) {
+            options.forEach { o ->
+                val on = o === chosen
+                val up = o.url != null
+                val bg by androidx.compose.animation.animateColorAsState(if (on) Color.White
+                    else Color.Transparent, tween(160), label = "seg")
+                val fg = if (on) Color(0xFF111114)
+                    else Color.White.copy(alpha = if (up) 1f else 0.5f)
+                Column(
+                    Modifier.weight(1f)
+                        .pressable(RoundedCornerShape(12.dp), scaleTo = 0.96f) { if (up) onPick(o) else o.setUp() }
+                        .background(bg)
+                        .padding(vertical = 8.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(o.icon, null, tint = fg, modifier = Modifier.size(15.dp))
+                        Spacer(Modifier.width(5.dp))
+                        Text(o.name, style = TextStyle(fontSize = 14.sp, fontWeight = FontWeight.SemiBold), color = fg, maxLines = 1)
+                    }
+                    Text(
+                        if (up) o.speed else "Off",
+                        style = TextStyle(fontSize = 11.5.sp, fontWeight = FontWeight.Medium, fontFeatureSettings = "tnum"),
+                        color = if (on) fg.copy(alpha = 0.66f) else Color.White.copy(alpha = if (up) 0.7f else 0.4f),
+                        maxLines = 1,
+                    )
+                }
+            }
+        }
+        if (note != null) Text(
+            note, style = BodyStyle.copy(fontSize = 13.sp, shadow = OnArt), color = Color.White.copy(alpha = 0.85f),
+            modifier = Modifier.padding(top = 8.dp, start = 4.dp),
+        )
+    }
+}
+
+/**
+ * The app's state at the top of Home, drawn the style's way and kept short, so the clipboard
+ * shows under it. Both lead with the switch, big, at the top right; the address in large
+ * type; and under it the connection picker, fastest first.
+ *  - Studio: a card of artwork glowing in the accent.
+ *  - Theatre: a hero under the status bar, with a white capsule button.
+ */
+@Composable
+private fun Hero(
+    state: UiState, running: Boolean, top: Dp, onToggle: () -> Unit, openTether: () -> Unit,
+    linkMode: String, direct: DirectLink.State, toggleDirect: () -> Unit,
+) {
     val ctx = LocalContext.current
     var showQr by remember { mutableStateOf(false) }
-    val url = state.primaryUrl
+    var picked by rememberSaveable { mutableStateOf<String?>(null) }
+    val openWifi = {
+        runCatching { ctx.startActivity(Intent(android.provider.Settings.ACTION_WIFI_SETTINGS)) }
+        Unit
+    }
+    val options = linkOptions(state, running, linkMode, direct, openTether, openWifi, toggleDirect)
+    // The one picked while it is up, else the fastest that is.
+    val chosen = options.firstOrNull { it.kind.name == picked && it.url != null } ?: options.firstOrNull { it.url != null }
+    val h = HeroText(state, running, chosen?.url ?: state.primaryUrl)
     val copy = {
-        if (url != null) {
-            SystemClipboard.write(ctx, url)
+        if (h.url != null) {
+            SystemClipboard.write(ctx, h.url)
             Toast.makeText(ctx, "Address copied", Toast.LENGTH_SHORT).show()
         }
     }
-    val on = running
-    val fg = if (on) Bridge.OnYellow else Bridge.Text
-    val soft = if (on) Bridge.OnYellow.copy(alpha = 0.66f) else Bridge.Muted
+    val kicker = if (!running) "OFF" else "LIVE" + (chosen?.let { " · " + HeroNames[it.kind].orEmpty() } ?: "")
+    // Why the laptop link is not up, when that is known.
+    val linkNote = when {
+        !running -> null
+        linkMode == "direct" && direct is DirectLink.State.Failed -> direct.reason
+        linkMode == "direct" && state.hotspotActive && direct !is DirectLink.State.On ->
+            "The phone's hotspot is on; the direct link needs it off."
+        else -> null
+    }
+    val pick = { o: LinkOption -> picked = o.kind.name }
+    when (Bridge.Style) {
+        Style.STUDIO -> Column(Modifier.fillMaxWidth().animateContentSize(tween(220))) {
+            // Automatic (black and white): the card takes Theatre's night blue rather than a flat black or white.
+            val night = Bridge.Accent == Color.White || Bridge.Accent == Color(0xFF1D1D1F)
+            val tint = if (!running) Color(0xFF8E8E93) else if (night) Color(0xFF15428C) else Bridge.Accent
+            val shape = RoundedCornerShape(18.dp)
+            Artwork(
+                BlazeIcons.Bolt, tint,
+                Modifier.fillMaxWidth().padding(horizontal = 16.dp).padding(top = 8.dp)
+                    .depth(tint, shape, if (Bridge.Dark) 26.dp else 18.dp),
+                radius = 18.dp, glyph = 0.dp,
+            ) {
+                Icon(
+                    BlazeIcons.Bolt, null, tint = Color.White.copy(alpha = 0.13f),
+                    modifier = Modifier.align(Alignment.CenterEnd).offset(x = 34.dp, y = 18.dp).size(170.dp),
+                )
+                Column(Modifier.fillMaxWidth().padding(start = 18.dp, end = 14.dp, top = 14.dp, bottom = 14.dp)) {
+                    HeroBody(h, kicker, running, onToggle, copy, showQr, { showQr = !showQr }, DisplayStyle.copy(fontSize = 27.sp, shadow = OnArt)) {
+                        LinkPicker(options, chosen, linkNote, pick)
+                    }
+                }
+            }
+            HeroExtras(state, running, h, showQr, openTether, Modifier.padding(horizontal = 20.dp))
+        }
 
-    Column(
-        Modifier
-            .fillMaxWidth()
-            .padding(top = 12.dp)
-            .padding(horizontal = 16.dp)
-            .card(TileShape, if (on) Bridge.Yellow else Bridge.Surface)
-            .animateContentSize(tween(180))
-            .padding(20.dp)
-    ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Text(
-                when {
-                    !on -> "BlazeIt is off"
-                    state.storageMode == Storage.Mode.NO_DESTINATION -> "Choose a folder"
-                    url == null -> "No network"
-                    else -> "Open on your computer"
-                },
-                style = TitleStyle.copy(fontSize = 19.sp, fontWeight = FontWeight.Bold), color = fg,
-                modifier = Modifier.weight(1f),
+        Style.THEATRE -> Column(Modifier.fillMaxWidth().animateContentSize(tween(220))) {
+            // Blue of its own; with a colour chosen in Settings, that colour instead.
+            val a = Bridge.Accent
+            val chosenColour = a != TheatreDark.accent && a != TheatreLight.accent
+            val art = if (running && chosenColour) listOf(lerp(a, Color.White, 0.08f), lerp(a, Color.Black, 0.6f), Color(0xFF05070D))
+            else if (running) listOf(Color(0xFF1E6BD6), Color(0xFF0B2F66), Color(0xFF05070D))
+            else listOf(Color(0xFF3A3A40), Color(0xFF1B1B1F), Color(0xFF060607))
+            Box(
+                Modifier.fillMaxWidth()
+                    .background(Brush.linearGradient(art, start = androidx.compose.ui.geometry.Offset(0f, 0f), end = androidx.compose.ui.geometry.Offset(900f, 1200f)))
+            ) {
+                Icon(
+                    BlazeIcons.Bolt, null, tint = Color.White.copy(alpha = 0.10f),
+                    modifier = Modifier.align(Alignment.CenterEnd).offset(x = 44.dp, y = 26.dp).size(240.dp),
+                )
+                Box(Modifier.matchParentSize().background(Brush.verticalGradient(0.35f to Color.Transparent, 1f to Color.Black.copy(alpha = 0.8f))))
+                Column(Modifier.fillMaxWidth().padding(start = 20.dp, end = 16.dp, top = top + 10.dp, bottom = 18.dp)) {
+                    HeroBody(
+                        h, kicker, running, onToggle, copy, showQr, { showQr = !showQr },
+                        TextStyle(fontSize = 29.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = (-0.8).sp, fontFeatureSettings = "tnum", shadow = OnArt),
+                    ) { LinkPicker(options, chosen, linkNote, pick) }
+                }
+            }
+            HeroExtras(state, running, h, showQr, openTether, Modifier.padding(horizontal = 20.dp))
+        }
+
+    }
+}
+
+/**
+ * What both heroes hold: the whole address large across the top, a tap copies it; under it
+ * copy, the QR code and the switch; then the connection picker.
+ */
+@Composable
+private fun HeroBody(
+    h: HeroText, kicker: String, running: Boolean, onToggle: () -> Unit, copy: () -> Unit,
+    showQr: Boolean, toggleQr: () -> Unit, big: TextStyle, picker: @Composable () -> Unit,
+) {
+    if (h.showAddress) {
+        val host = h.address!!.substringBeforeLast(':')
+        val port = h.address.substringAfterLast(':', "")
+        FitText(
+            androidx.compose.ui.text.buildAnnotatedString {
+                append(host)
+                pushStyle(androidx.compose.ui.text.SpanStyle(color = Color.White.copy(alpha = 0.72f))); append(":$port"); pop()
+            },
+            big.copy(color = Color.White), max = 40.sp, min = 20.sp,
+            Modifier.fillMaxWidth().clickable(onClickLabel = "Copy the address", onClick = copy),
+        )
+    } else {
+        Text(h.headline, style = big, color = Color.White, maxLines = 2, overflow = TextOverflow.Ellipsis)
+        h.note?.let { Text(it, style = BodyStyle.copy(fontSize = 14.sp, shadow = OnArt), color = Color.White.copy(alpha = 0.8f), maxLines = 3) }
+    }
+    Row(Modifier.fillMaxWidth().padding(top = 12.dp), verticalAlignment = Alignment.CenterVertically) {
+        if (h.showAddress) {
+            val chip = Color.White.copy(alpha = 0.16f)
+            IconChip(BlazeIcons.Copy, "Copy the address", tint = Color.White, bg = chip, size = 42.dp, onClick = copy)
+            Spacer(Modifier.width(10.dp))
+            IconChip(
+                BlazeIcons.Qr, if (showQr) "Hide code" else "QR code", tint = Color.White,
+                bg = if (showQr) Color.White.copy(alpha = 0.35f) else chip, size = 42.dp, onClick = toggleQr,
             )
-            Toggle(on, color = Color(0xFF15120A)) { onToggle() }
         }
+        Spacer(Modifier.weight(1f))
+        PowerSwitch(running, onToggle)
+    }
+    if (running) picker()
+}
 
-        if (!on) return@Column
-        when {
-            state.storageMode == Storage.Mode.NO_DESTINATION -> RowNote("Set it in Settings, Receiving.", soft)
-            url == null -> RowNote("Join Wi-Fi or start the direct link.", soft)
-            state.onlyCellular -> RowNote("Mobile data can't be reached. Use the direct link or USB.", soft)
+/**
+ * One line of large type at the biggest size that fits the width, down to [min], with the
+ * music page's hard shadow: offset, unblurred, like a lit sleeve's lettering.
+ */
+@Composable
+private fun FitText(text: androidx.compose.ui.text.AnnotatedString, style: TextStyle, max: androidx.compose.ui.unit.TextUnit, min: androidx.compose.ui.unit.TextUnit, modifier: Modifier = Modifier) {
+    val measurer = androidx.compose.ui.text.rememberTextMeasurer()
+    val density = androidx.compose.ui.platform.LocalDensity.current
+    androidx.compose.foundation.layout.BoxWithConstraints(modifier) {
+        val width = constraints.maxWidth
+        val size = remember(text, width, style) {
+            var s = max.value
+            while (s > min.value &&
+                measurer.measure(text, style.copy(fontSize = s.sp, shadow = null), maxLines = 1, softWrap = false).size.width > width
+            ) s -= 1f
+            s
         }
+        val px = with(density) { size.sp.toPx() }
+        Text(
+            text,
+            style = style.copy(
+                fontSize = size.sp,
+                shadow = androidx.compose.ui.graphics.Shadow(
+                    Color.Black.copy(alpha = 0.42f), androidx.compose.ui.geometry.Offset(px * 0.055f, px * 0.075f), 0f),
+            ),
+            maxLines = 1, softWrap = false,
+        )
+    }
+}
+
+/** The kicker's name for each connection. */
+private val HeroNames = mapOf(
+    LinkKind.USB to "USB CABLE", LinkKind.WIFI to "WI-FI", LinkKind.HOTSPOT to "HOTSPOT", LinkKind.DIRECT to "DIRECT LINK",
+)
+
+/** Under the hero: what needs doing, the faster cable, and the QR code with the other addresses. */
+@Composable
+private fun HeroExtras(state: UiState, running: Boolean, h: HeroText, showQr: Boolean, openTether: () -> Unit, modifier: Modifier) {
+    if (!running) return
+    Column(modifier.fillMaxWidth()) {
+        if (h.showAddress && state.onlyCellular) RowNote(h.note ?: "")
         // The cable is in, but it carries nothing until USB tethering is on; Android lets only
         // the phone's own settings switch that.
         if (state.cableNoTether) {
-            RowNote("Cable connected. Turn on USB tethering for full speed.", fg)
-            Spacer(Modifier.height(10.dp))
-            OnYellowPill("USB tethering", BlazeIcons.Bolt, openTether)
-        }
-        if (url == null) return@Column
-
-        Spacer(Modifier.height(14.dp))
-        Text(
-            url.removePrefix("http://").removeSuffix("/"),
-            style = DisplayStyle, color = fg,
-            maxLines = 1, overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.clickable(onClick = copy),
-        )
-        Spacer(Modifier.height(14.dp))
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            OnYellowPill("Copy", BlazeIcons.Copy, copy)
-            OnYellowPill(if (showQr) "Hide code" else "QR code", BlazeIcons.Qr) { showQr = !showQr }
+            RowNote("Cable connected. Turn on USB tethering for full speed.", Bridge.Text)
+            Spacer(Modifier.height(8.dp))
+            SoftButton("USB tethering", icon = BlazeIcons.Bolt, onClick = openTether)
         }
         state.fasterLink?.let { usb ->
-            RowNote("Faster over USB: " + usb.url(state.port).removePrefix("http://").removeSuffix("/"), fg)
+            RowNote("Faster over USB: " + usb.url(state.port).removePrefix("http://").removeSuffix("/"), Bridge.Text)
         }
-        if (showQr) {
+        val url = h.url
+        if (showQr && url != null) {
             val qr = remember(url) { QrCode.render(url, 520) }
             if (qr != null) {
                 Spacer(Modifier.height(16.dp))
