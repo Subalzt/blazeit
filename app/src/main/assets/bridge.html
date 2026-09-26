@@ -1209,11 +1209,19 @@
   </div>
   <div class="pl-right">
     <span class="pl-time" id="pl-time" hidden></span>
+    <button class="pl-btn small" id="pl-sync" title="Play on other devices, in step"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="2"/><path d="M8.3 15.7a5.3 5.3 0 0 1 0-7.4M15.7 8.3a5.3 5.3 0 0 1 0 7.4M5.5 18.5a9.2 9.2 0 0 1 0-13M18.5 5.5a9.2 9.2 0 0 1 0 13"/></svg><b id="pl-sync-n"></b></button>
     <button class="pl-btn small" id="pl-mute" title="Mute"><svg viewBox="0 0 24 24" aria-hidden="true"><path class="fill" d="M4 9.5h3l4.5-3.8v12.6L7 14.5H4z"/><path class="w1" d="M15 9.5a3.5 3.5 0 0 1 0 5"/><path class="w2" d="M17.8 7a7 7 0 0 1 0 10"/></svg></button>
     <input id="pl-vol" type="range" min="0" max="100" value="100" aria-label="Volume">
   </div>
 </div>
 <audio id="audio" preload="auto"></audio>
+<!-- Playing together: which devices play in step with this one. -->
+<div class="sync-pop" id="sync-pop" hidden>
+  <div class="sync-head"><b>Play in sync</b></div>
+  <p class="sync-note" id="sync-note"></p>
+  <div id="sync-list"></div>
+</div>
+<div class="sync-join" id="sync-join" hidden><span>Music is playing in sync from <b id="sync-join-from">another device</b>.</span><button class="btn sm" id="sync-join-btn" type="button">Join</button></div>
 <div class="toasts" id="toasts" aria-live="polite"></div>
 <div class="viewer" id="viewer" hidden role="dialog" aria-modal="true" aria-label="Preview">
   <div class="viewer-bar">
@@ -3067,6 +3075,8 @@ function connectEvents() {
   });
   events.addEventListener("theme", function (e) { applyTheme(e.data); });
   events.addEventListener("look", function (e) { try { applyLook(JSON.parse(e.data)); } catch (err) {} });
+  events.addEventListener("cover", function (e) { coverArrived(e.data); });
+  syncEvents(events);
   // The phone's links changed: the helper may be moving this page onto another one.
   events.addEventListener("direct", function () { setTimeout(refreshRoute, 1500); setTimeout(refreshRoute, 5000); });
   events.addEventListener("files", function (e) {
@@ -3845,6 +3855,8 @@ function startQueue(list, index) {
 function playCurrent() {
   var t = currentTrack();
   if (!t) return;
+  vizEnsure();
+  if (syncMember()) { syncPlayTrack(t); return; }
   var audio = $("audio");
   // From memory if it was prefetched; otherwise stream it with ranges.
   audio.src = player.blobs[t.id] || streamUrl(t.id);
@@ -4139,17 +4151,20 @@ function showPlayer(t) {
 }
 
 function playNext(auto) {
+  if (syncFollower()) { if (!auto) syncCmd("next"); return; }
   var audio = $("audio");
-  if (auto && player.repeat === "one") { audio.currentTime = 0; audio.play(); return; }
+  if (auto && player.repeat === "one") { if (syncMember()) playCurrent(); else { audio.currentTime = 0; audio.play(); } return; }
   if (player.pos + 1 < player.order.length) { player.pos++; playCurrent(); return; }
   if (player.repeat === "all" && player.order.length) { player.pos = 0; playCurrent(); return; }
   if (auto) { setPlayIcon(false); }
 }
 
 function playPrev() {
+  if (syncFollower()) { syncCmd("prev"); return; }
   var audio = $("audio");
   // Like every player: early in a song, go back a track; later, restart this one.
-  if (audio.currentTime > 3 || player.pos <= 0) { audio.currentTime = 0; return; }
+  var at = syncMember() ? syncPos() : audio.currentTime;
+  if (at > 3 || player.pos <= 0) { if (syncMember()) syncSeek(0); else audio.currentTime = 0; return; }
   player.pos--;
   playCurrent();
 }
@@ -4185,8 +4200,10 @@ function parkSoon() {
   }, PARK_AFTER_MS);
 }
 function resume() {
+  if (syncMember()) { syncSetPlaying(true); return; }
   var audio = $("audio"), t = currentTrack();
   if (!t) return;
+  vizEnsure();
   clearTimeout(player.parkTimer);
   if (player.parked) {
     player.parked = false;
@@ -4203,6 +4220,7 @@ function resume() {
 
 function togglePlay() {
   var audio = $("audio");
+  if (syncMember()) { syncTogglePlay(); return; }
   if (!currentTrack()) return;
   if (audio.paused) resume(); else audio.pause();
 }
@@ -4241,6 +4259,13 @@ function setupPlayer() {
   seek.addEventListener("change", function () {
     var t = currentTrack();
     var dur = audio.duration && isFinite(audio.duration) ? audio.duration : (t ? t.durationMs / 1000 : 0);
+    if (syncMember()) {
+      var b = sync.eng.bufs[sync.state.trackId];
+      var d = b && b.buf ? b.buf.duration : dur;
+      if (d > 0) syncSeek(seek.value / 1000 * d);
+      seeking = false;
+      return;
+    }
     if (dur > 0) audio.currentTime = seek.value / 1000 * dur;
     seeking = false;
   });
@@ -4324,9 +4349,437 @@ function setupPlayer() {
     searchTimer = setTimeout(function () { music.filter = v; music.shown = MUSIC_PAGE; renderMusic(); }, 120);
   });
   Array.prototype.forEach.call($("music-view").children, function (b) {
-    b.onclick = function () { music.view = b.dataset.v; music.album = null; setViewButtons(); renderMusic(); };
+    b.onclick = function () { music.view = b.dataset.v; music.album = null; music.shown = MUSIC_PAGE; renderMusic(); keepPlace(); };
   });
   $("music-rescan").onclick = function () { musicLoad(true); };
+}
+
+// ------------------------------------------------------------------ playing together
+//
+// The same music on this computer, other computers with the page open, and the phone's
+// speaker, in step (see SyncPlay on the phone).
+//
+// Each member loads the whole song into memory and plays it through Web Audio, scheduled
+// for the exact instant: not the <audio> element, which cannot be told when to start. The
+// phone keeps the clock; this page measures how far its clock is from it, and the
+// group shares one state: at phone time anchorMs the song trackId is at anchorPos, playing
+// or not. Changes are set a moment ahead (anchorMs in the future), so every member,
+// this one included, makes them at the same instant. The output's own timestamp says which
+// sample is heard when, so the song starts exactly where the group is. The channel
+// carries only the changes: play, pause, where, which song, and the next one to load.
+//
+// Play, pause and seek from any member change the group. A song picked here makes this
+// page the leader: its queue goes on to the next song, and next and previous from other
+// members come to it.
+
+var sync = {
+  id: (function () {
+    try {
+      var v = sessionStorage.getItem("blazeit.syncid");
+      if (!v) { v = uid(); sessionStorage.setItem("blazeit.syncid", v); }
+      return v;
+    } catch (e) { return uid(); }
+  })(),
+  offset: 0, clockAt: 0,
+  state: null, pages: [], phone: "Phone",
+  helloTimer: 0, uiTimer: 0, checkTimer: 0,
+  was: false, wasLeader: false, wasPlaying: false, lastTrack: -1,
+  eng: { bufs: {}, src: null, gain: null, startCtx: 0, startOff: 0, trackId: -1, endedSeq: -1 },
+};
+
+function serverNow() { return performance.timeOrigin + performance.now() + sync.offset; }
+
+/** Measures the phone's clock against this one: several round trips, the quickest trusted. */
+async function syncClock() {
+  var samples = [];
+  for (var i = 0; i < 7; i++) {
+    try {
+      var t0 = performance.now();
+      var r = await fetch("/api/sync/time", { cache: "no-store", credentials: "same-origin" });
+      var body = await r.json();
+      var t1 = performance.now();
+      samples.push({ rtt: t1 - t0, offset: body.now - (performance.timeOrigin + (t0 + t1) / 2) });
+    } catch (e) {}
+  }
+  if (!samples.length) return;
+  samples.sort(function (a, b) { return a.rtt - b.rtt; });
+  var best = samples.slice(0, 3);
+  sync.offset = best.reduce(function (n, s) { return n + s.offset; }, 0) / best.length;
+  sync.clockAt = Date.now();
+}
+
+function syncMember(s) { s = s || sync.state; return !!(s && s.on && s.members.indexOf(sync.id) >= 0); }
+function syncLeader() { return syncMember() && sync.state.leader === sync.id; }
+function syncFollower() { return syncMember() && sync.state.leader !== sync.id; }
+
+/** Playing, as the page should show it: the group's state when in one, else the player's. */
+function isPlaying() { return syncMember() ? !!sync.state.playing && sync.state.trackId >= 0 : !$("audio").paused; }
+
+/** Where the group is in the song now, in seconds. */
+function syncPos() {
+  var s = sync.state;
+  if (!s) return 0;
+  if (!s.playing) return s.anchorPos;
+  return Math.max(0, s.anchorPos + (serverNow() - s.anchorMs) / 1000);
+}
+
+/** Tells the phone this page is open (every few seconds, so a closed one drops out). */
+async function syncHello() {
+  try {
+    var res = await api("/api/sync/hello", {
+      method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: sync.id }),
+    });
+    var info = await res.json();
+    sync.pages = info.pages || [];
+    sync.phone = info.phone || "Phone";
+    if (!sync.state || info.state.seq > sync.state.seq) { sync.state = info.state; syncApply(); }
+    renderSync();
+  } catch (e) {}
+}
+
+function syncSend(next) {
+  api("/api/sync/state", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(next) }).catch(function () {});
+}
+
+/** A change made here: applied here at once, and sent to the rest. */
+function syncSet(change) {
+  var s = sync.state || {};
+  var next = Object.assign({}, s, change);
+  next.seq = (s.seq || 0);
+  sync.state = next;
+  syncSend(next);
+  syncApply();
+}
+
+function syncCmd(cmd) {
+  api("/api/sync/cmd", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ cmd: cmd, from: sync.id }) }).catch(function () {});
+}
+
+// ---- what the player's controls do while in a group
+
+function syncTogglePlay() {
+  var at = serverNow() + 220;
+  if (sync.state.playing) syncSet({ playing: false, anchorMs: at, anchorPos: syncPos() + 0.22 });
+  else syncSet({ playing: true, anchorMs: at, anchorPos: sync.state.anchorPos });
+}
+
+function syncSetPlaying(on) { if (!!sync.state.playing !== on) syncTogglePlay(); }
+
+function syncSeek(pos) {
+  syncSet({ anchorMs: serverNow() + 220, anchorPos: Math.max(0, pos) });
+}
+
+/** A song picked here (or this page's queue moving on): everyone loads it and starts together. */
+function syncPlayTrack(t) {
+  var next = trackAhead(1);
+  var ready = sync.eng.bufs[t.id] && sync.eng.bufs[t.id].buf;
+  engLoad(t.id);
+  showPlayer(t);
+  markPlaying();
+  syncSet({
+    trackId: t.id, nextId: next ? next.id : -1, playing: true,
+    anchorPos: 0, anchorMs: serverNow() + (ready ? 400 : 1800), leader: sync.id,
+  });
+}
+
+// ---- the engine: songs in memory, started by the audio clock
+
+function engCtx() {
+  vizEnsure();
+  return viz.ctx;
+}
+
+/** Loads a song into memory (the whole file, decoded). Only the current and next are kept. */
+function engLoad(id) {
+  var e = sync.eng;
+  if (id == null || id < 0) return Promise.resolve(null);
+  if (e.bufs[id]) return e.bufs[id].p;
+  var ctx = engCtx();
+  if (!ctx) return Promise.reject(new Error("no audio yet"));
+  var entry = { buf: null, p: null };
+  entry.p = fetch(player.blobs[id] || streamUrl(id), { credentials: "same-origin" })
+    .then(function (r) { if (!r.ok) throw new Error("HTTP " + r.status); return r.arrayBuffer(); })
+    .then(function (ab) { return ctx.decodeAudioData(ab); })
+    .then(function (b) { entry.buf = b; return b; })
+    .catch(function (err) { delete e.bufs[id]; throw err; });
+  e.bufs[id] = entry;
+  var s = sync.state || {};
+  Object.keys(e.bufs).forEach(function (k) {
+    if (+k !== +id && +k !== s.trackId && +k !== s.nextId) delete e.bufs[k];
+  });
+  return entry.p;
+}
+
+/** The audio clock's time at which a phone-clock instant is heard, from the output's own report. */
+function ctxAt(serverMs) {
+  var ctx = viz.ctx, ts = ctx.getOutputTimestamp ? ctx.getOutputTimestamp() : null;
+  if (ts && ts.performanceTime > 0) {
+    return ts.contextTime + (serverMs - sync.offset - performance.timeOrigin - ts.performanceTime) / 1000;
+  }
+  return ctx.currentTime + (serverMs - serverNow()) / 1000 - (ctx.outputLatency || 0) - (ctx.baseLatency || 0);
+}
+
+/** Plays the group's state: starts, moves or stops the song so it is where the group is. */
+function engRender() {
+  var s = sync.state, e = sync.eng;
+  if (!syncMember(s)) { engStop(); return; }
+  if (s.nextId >= 0) engLoad(s.nextId).catch(function () {});
+  if (s.trackId < 0 || !s.playing) { engStop(s.trackId >= 0 ? s.anchorMs : 0); return; }
+  var ctx = engCtx();
+  if (!ctx) return;
+  var entry = e.bufs[s.trackId];
+  if (!entry || !entry.buf) {
+    engLoad(s.trackId).then(function () { if (sync.state && sync.state.trackId === s.trackId) engRender(); }).catch(function () {});
+    return;
+  }
+  var buf = entry.buf, when = ctxAt(s.anchorMs), off = s.anchorPos, soonest = ctx.currentTime + 0.03;
+  if (when < soonest) { off += soonest - when; when = soonest; }
+  if (off >= buf.duration - 0.05) { engStop(); engEnded(s); return; }
+  // Already playing this song on the same plan (within 5 ms): leave it be.
+  if (e.src && e.trackId === s.trackId && Math.abs((e.startOff - e.startCtx) - (off - when)) < 0.005) return;
+  var g = ctx.createGain();
+  g.connect(viz.an || ctx.destination);
+  var src = ctx.createBufferSource();
+  src.buffer = buf;
+  src.connect(g);
+  // A change of place crossfades over a few milliseconds, so nothing clicks.
+  g.gain.setValueAtTime(0, when);
+  g.gain.linearRampToValueAtTime(1, when + 0.012);
+  if (e.src) {
+    try {
+      e.gain.gain.setValueAtTime(1, when);
+      e.gain.gain.linearRampToValueAtTime(0, when + 0.012);
+      e.src.stop(when + 0.02);
+    } catch (err) {}
+  }
+  src.start(when, off);
+  src.onended = function () { if (e.src === src) { e.src = null; engEnded(sync.state); } };
+  e.src = src; e.gain = g; e.startCtx = when; e.startOff = off; e.trackId = s.trackId;
+  // This page was playing on its own until now: its own player stops the moment the group starts.
+  var audio = $("audio");
+  if (!audio.paused) setTimeout(function () { audio.pause(); }, Math.max(0, (when - ctx.currentTime) * 1000));
+}
+
+/** Stops the song, at phone time [atMs] when that is still ahead (a pause everyone makes together). */
+function engStop(atMs) {
+  var e = sync.eng, ctx = viz.ctx;
+  if (!e.src || !ctx) { e.src = null; return; }
+  var when = Math.max(ctx.currentTime + 0.01, atMs ? ctxAt(atMs) : 0);
+  try {
+    e.gain.gain.setValueAtTime(1, when);
+    e.gain.gain.linearRampToValueAtTime(0, when + 0.015);
+    e.src.stop(when + 0.02);
+  } catch (err) {}
+  e.src = null;
+}
+
+/** The song came to its end: the leader's queue moves on (once). */
+function engEnded(s) {
+  if (!s || !syncLeader() || sync.eng.endedSeq === s.seq) return;
+  sync.eng.endedSeq = s.seq;
+  playNext(true);
+}
+
+/** Every couple of seconds: still where the group is? Clocks wander; a plan off by 15 ms is redone. */
+function engCheck() {
+  var s = sync.state, e = sync.eng;
+  if (!syncMember(s) || !s.playing || !e.src || !viz.ctx) return;
+  var when = ctxAt(s.anchorMs);
+  var diff = (e.startOff - e.startCtx) - (s.anchorPos - when);
+  if (Math.abs(diff) > 0.015) engRender();
+  if (Date.now() - sync.clockAt > 60000) syncClock();
+}
+
+// ---- following the group
+
+/** A new state (from the phone, or made here): follow it. */
+function syncApply() {
+  var s = sync.state, audio = $("audio");
+  renderSync();
+  if (!s) return;
+  if (!syncMember(s)) {
+    if (sync.was) {
+      var pos = sync.lastPos || 0, id = sync.lastTrack;
+      engStop();
+      stopSyncUi();
+      // The group ended from here while playing: carry on here, on this page's own player.
+      if (sync.wasLeader && sync.wasPlaying && id >= 0) {
+        var t = music.tracks.filter(function (x) { return x.id === id; })[0];
+        if (t) {
+          audio.src = player.blobs[t.id] || streamUrl(t.id);
+          audio.addEventListener("loadedmetadata", function once() {
+            audio.removeEventListener("loadedmetadata", once);
+            try { audio.currentTime = pos; } catch (e) {}
+          });
+          var p = audio.play();
+          if (p && p.catch) p.catch(function () {});
+        }
+      }
+      setPlayIcon(!audio.paused);
+      renderStage();
+    }
+    sync.was = false;
+    $("sync-join").hidden = true;
+    return;
+  }
+  sync.was = true;
+  sync.wasLeader = s.leader === sync.id;
+  sync.wasPlaying = s.playing;
+  sync.lastTrack = s.trackId;
+  var t2 = s.trackId >= 0 ? music.tracks.filter(function (x) { return x.id === s.trackId; })[0] : null;
+  if (s.trackId >= 0 && !t2) {
+    if (!music.loaded && !music.loading) musicLoad(false).then(syncApply);
+    return;
+  }
+  if (t2) {
+    var cur = currentTrack();
+    if (!cur || cur.id !== t2.id) {
+      // Following another member: this page's queue is just the song playing.
+      player.queue = [t2]; player.order = [0]; player.pos = 0;
+      showPlayer(t2);
+    }
+  }
+  // A page nobody has clicked on cannot make sound: one click to join.
+  if (!viz.ctx && navigator.userActivation && !navigator.userActivation.hasBeenActive) {
+    $("sync-join").hidden = !s.playing;
+    startSyncUi();
+    return;
+  }
+  $("sync-join").hidden = true;
+  engRender();
+  startSyncUi();
+  setPlayIcon(s.playing);
+  renderStage();
+  markPlaying();
+}
+
+/** The player bar while in a group: the group's place, four times a second. */
+function startSyncUi() {
+  if (sync.uiTimer) return;
+  sync.uiTimer = setInterval(function () {
+    if (!syncMember()) { stopSyncUi(); return; }
+    var s = sync.state, t = currentTrack(), pos = syncPos();
+    sync.lastPos = pos;
+    var entry = sync.eng.bufs[s.trackId];
+    var dur = entry && entry.buf ? entry.buf.duration : (t ? t.durationMs / 1000 : 0);
+    $("pl-cur").textContent = fmtTime(Math.min(pos, dur));
+    $("pl-dur").textContent = fmtTime(dur);
+    $("pl-time").textContent = fmtTime(Math.min(pos, dur)) + " / " + fmtTime(dur);
+    var seek = $("pl-seek");
+    if (document.activeElement !== seek && dur > 0) {
+      var pct = Math.min(100, pos / dur * 100);
+      seek.value = Math.round(pct * 10);
+      seek.style.setProperty("--p", pct + "%");
+    }
+    setPlayIcon(s.playing);
+  }, 250);
+  if (!sync.checkTimer) sync.checkTimer = setInterval(engCheck, 2000);
+  vizStart();
+}
+
+function stopSyncUi() {
+  clearInterval(sync.uiTimer); sync.uiTimer = 0;
+  clearInterval(sync.checkTimer); sync.checkTimer = 0;
+}
+
+/** The player bar's Sync button and its list of devices. */
+function renderSync() {
+  var btn = $("pl-sync"), s = sync.state;
+  if (!btn) return;
+  var n = syncMember(s) ? s.members.length : 0;
+  btn.classList.toggle("on", n > 1);
+  $("pl-sync-n").textContent = n > 1 ? n : "";
+  var leader = s && s.leader;
+  var from = leader && leader !== sync.id ? (sync.pages.filter(function (p) { return p.id === leader; })[0] || {}).name : null;
+  $("sync-note").textContent = !syncMember(s) ? "Pick the devices to play on, in step with this one."
+    : from ? "Playing with " + from + ". Controls here work for everyone."
+    : "Playing on " + n + " devices, in step.";
+  $("sync-join-from").textContent = from || "another device";
+  var list = $("sync-list");
+  list.innerHTML = "";
+  var rows = [{ id: sync.id, name: "This computer", sub: "Plays here", self: true }, { id: "phone", name: sync.phone, sub: "The phone's speaker" }]
+    .concat(sync.pages.filter(function (p) { return p.id !== sync.id; }).map(function (p) { return { id: p.id, name: p.name, sub: p.ip }; }));
+  rows.forEach(function (r) {
+    var on = r.self || !!(s && s.on && s.members.indexOf(r.id) >= 0);
+    var b = document.createElement("button");
+    b.type = "button";
+    b.className = "sync-row" + (on ? " on" : "") + (r.self ? " self" : "");
+    b.innerHTML = '<span class="sr-ic"></span><span class="grow"><b></b><span></span></span><i class="switch"></i>';
+    b.querySelector("b").textContent = r.name;
+    b.querySelector(".grow span").textContent = r.sub;
+    b.firstChild.innerHTML = r.id === "phone"
+      ? '<svg viewBox="0 0 24 24"><path d="M9 2.5h6A2.5 2.5 0 0 1 17.5 5v14a2.5 2.5 0 0 1-2.5 2.5H9A2.5 2.5 0 0 1 6.5 19V5A2.5 2.5 0 0 1 9 2.5Z"/><path d="M11 18.5h2"/></svg>'
+      : '<svg viewBox="0 0 24 24"><path d="M5.5 5.5h13a1 1 0 0 1 1 1V16h-15V6.5a1 1 0 0 1 1-1Z"/><path d="M2.5 18.5h19"/></svg>';
+    if (!r.self) b.onclick = function () { syncToggle(r.id); };
+    list.appendChild(b);
+  });
+  if (sync.pages.filter(function (p) { return p.id !== sync.id; }).length === 0) {
+    var hint = document.createElement("p");
+    hint.className = "sync-hint";
+    hint.textContent = "Open this page on another computer and it shows up here.";
+    list.appendChild(hint);
+  }
+}
+
+/**
+ * Adds a device to the group, or takes it out. Starting a group from here: this page leads,
+ * from where its own player is, and hands over to the group's engine at the start instant.
+ */
+function syncToggle(id) {
+  var s = sync.state, inGroup = syncMember(s);
+  var list = inGroup ? s.members.slice() : [sync.id];
+  var i = list.indexOf(id);
+  if (i >= 0) list.splice(i, 1); else list.push(id);
+  syncClock().then(function () {
+    vizEnsure();
+    if (inGroup) { syncSet({ members: list, on: list.length > 1 }); return; }
+    var audio = $("audio"), cur = currentTrack(), next = trackAhead(1), lead = 1.6;
+    if (cur) engLoad(cur.id).catch(function () {});
+    var playing = !!cur && !audio.paused;
+    syncSet({
+      on: list.length > 1, members: list, leader: sync.id,
+      trackId: cur ? cur.id : -1, nextId: next ? next.id : -1, playing: playing,
+      anchorMs: serverNow() + lead * 1000, anchorPos: cur ? audio.currentTime + (playing ? lead : 0) : 0,
+    });
+  });
+}
+
+function setupSync() {
+  $("pl-sync").onclick = function (e) {
+    e.stopPropagation();
+    var pop = $("sync-pop");
+    pop.hidden = !pop.hidden;
+    if (!pop.hidden) syncHello();
+  };
+  document.addEventListener("click", function (e) {
+    var pop = $("sync-pop");
+    if (!pop.hidden && !pop.contains(e.target)) pop.hidden = true;
+  });
+  $("sync-join-btn").onclick = function () {
+    $("sync-join").hidden = true;
+    vizEnsure();
+    syncApply();
+  };
+  syncClock().then(syncHello);
+  sync.helloTimer = setInterval(function () { if (document.visibilityState === "visible" || syncMember()) syncHello(); }, 5000);
+  window.addEventListener("pagehide", function () {
+    try { navigator.sendBeacon("/api/sync/bye", new Blob([JSON.stringify({ id: sync.id })], { type: "application/json" })); } catch (e) {}
+  });
+}
+
+function syncEvents(events) {
+  events.addEventListener("sync", function (e) {
+    try { sync.state = JSON.parse(e.data); syncApply(); } catch (err) {}
+  });
+  events.addEventListener("syncpages", function (e) { try { sync.pages = JSON.parse(e.data); renderSync(); } catch (err) {} });
+  events.addEventListener("synccmd", function (e) {
+    try {
+      var c = JSON.parse(e.data);
+      if (!syncLeader() || c.from === sync.id) return;
+      if (c.cmd === "next") playNext(false);
+      else if (c.cmd === "prev") playPrev();
+    } catch (err) {}
+  });
 }
 
 // ------------------------------------------------------------------ auth
@@ -4359,6 +4812,7 @@ function showApp() {
     setupDrop();
     setupDock();
     setupPlayer();
+    setupSync();
     setupPhoneFiles();
     setupNotifs();
     setupMirror();

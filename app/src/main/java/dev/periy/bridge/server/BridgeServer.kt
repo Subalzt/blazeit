@@ -138,12 +138,15 @@ class BridgeServer(
         engine = server
         beacon.start()
         Monitor.start(ctx)
+        SyncPlay.phone = PhoneSyncPlayer(ctx, music)
         Log.i(TAG, "Listening on :${config.port}")
     }
 
     fun stop() {
         beacon.stop()
         Monitor.stop()
+        SyncPlay.phone?.release()
+        SyncPlay.phone = null
         engine?.stop(GRACE_MS, TIMEOUT_MS)
         engine = null
         Log.i(TAG, "Stopped")
@@ -203,6 +206,37 @@ class BridgeServer(
             p2pTrial()
             phoneFileRoutes()
             notificationRoutes()
+            syncRoutes()
+        }
+    }
+
+    // ------------------------------------------------------------------ playing together
+
+    /** See SyncPlay: the clock, who is open, and the state every member plays by. */
+    private fun io.ktor.server.routing.Route.syncRoutes() {
+        get("/api/sync/time") {
+            call.response.header(HttpHeaders.CacheControl, "no-store")
+            call.respond(SyncTime(System.currentTimeMillis()))
+        }
+        post("/api/sync/hello") {
+            val body = runCatching { call.receive<SyncHello>() }.getOrDefault(SyncHello())
+            SyncPlay.hello(body.id, call.device()?.name ?: "Browser", call.request.origin.remoteAddress)
+            call.respond(SyncPlay.info(config.deviceName))
+        }
+        post("/api/sync/bye") {
+            val body = runCatching { call.receive<SyncHello>() }.getOrDefault(SyncHello())
+            SyncPlay.bye(body.id)
+            call.respond(ApiResult(true))
+        }
+        post("/api/sync/state") {
+            val body = runCatching { call.receive<SyncState>() }.getOrNull()
+            if (body == null) { call.respond(HttpStatusCode.BadRequest, ApiResult(false, "Bad state")); return@post }
+            SyncPlay.set(body)
+            call.respond(SyncPlay.info(config.deviceName))
+        }
+        post("/api/sync/cmd") {
+            runCatching { call.receive<SyncCmd>() }.getOrNull()?.let(SyncPlay::command)
+            call.respond(ApiResult(true))
         }
     }
 
@@ -249,19 +283,6 @@ class BridgeServer(
             }
             call.response.header(HttpHeaders.CacheControl, "private, max-age=604800")
             call.respondBytes(bytes, ContentType.Image.JPEG)
-        }
-
-        // The turntable's record and light sheen, from the Vinyl Glass widget. A fixed
-        // list, so a crafted name can never reach anything else in the APK's assets.
-        get("/api/music/vinyl/{name}") {
-            val name = call.parameters["name"]
-            if (name !in VINYL_ASSETS) {
-                call.respond(HttpStatusCode.NotFound)
-                return@get
-            }
-            val bytes = withContext(Dispatchers.IO) { ctx.assets.open("vinyl/$name").use { it.readBytes() } }
-            call.response.header(HttpHeaders.CacheControl, "private, max-age=604800")
-            call.respondBytes(bytes, ContentType.Image.PNG)
         }
     }
 
@@ -347,7 +368,7 @@ class BridgeServer(
     /**
      * Read-only browsing of the phone's shared storage from the page. Every route sits behind
      * the pairing gate like the rest, and nothing is reachable until the phone's owner turns on
-     * "All files access" for BlazeIt.
+     * "All files access" for Localhost 8787.
      */
     private fun io.ktor.server.routing.Route.phoneFileRoutes() {
         get("/api/fs") {
@@ -529,12 +550,13 @@ class BridgeServer(
         }
     }
 
+    @androidx.annotation.OptIn(markerClass = [androidx.media3.common.util.UnstableApi::class])
     private fun io.ktor.server.routing.Route.controlRoutes() {
         // "Phone screen" on the page: the laptop helper opens a window with this phone's screen,
         // to watch and use with the laptop's mouse and keyboard (scrcpy, over adb).
         // "Use this phone as a second screen": opens the phone's second-screen view, which tells
         // the helper to start streaming once it is listening. Opening it from the background is
-        // allowed because BlazeIt may draw over other apps (see ClipWatch).
+        // allowed because Localhost 8787 may draw over other apps (see ClipWatch).
         post("/api/display") {
             if (Control.connected.value.isEmpty()) {
                 call.respond(ApiResult(false, "The laptop helper is not running"))
@@ -635,7 +657,7 @@ class BridgeServer(
         }
         post("/api/look") {
             val body = runCatching { call.receive<LookRequest>() }.getOrDefault(LookRequest())
-            config.setLook(body.glass, body.oled)
+            config.setLook(body.style, body.accent)
             call.respond(ApiResult(true))
         }
     }
@@ -728,8 +750,8 @@ class BridgeServer(
                     deviceName = config.deviceName,
                     uploadStreams = config.uploadStreams(),
                     theme = config.theme(),
-                    glass = config.look().glass,
-                    oled = config.look().oled,
+                    style = config.look().style,
+                    accent = config.look().accent,
                     clipSync = config.clipSync(),
                     clip = clipboard.meta.value,
                 )
@@ -1272,6 +1294,5 @@ class BridgeServer(
         const val BENCH_MAX = 4L * 1024 * 1024 * 1024
 
         val PUBLIC_PATHS = setOf("/", "/api/ping", "/favicon.ico")
-        val VINYL_ASSETS = setOf("record.png", "sheen.png")
     }
 }
