@@ -91,8 +91,8 @@ you take on the phone. To send copies from any phone app straight away, allow tw
 over USB:
 
 ```bash
-adb shell pm grant dev.periy.bridge android.permission.READ_LOGS
-adb shell appops set dev.periy.bridge SYSTEM_ALERT_WINDOW allow
+adb shell pm grant dev.periy.bridge.debug android.permission.READ_LOGS
+adb shell appops set dev.periy.bridge.debug SYSTEM_ALERT_WINDOW allow
 ```
 
 ### 5. Send files and whole folders
