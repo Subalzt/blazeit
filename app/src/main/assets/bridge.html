@@ -503,9 +503,39 @@
   .stage-actions .btn.ghost { background: rgba(255,255,255,.16); color: #FFFFFF; box-shadow: none; }
   .stage-actions .btn.ghost:hover:not(:disabled) { background: rgba(255,255,255,.26); box-shadow: none; }
   .stage-actions svg { width: 17px; height: 17px; }
-  .deck-next { margin-top: 16px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,.16); font-size: 13px; opacity: .8;
-    overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .deck-next b { font-size: 11px; letter-spacing: 1px; margin-right: 8px; }
+  /* The queue, beside what is playing, as Apple Music's Playing Next: every song with its cover;
+     the one playing lit, its cover dimmed under bars that move while it plays. On the right,
+     level with each line of the song: the kind of file (on every row, so none looks lesser),
+     and Ready, once it is in memory. A click on one plays it. */
+  .stage-queue { flex: 0 0 320px; align-self: stretch; display: flex; flex-direction: column; min-width: 0; padding: 10px;
+    border-radius: 16px; background: rgba(0,0,0,.24); box-shadow: inset 0 0 0 1px rgba(255,255,255,.12); }
+  .stage-queue[hidden] { display: none; }
+  .sq-label { margin: 12px 8px 4px; font-size: 11px; font-weight: 800; letter-spacing: 1.5px; opacity: .72; }
+  .sq-label:first-child { margin-top: 2px; }
+  .sq-row { display: flex; align-items: center; gap: 12px; width: 100%; min-width: 0; padding: 7px 10px 7px 8px; border: 0; border-radius: 12px;
+    background: transparent; color: #FFFFFF; font: inherit; text-align: left; cursor: pointer; transition: background .15s; }
+  .sq-row:hover { background: rgba(255,255,255,.10); }
+  .sq-row.now { background: rgba(255,255,255,.16); }
+  .sq-row .lead { position: relative; flex: 0 0 42px; width: 42px; height: 42px; display: grid; place-items: center; overflow: hidden;
+    border-radius: 7px; background: rgba(0,0,0,.25); box-shadow: 3px 3px 0 rgba(0,0,0,.26); }
+  .sq-row .lead.gen { font-size: 13px; }
+  .sq-row .lead img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+  .sq-row.now .lead::after { content: ""; position: absolute; inset: 0; background: rgba(0,0,0,.42); }
+  .sq-row .lead .eq { position: absolute; z-index: 1; left: 50%; top: 50%; transform: translate(-50%, -50%);
+    display: inline-flex; align-items: flex-end; gap: 2px; height: 14px; }
+  .sq-row .lead .eq b { width: 3px; height: 35%; border-radius: 1px; background: #FFFFFF; }
+  .stage.playing .sq-row .lead .eq b { animation: eq .9s ease-in-out infinite alternate; }
+  .stage.playing .sq-row .lead .eq b:nth-child(2) { animation-delay: -.35s; } .stage.playing .sq-row .lead .eq b:nth-child(3) { animation-delay: -.7s; }
+  .sq-row .txt { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; }
+  .sq-row .txt b { font-size: 14px; font-weight: 650; line-height: 20px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .sq-row .txt span { font-size: 12px; line-height: 17px; opacity: .72; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .sq-row .rt { flex: 0 0 auto; display: flex; flex-direction: column; align-items: flex-end; }
+  .sq-row .rt i { font-style: normal; font-size: 10px; font-weight: 800; letter-spacing: .8px; line-height: 20px; opacity: .55; }
+  .sq-row .rt em { display: inline-flex; align-items: center; gap: 3px; min-height: 17px; font-style: normal; font-size: 11.5px; font-weight: 600; line-height: 17px; opacity: .85; }
+  .sq-row .rt em svg { width: 12px; height: 12px; fill: none; stroke: currentColor; stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round; }
+  .sq-end { padding: 8px; font-size: 12.5px; opacity: .6; }
+  .stage-kicker #deck-state { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  @media (max-width: 1180px) { .stage { flex-wrap: wrap; } .stage-queue { flex: 1 1 100%; } }
 
   /* The album grid: covers on the page, lifting off their own hard shadow under the pointer. */
   .albums { display: grid; grid-template-columns: repeat(auto-fill, minmax(164px, 1fr)); gap: 30px 22px; }
@@ -531,14 +561,26 @@
   .album:hover .album-play { opacity: 1; transform: none; }
   .album .cap { padding: 11px 2px 0; }
   .album .cap .t { font-size: 14.5px; font-weight: 700; letter-spacing: -.1px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .album .cap .a { font-size: 12.5px; color: var(--sub); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  /* Who, then how many tracks: a long list of artists is cut short, never the count. */
+  .album .cap .a { display: flex; gap: 4px; font-size: 12.5px; color: var(--sub); white-space: nowrap; }
+  .album .cap .a .by { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+  .album .cap .a .n { flex: 0 0 auto; }
 
-  /* Tracks: an album's list, and every song. The cover, the title with its genre beside it,
-     who, then the album (every song only), the kind of file and the length on the right.
+  /* Tracks: an album's list, and every song. The cover, the title and who, then the album
+     (every song only), the kind of file and the length on the right.
      Hover lights the row; the one playing is lit as a whole, in the colour in use. */
   .trk { display: grid; grid-template-columns: 46px minmax(0, 1fr) 64px 48px; align-items: center; gap: 14px; padding: 8px 12px;
     border-radius: 10px; cursor: pointer; content-visibility: auto; contain-intrinsic-size: auto 62px; transition: background .15s; }
   .trk.with-album { grid-template-columns: 46px minmax(0, 2fr) minmax(0, 1fr) 64px 48px; }
+  /* In an album: the track's number first, as on the sleeve. */
+  .trk.numbered { grid-template-columns: 30px 46px minmax(0, 1fr) 64px 48px; }
+  .trk .no { font-size: 14px; font-weight: 600; color: var(--sub); text-align: right; font-variant-numeric: tabular-nums; }
+  .trk.playing .no { color: var(--accent); }
+  /* The song playing, found from the player bar or the banner: lit a little brighter for a moment. */
+  .trk.flash { animation: trk-flash 1.8s ease-out; }
+  .album.flash .art { animation: album-flash 1.8s ease-out; }
+  @keyframes album-flash { 0%, 35% { box-shadow: 0 0 0 4px var(--accent), 6px 7px 0 color-mix(in srgb, var(--accent) 55%, transparent); } }
+  @keyframes trk-flash { 0%, 35% { background: color-mix(in srgb, var(--accent) 38%, transparent); } }
   .trk + .trk { box-shadow: inset 0 1px 0 var(--line); }
   .trk:hover, .trk:hover + .trk, .trk.playing, .trk.playing + .trk { box-shadow: none; }
   .trk:hover { background: color-mix(in srgb, var(--txt) 6%, transparent); }
@@ -550,9 +592,6 @@
   .trk .tl { display: flex; align-items: center; gap: 8px; min-width: 0; }
   .trk .tl b { flex: 0 1 auto; min-width: 0; font-size: 15px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .trk .badge { margin: 0; vertical-align: 0; }
-  .trk .tl .badge.genre { flex: 0 0 auto; cursor: pointer; background: color-mix(in srgb, var(--txt) 8%, transparent); color: var(--sub);
-    letter-spacing: .2px; text-transform: none; font-weight: 700; }
-  .trk .tl .badge.genre:hover { background: color-mix(in srgb, var(--accent) 18%, transparent); color: var(--accent); }
   .trk .who { display: block; margin-top: 1px; font-size: 13px; color: var(--sub); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .trk .al { font-size: 13px; color: var(--sub); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .trk .kind { text-align: right; }
@@ -560,19 +599,12 @@
   .trk.playing .tl b, .trk.playing .d { color: var(--accent); }
   .trk.playing .who, .trk.playing .al { color: color-mix(in srgb, var(--accent) 55%, var(--sub)); }
 
-  /* Genres: chips over the list, the count beside each name; the one picked is filled. */
-  .genres { display: flex; gap: 8px; margin: -8px 0 24px; overflow-x: auto; padding: 2px 2px 6px; scrollbar-width: none; }
-  .genres::-webkit-scrollbar { display: none; }
-  .chip { flex: 0 0 auto; display: inline-flex; align-items: center; gap: 7px; height: 34px; padding: 0 14px; border: 0; border-radius: 17px; cursor: pointer;
-    background: var(--surface-2); color: var(--txt); font-size: 13.5px; font-weight: 600; white-space: nowrap; transition: background .15s, color .15s; }
-  .chip i { font-style: normal; font-size: 12px; font-weight: 600; color: var(--sub); font-variant-numeric: tabular-nums; }
-  .chip:hover { background: var(--surface-3); }
-  .chip.on { background: var(--accent); color: var(--on-accent); }
-  .chip.on i { color: var(--on-accent); opacity: .75; }
-  /* The filter bar stays at the top while the library scrolls under it, on a frosted strip
-     of the page's own colour, so what is picked is always in view. */
+  /* The filter bar, under the banner, pins to the top on a frosted strip of the page's own colour.
+     Scrolling down it slips up out of the way (tucked); scrolling up brings it straight back. */
   .mu-bar { position: sticky; top: 0; z-index: 20; margin: -10px -14px 18px; padding: 10px 14px 4px;
-    background: color-mix(in srgb, var(--bg) 86%, transparent); -webkit-backdrop-filter: blur(16px) saturate(1.5); backdrop-filter: blur(16px) saturate(1.5); }
+    background: color-mix(in srgb, var(--bg) 86%, transparent); -webkit-backdrop-filter: blur(16px) saturate(1.5); backdrop-filter: blur(16px) saturate(1.5);
+    transition: transform .28s cubic-bezier(.25,.8,.3,1), opacity .2s ease; }
+  .mu-bar.tucked { transform: translateY(-110%); opacity: 0; pointer-events: none; }
   :root[data-style="theatre"] .mu-bar { top: 72px; }
   @media (max-width: 900px) { :root[data-style="theatre"] .mu-bar { top: 64px; } }
   .mu-bar .mu-tools { margin: 0 0 10px; }
@@ -580,27 +612,24 @@
   .mu-tools .seg, .mu-tools input[type=search], .mu-tools .btn { height: 42px; box-sizing: border-box; }
   .mu-tools .seg { align-items: stretch; }
   .mu-tools .btn { padding: 0 18px; flex: 0 0 auto; }
-  .mu-bar .genres { margin: 0; padding: 2px 2px 8px; }
-  .chip em { display: none; width: 14px; height: 14px; margin-left: -2px; }
-  .chip em svg { width: 14px; height: 14px; display: block; }
-  .chip.clear i { display: none; }
-  .chip.clear em { display: block; }
 
-  /* The genre picked: a strip under the bar with a cover made from its name. */
-  .genre-strip { display: flex; align-items: center; gap: 14px; margin: 0 0 22px; padding: 12px 14px; border-radius: 16px;
+  /* An album opened while another plays: a strip over its songs, its cover, Play and Shuffle. */
+  .strip { display: flex; align-items: center; gap: 14px; margin: 0 0 22px; padding: 12px 14px; border-radius: 16px;
     background: var(--surface); box-shadow: var(--card-shadow); }
-  .genre-strip .gs-art { width: 52px; height: 52px; flex: 0 0 52px; display: grid; place-items: center; border-radius: 10px; font-size: 20px;
+  .strip .gs-art { width: 52px; height: 52px; flex: 0 0 52px; display: grid; place-items: center; border-radius: 10px; font-size: 20px;
     box-shadow: 4px 5px 0 color-mix(in srgb, var(--txt) 14%, transparent); }
-  .genre-strip .gs-art.gen { color: #FFFFFF; font-weight: 850; }
-  .genre-strip .gs-text { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; }
-  .genre-strip .gs-name { font-size: 19px; font-weight: 800; letter-spacing: -.4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .genre-strip .gs-meta { font-size: 13px; color: var(--sub); }
-  .genre-strip .btn svg { width: 16px; height: 16px; }
-  .genre-strip .gs-clear { flex: 0 0 auto; width: 34px; height: 34px; display: grid; place-items: center; border: 0; border-radius: 50%; cursor: pointer;
+  .strip .gs-art.gen { color: #FFFFFF; font-weight: 850; }
+  .strip .gs-text { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; }
+  .strip .gs-name { font-size: 19px; font-weight: 800; letter-spacing: -.4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .strip .gs-meta { font-size: 13px; color: var(--sub); }
+  .strip .btn svg { width: 16px; height: 16px; }
+  .strip .gs-clear { flex: 0 0 auto; width: 34px; height: 34px; display: grid; place-items: center; border: 0; border-radius: 50%; cursor: pointer;
     background: var(--surface-2); color: var(--sub); }
-  .genre-strip .gs-clear:hover { background: var(--surface-3); color: var(--txt); }
-  .genre-strip .gs-clear svg { width: 16px; height: 16px; }
-  @media (max-width: 900px) { .genre-strip .gs-shuffle { display: none; } }
+  .strip .gs-clear:hover { background: var(--surface-3); color: var(--txt); }
+  .strip .gs-clear svg { width: 16px; height: 16px; }
+  @media (max-width: 900px) { .strip .gs-shuffle { display: none; } }
+  .album-strip .gs-art { position: relative; overflow: hidden; box-shadow: 3px 4px 0 color-mix(in srgb, var(--txt) 14%, transparent); }
+  .album-strip .gs-art img { width: 100%; height: 100%; object-fit: cover; }
   /* Playing together: the Sync button in the player (lit, with how many devices, while on),
      its list of devices, and the one-click Join a browser asks for before it makes sound. */
   #pl-sync { position: relative; }
@@ -632,6 +661,7 @@
     .stage { flex-direction: column; align-items: flex-start; gap: 22px; padding: 22px; }
     .stage-art { width: min(200px, 60vw); }
     .trk, .trk.with-album { grid-template-columns: 46px minmax(0, 1fr) auto; }
+    .trk.numbered { grid-template-columns: 22px 46px minmax(0, 1fr) auto; }
     .trk .kind { display: none; }
     .trk .al { display: none; }
     .pl-viz { display: none; }
@@ -1102,30 +1132,8 @@
   </section>
 
   <section data-panel="music" hidden>
-    <!-- The filter bar: sticky at the top of the tab; Albums or Songs, the search, the genres. -->
-    <div class="mu-bar" id="mu-bar">
-      <div class="mu-tools">
-        <div class="seg" id="music-view">
-          <button data-v="albums" class="on">Albums</button>
-          <button data-v="songs">Songs</button>
-        </div>
-        <input id="music-search" type="search" placeholder="Search songs, artists, albums, genres" autocomplete="off">
-        <button class="btn sm ghost" id="music-rescan">Rescan</button>
-      </div>
-      <div class="genres" id="music-genres" hidden></div>
-    </div>
-    <!-- With a genre picked: how much of it there is, and Play and Shuffle for all of it. -->
-    <div class="genre-strip" id="genre-strip" hidden>
-      <div class="gs-art"></div>
-      <div class="gs-text"><b class="gs-name"></b><span class="gs-meta"></span></div>
-      <button class="btn sm gs-play" type="button"></button>
-      <button class="btn sm ghost gs-shuffle" type="button"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7h3.5c2.5 0 3.8 1.3 5.3 4.2l.4.6c1.5 2.9 2.8 4.2 5.3 4.2H21"/><path d="M3 17h3.5c1.4 0 2.4-.4 3.3-1.2M14.2 8.2C15.1 7.4 16.1 7 17.5 7H21"/><path d="m18.5 4.5 2.5 2.5-2.5 2.5M18.5 13.5l2.5 2.5-2.5 2.5"/></svg>Shuffle</button>
-      <button class="gs-clear" type="button" title="Show all genres" aria-label="Show all genres"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M7 7l10 10M17 7 7 17"/></svg></button>
-    </div>
-    <div id="music-perm" class="banner bad" hidden>
-      Localhost 8787 needs permission to read your music. On the phone: Settings &rarr; Music &rarr; Allow music access.
-    </div>
-    <!-- The stage: the album you opened, or else what is playing. Never both. -->
+    <!-- The banner: what is playing (its album, and the song in it), whatever search or album
+         is picked; with nothing playing, the album opened. -->
     <div class="stage" id="deck" hidden>
       <div class="stage-art" id="np-art"></div>
       <div class="stage-meta">
@@ -1134,8 +1142,34 @@
         <div class="stage-artist" id="deck-artist"></div>
         <div class="stage-album" id="deck-album"></div>
         <div class="stage-actions" id="stage-actions"></div>
-        <div class="deck-next" id="deck-next" hidden></div>
       </div>
+      <!-- The queue: the song playing, lit, and the ones after it, each Ready once it is in memory. -->
+      <div class="stage-queue" id="deck-queue" hidden></div>
+    </div>
+    <!-- The filter bar, under the banner: Albums or Songs, and the search. It stays at the
+         top while you move through the list, slips away as you scroll down, and is back the
+         moment you scroll up. The anchor marks where it sits when it is not pinned. -->
+    <div id="mu-anchor"></div>
+    <div class="mu-bar" id="mu-bar">
+      <div class="mu-tools">
+        <div class="seg" id="music-view">
+          <button data-v="albums" class="on">Albums</button>
+          <button data-v="songs">Songs</button>
+        </div>
+        <input id="music-search" type="search" placeholder="Search songs, artists, albums" autocomplete="off">
+        <button class="btn sm ghost" id="music-rescan">Rescan</button>
+      </div>
+    </div>
+    <div id="music-perm" class="banner bad" hidden>
+      Localhost 8787 needs permission to read your music. On the phone: Settings &rarr; Music &rarr; Allow music access.
+    </div>
+    <!-- An album opened while another plays: its name, and Play and Shuffle for it, over its songs. -->
+    <div class="strip album-strip" id="album-strip" hidden>
+      <div class="gs-art"></div>
+      <div class="gs-text"><b class="gs-name"></b><span class="gs-meta"></span></div>
+      <button class="btn sm gs-play" type="button"></button>
+      <button class="btn sm ghost gs-shuffle" type="button"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7h3.5c2.5 0 3.8 1.3 5.3 4.2l.4.6c1.5 2.9 2.8 4.2 5.3 4.2H21"/><path d="M3 17h3.5c1.4 0 2.4-.4 3.3-1.2M14.2 8.2C15.1 7.4 16.1 7 17.5 7H21"/><path d="m18.5 4.5 2.5 2.5-2.5 2.5M18.5 13.5l2.5 2.5-2.5 2.5"/></svg>Shuffle</button>
+      <button class="gs-clear" type="button" title="Back to the albums" aria-label="Back to the albums"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M7 7l10 10M17 7 7 17"/></svg></button>
     </div>
     <div id="music-list"><p class="empty">Loading your library...</p></div>
     <div id="music-more" class="actions"></div>
@@ -1259,7 +1293,7 @@
 <!-- ------------------------------------------------------------------ player -->
 <div class="player" id="player" hidden>
   <div class="pl-left">
-    <div class="cover" id="pl-art" title="Open the turntable">&#9834;</div>
+    <div class="cover" id="pl-art" title="Show it in its album">&#9834;</div>
     <div class="pl-meta">
       <div class="pl-title" id="pl-title"></div>
       <div class="pl-sub" id="pl-sub"></div>
@@ -3493,8 +3527,10 @@ var PREFETCH_MAX_BYTES = 250 * 1024 * 1024;
 var MUSIC_PAGE = 300;
 
 var music = { tracks: [], granted: true, loaded: false, loading: false,
-              view: "albums", album: null, genre: null, filter: "", shown: MUSIC_PAGE };
-var player = { queue: [], order: [], pos: -1, shuffle: false, repeat: "off",
+              view: "albums", album: null, filter: "", shown: MUSIC_PAGE };
+// source: where the queue was started, so the banner can say it, and where Music was then
+// (place), so the player bar's cover can go back there: { kind: "album" | "songs", key, label, place }.
+var player = { queue: [], order: [], pos: -1, shuffle: false, repeat: "off", source: null,
                blobs: {}, prefetchCtl: null, prefetchTimer: null,
                parkTimer: null, parked: false, parkedAt: 0 };
 
@@ -3613,11 +3649,7 @@ async function musicLoad(refresh) {
 // Albums are listed biggest first.
 //
 // Filters work the way Spotify's and Apple Music's library filters do: one bar, sticky at
-// the top, holding Albums or Songs, the genres and the search. They narrow what is under
-// them in place: a genre applies to albums and songs alike and stays while you switch
-// between them or open an album; the chip picked shows a cross to clear it, and the chips
-// are never redrawn, so the row stays where you scrolled it. With a genre picked, a strip
-// under the bar plays or shuffles just that genre.
+// the top, holding Albums or Songs and the search. They narrow what is under them in place.
 
 /** "Pusha T & Malice feat. Kendrick Lamar" -> ["Pusha T", "Malice", "Kendrick Lamar"]. */
 function artistParts(s) {
@@ -3662,7 +3694,6 @@ function indexAlbums() {
   }).sort(function (a, b) { return b.tracks.length - a.tracks.length || a.album.localeCompare(b.album); });
   music.albumByKey = {};
   music.albums.forEach(function (a) { music.albumByKey[a.key] = a; });
-  buildGenreChips();
 }
 
 /**
@@ -3690,15 +3721,13 @@ function albumTracks(key) {
 }
 
 function matchesSearch(t, q) {
-  return !q || (t.title + " " + t.artist + " " + t.album + " " + (t.genre || "")).toLowerCase().indexOf(q) >= 0;
+  return !q || (t.title + " " + t.artist + " " + t.album).toLowerCase().indexOf(q) >= 0;
 }
 
-/** The songs the Songs view shows: in the genre picked, and matching the search. */
+/** The songs the Songs view shows: those matching the search. */
 function musicMatches() {
   var q = music.filter.trim().toLowerCase();
-  return music.tracks.filter(function (t) {
-    return (!music.genre || t.genre === music.genre) && matchesSearch(t, q);
-  });
+  return music.tracks.filter(function (t) { return matchesSearch(t, q); });
 }
 
 var PLAY_SVG = "<svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path fill=\"currentColor\" d=\"M8 5.6v12.8a.9.9 0 0 0 1.4.8l10-6.4a.9.9 0 0 0 0-1.6l-10-6.4A.9.9 0 0 0 8 5.6Z\"/></svg>";
@@ -3708,16 +3737,14 @@ var BACK_SVG = "<svg viewBox=\"0 0 24 24\" aria-hidden=\"true\" fill=\"none\" st
 var CLOSE_SVG = "<svg viewBox=\"0 0 24 24\" aria-hidden=\"true\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.4\" stroke-linecap=\"round\"><path d=\"M7 7l10 10M17 7 7 17\"/></svg>";
 
 /**
- * Draws what is under the filter bar. The bar itself is not redrawn: its chips and buttons
- * only change state, so nothing in it moves.
+ * Draws what is under the filter bar. The bar itself is not redrawn: its buttons only change
+ * state, so nothing in it moves.
  */
 function renderMusic() {
   $("music-perm").hidden = music.granted;
   var host = $("music-list"), more = $("music-more");
   host.innerHTML = ""; more.innerHTML = "";
   setViewButtons();
-  updateGenreChips();
-  renderGenreStrip();
   renderStage();
   if (!music.granted) return;
   if (!music.tracks.length) {
@@ -3726,9 +3753,8 @@ function renderMusic() {
   }
   var q = music.filter.trim().toLowerCase();
   if (music.album !== null) {
-    // An album shows all of its songs, whatever genre is picked.
     var tracks = albumTracks(music.album);
-    renderTracks(host, q ? tracks.filter(function (t) { return t.title.toLowerCase().indexOf(q) >= 0; }) : tracks, false, tracks);
+    renderTracks(host, q ? tracks.filter(function (t) { return t.title.toLowerCase().indexOf(q) >= 0; }) : tracks, false, tracks, true);
     return;
   }
   if (music.view === "albums") { renderAlbums(host); return; }
@@ -3750,24 +3776,70 @@ function renderMusic() {
  * starts again just under the bar; if not, nothing moves.
  */
 function keepPlace() {
-  var bar = $("mu-bar"), panel = bar.parentNode;
-  var top = panel.getBoundingClientRect().top + window.scrollY - 8;
+  var bar = $("mu-bar"), pin = parseFloat(getComputedStyle(bar).top) || 0;
+  // Where the bar pins: its own place under the banner, less the header it pins under.
+  var top = $("mu-anchor").getBoundingClientRect().top + window.scrollY - pin - 10;
   if (window.scrollY > top) window.scrollTo({ top: top });
+  bar.classList.remove("tucked");
 }
 
 /**
- * Rows of tracks: the cover, the title with its genre beside it, who, then (every song
- * only) the album, what kind of file, and the length. The row playing is lit as a whole.
+ * The filter bar gets out of the way: pinned at the top, it slips up as you scroll down the
+ * list and is back the moment you scroll up (or reach its own place again). Never while you
+ * are typing in its search.
  */
-function renderTracks(host, shown, withAlbum, queue) {
+function setupBarTuck() {
+  var bar = $("mu-bar"), last = window.scrollY;
+  window.addEventListener("scroll", function () {
+    if (document.body.dataset.tab !== "music") return;
+    var y = window.scrollY, pin = parseFloat(getComputedStyle(bar).top) || 0;
+    var pinned = $("mu-anchor").getBoundingClientRect().top < pin - 4;
+    if (!pinned || document.activeElement === $("music-search")) bar.classList.remove("tucked");
+    else if (y > last + 6) bar.classList.add("tucked");
+    else if (y < last - 6) bar.classList.remove("tucked");
+    if (Math.abs(y - last) > 6 || !pinned) last = y;
+  }, { passive: true });
+  $("music-search").addEventListener("focus", function () { bar.classList.remove("tucked"); });
+}
+
+/** Theatre's top bar is clear over Home's banner while the page is at its top, as on the phone. */
+function setupTopBar() {
+  function check() { document.body.classList.toggle("at-top", window.scrollY < 8); }
+  window.addEventListener("scroll", check, { passive: true });
+  check();
+}
+
+/**
+ * Rows of tracks: (in an album, [numbered]) the track's number, the cover, the title, who,
+ * then (every song only) the album, what kind of file, and the length.
+ * The row playing is lit as a whole.
+ */
+/** A song clicked: it plays, then the rest of the list it is in, in order. */
+function playFrom(queue, t, source) {
+  setShuffle(false);
+  startQueue(queue, queue.indexOf(t), source);
+}
+
+function renderTracks(host, shown, withAlbum, queue, numbered) {
   var frag = document.createDocumentFragment();
+  // An album on more than one disc numbers its tracks disc by disc: 2-1, 2-2...
+  var discs = numbered && queue.some(function (t) { return t.disc > 1; });
+  var a = numbered ? music.albumByKey[music.album] : null;
+  var source = a ? { kind: "album", key: a.key, label: a.album } : songsSource();
   shown.forEach(function (t) {
     var row = document.createElement("div");
-    row.className = "trk" + (withAlbum ? " with-album" : "");
+    row.className = "trk" + (withAlbum ? " with-album" : "") + (numbered ? " numbered" : "");
     row.dataset.id = t.id;
     row.setAttribute("role", "button");
     row.tabIndex = 0;
     row.setAttribute("aria-label", "Play " + t.title + " by " + t.artist);
+    if (numbered) {
+      var no = document.createElement("span");
+      no.className = "no";
+      var n = t.track > 0 ? t.track : queue.indexOf(t) + 1;
+      no.textContent = discs ? t.disc + "-" + n : n;
+      row.appendChild(no);
+    }
     row.appendChild(coverEl("cover", (music.albumByKey[t.ak] || {}).coverId || t.albumId, t.album));
     var body = document.createElement("div");
     body.className = "t";
@@ -3776,17 +3848,6 @@ function renderTracks(host, shown, withAlbum, queue) {
     var name = document.createElement("b");
     name.textContent = t.title;
     line.appendChild(name);
-    if (t.genre) {
-      var g = document.createElement("span");
-      g.className = "badge genre";
-      g.textContent = t.genre;
-      g.title = "Only " + t.genre;
-      g.setAttribute("role", "button");
-      g.tabIndex = 0;
-      g.onclick = function (e) { e.stopPropagation(); pickGenre(t.genre, true); };
-      g.onkeydown = function (e) { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); e.stopPropagation(); pickGenre(t.genre, true); } };
-      line.appendChild(g);
-    }
     var who = document.createElement("span");
     who.className = "who";
     who.textContent = t.artist;
@@ -3813,124 +3874,27 @@ function renderTracks(host, shown, withAlbum, queue) {
     d.className = "d";
     d.textContent = fmtTime(t.durationMs / 1000);
     row.appendChild(d);
-    row.onclick = function () { startQueue(queue, queue.indexOf(t)); };
-    row.onkeydown = function (e) { if (e.target === row && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); startQueue(queue, queue.indexOf(t)); } };
+    row.onclick = function () { playFrom(queue, t, source); };
+    row.onkeydown = function (e) { if (e.target === row && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); playFrom(queue, t, source); } };
     frag.appendChild(row);
   });
   host.appendChild(frag);
   markPlaying();
 }
 
-// ---- genres
-
-function genreCounts() {
-  var seen = {}, list = [];
-  music.tracks.forEach(function (t) {
-    if (!t.genre) return;
-    if (!seen[t.genre]) { seen[t.genre] = { name: t.genre, count: 0 }; list.push(seen[t.genre]); }
-    seen[t.genre].count++;
-  });
-  return list.sort(function (a, b) { return b.count - a.count || a.name.localeCompare(b.name); });
-}
-
-/** The chips, built once per library load; after that only their state changes. */
-function buildGenreChips() {
-  var host = $("music-genres");
-  var list = genreCounts();
-  host.innerHTML = "";
-  host.hidden = list.length < 2;
-  if (host.hidden) return;
-  [{ name: null, count: music.tracks.length }].concat(list).forEach(function (g) {
-    var b = document.createElement("button");
-    b.type = "button";
-    b.className = "chip";
-    b.dataset.genre = g.name || "";
-    b.innerHTML = "<span></span><i></i><em aria-hidden=\"true\">" + CLOSE_SVG + "</em>";
-    b.firstChild.textContent = g.name || "All";
-    b.children[1].textContent = g.count;
-    b.onclick = function () { pickGenre(g.name, false); };
-    host.appendChild(b);
-  });
-}
-
-function updateGenreChips() {
-  Array.prototype.forEach.call($("music-genres").children, function (b) {
-    var on = (b.dataset.genre || null) === music.genre;
-    b.classList.toggle("on", on);
-    b.classList.toggle("clear", on && !!music.genre);
-    b.title = on && music.genre ? "Show all genres" : "";
-  });
-  // The chip picked is brought into view, without moving the page.
-  var on = $("music-genres").querySelector(".chip.on");
-  if (on && on.scrollIntoView) on.scrollIntoView({ block: "nearest", inline: "nearest" });
-}
-
-/**
- * Picks a genre, or clears it (the same chip again, or All). The view stays as it is,
- * Albums or Songs; an open album closes, since the genre is about the whole library. From a
- * song's badge ([fromBadge]) the Songs view is shown, where that song is.
- */
-function pickGenre(name, fromBadge) {
-  music.genre = music.genre === name ? null : name;
-  music.album = null;
-  music.shown = MUSIC_PAGE;
-  if (fromBadge && music.genre) music.view = "songs";
-  renderMusic();
-  keepPlace();
-}
-
-function genreTracks(name) {
-  return music.tracks.filter(function (t) { return t.genre === name; });
-}
-
-function playGenre(name, shuffled) {
-  var list = genreTracks(name);
-  if (!list.length) return;
-  player.shuffle = !!shuffled;
-  $("pl-shuffle").classList.toggle("on", player.shuffle);
-  startQueue(list, shuffled ? Math.floor(Math.random() * list.length) : 0);
-}
-
-/** Under the bar while a genre is picked: how much of it there is, and Play and Shuffle for all of it. */
-function renderGenreStrip() {
-  var el = $("genre-strip"), name = music.genre;
-  el.hidden = !name || music.album !== null;
-  if (el.hidden) return;
-  var tracks = genreTracks(name), albums = {}, secs = 0;
-  tracks.forEach(function (t) { albums[t.ak] = 1; secs += t.durationMs / 1000; });
-  var mins = Math.round(secs / 60), n = Object.keys(albums).length;
-  var art = el.querySelector(".gs-art");
-  art.innerHTML = "";
-  genCover(art, name);
-  el.querySelector(".gs-name").textContent = name;
-  el.querySelector(".gs-meta").textContent = tracks.length + (tracks.length === 1 ? " song" : " songs") + " · " +
-    n + (n === 1 ? " album" : " albums") + " · " + (mins >= 60 ? Math.floor(mins / 60) + " h " + (mins % 60) + " min" : mins + " min");
-  var cur = currentTrack(), here = cur && cur.genre === name, playing = here && isPlaying();
-  var play = el.querySelector(".gs-play");
-  play.innerHTML = (playing ? PAUSE_SVG + "Pause" : PLAY_SVG + "Play");
-  play.onclick = function () { if (here) togglePlay(); else playGenre(name, false); };
-  el.querySelector(".gs-shuffle").onclick = function () { playGenre(name, true); };
-  el.querySelector(".gs-clear").onclick = function () { pickGenre(name, false); };
-}
-
 // ---- albums
 
 function renderAlbums(host) {
   var q = music.filter.trim().toLowerCase();
-  var albums = music.albums.map(function (a) {
-    var n = music.genre ? a.tracks.filter(function (t) { return t.genre === music.genre; }).length : a.tracks.length;
-    return { a: a, n: n };
-  }).filter(function (x) {
-    return x.n > 0 && (!q || (x.a.album + " " + x.a.artist).toLowerCase().indexOf(q) >= 0 ||
-      x.a.tracks.some(function (t) { return matchesSearch(t, q); }));
+  var albums = music.albums.filter(function (a) {
+    return !q || (a.album + " " + a.artist).toLowerCase().indexOf(q) >= 0 ||
+      a.tracks.some(function (t) { return matchesSearch(t, q); });
   });
-  // Biggest first: in a genre, by how much of the album is in it.
-  if (music.genre) albums.sort(function (x, y) { return y.n - x.n || y.a.tracks.length - x.a.tracks.length; });
   if (!albums.length) { host.innerHTML = '<p class="empty">No albums match.</p>'; return; }
   var grid = document.createElement("div");
   grid.className = "albums";
-  albums.forEach(function (x) {
-    var a = x.a, total = a.tracks.length;
+  albums.forEach(function (a) {
+    var total = a.tracks.length;
     var tile = document.createElement("button");
     tile.type = "button";
     tile.className = "album";
@@ -3946,9 +3910,11 @@ function renderAlbums(host) {
     tile.appendChild(art);
     var cap = document.createElement("div");
     cap.className = "cap";
-    cap.innerHTML = '<div class="t"></div><div class="a"></div>';
+    cap.innerHTML = '<div class="t"></div><div class="a"><span class="by"></span><span class="n"></span></div>';
     cap.firstChild.textContent = a.album;
-    cap.lastChild.textContent = a.artist + " · " + (music.genre && x.n < total ? x.n + " of " + total : total) + (total === 1 ? " track" : " tracks");
+    cap.title = a.album + "\n" + a.artist;
+    cap.querySelector(".by").textContent = a.artist;
+    cap.querySelector(".n").textContent = "· " + total + (total === 1 ? " track" : " tracks");
     tile.appendChild(cap);
     tile.onclick = function () { openAlbum(a.key); };
     grid.appendChild(tile);
@@ -3973,17 +3939,28 @@ function markPlaying() {
     r.classList.toggle("playing", !!cur && String(cur.id) === r.dataset.id);
   });
   Array.prototype.forEach.call(document.querySelectorAll("#music-list .album"), function (r) {
-    r.classList.toggle("playing", !!cur && cur.ak === r.dataset.album);
+    // A tile keeps its album's key as text; the key itself may be a number.
+    r.classList.toggle("playing", !!cur && String(cur.ak) === r.dataset.album);
   });
-  if (music.genre) renderGenreStrip();
 }
 
 function playAlbum(key, shuffled) {
   var list = albumTracks(key);
   if (!list.length) return;
-  player.shuffle = !!shuffled;
+  setShuffle(shuffled);
+  var a = music.albumByKey[key];
+  startQueue(list, shuffled ? Math.floor(Math.random() * list.length) : 0, { kind: "album", key: key, label: a ? a.album : "" });
+}
+
+/** Play is in order, Shuffle is shuffled: each section's buttons set it, and the bar's shows it. */
+function setShuffle(on) {
+  player.shuffle = !!on;
   $("pl-shuffle").classList.toggle("on", player.shuffle);
-  startQueue(list, shuffled ? Math.floor(Math.random() * list.length) : 0);
+}
+
+/** What the Songs list is showing, as a queue's source: a search, or every song. */
+function songsSource() {
+  return { kind: "songs", label: music.filter.trim() ? "Search" : "Songs" };
 }
 
 /** Albums or Songs lit as the view is; with an album open, Albums (it is where you came from). */
@@ -4027,7 +4004,10 @@ function buildOrder(startIndex) {
   player.order = idx;
 }
 
-function startQueue(list, index) {
+function startQueue(list, index, source) {
+  player.source = source || null;
+  // Where Music was when this started: the player bar's cover goes back there.
+  if (player.source) player.source.place = { view: music.view, filter: music.filter };
   player.queue = list.slice();
   buildOrder(index);
   playCurrent();
@@ -4100,60 +4080,140 @@ function stageButton(host, cls, html, onClick) {
 }
 
 /**
- * The stage: the album opened; or, with no filter on (no genre, no search), what is
- * playing. A filtered list starts right under the bar, so filtering never pushes it down.
+ * The banner: what is playing, shown as its album with the song in it, whatever search or
+ * album is picked, so it never goes away while music plays. With nothing playing, it is
+ * the album opened. An album opened while another plays gets the strip over its songs instead.
  */
 function renderStage() {
-  var el = $("deck"), cur = currentTrack(), audio = $("audio");
+  renderAlbumStrip();
+  var el = $("deck"), cur = currentTrack();
   var playing = !!cur && isPlaying();
-  var unfiltered = !music.genre && !music.filter.trim();
-  var mode = music.album !== null ? "album" : cur && unfiltered ? "track" : null;
-  el.hidden = !mode;
-  if (!mode) return;
-  var here = mode === "track" || (cur && cur.ak === music.album);
-  el.classList.toggle("playing", playing && here);
-  el.classList.toggle("paused", mode === "track" && !playing);
-  $("stage-eq").hidden = !(here && cur);
+  var key = cur ? cur.ak : music.album;
+  var a = key !== null && key !== undefined ? music.albumByKey[key] : null;
+  el.hidden = !a;
+  if (!a) return;
+  var here = !!cur && cur.ak === key, many = a.tracks.length > 1;
+  el.classList.toggle("playing", playing);
+  el.classList.toggle("paused", here && !playing);
+  $("stage-eq").hidden = !here;
+  // An album of one song is that song: its name is the title.
+  var title = here && !many ? cur.title : a.album;
+  $("deck-title").textContent = title;
+  $("deck-title").classList.toggle("long", title.length > 26);
+  $("deck-artist").textContent = a.artist;
+  // Where it is playing from, when that is not the album on the banner, and whether shuffled.
+  var src = player.source, from = "";
+  if (here && src && !(src.kind === "album" && src.key === key)) from = src.label;
+  $("deck-state").textContent = (here ? (playing ? "NOW PLAYING" : "PAUSED") : "ALBUM") +
+    (from ? " · FROM " + from.toUpperCase() : "") + (here && player.shuffle ? " · SHUFFLE" : "");
+  var meta = $("deck-album");
+  if (many) {
+    var secs = a.tracks.reduce(function (n, t) { return n + t.durationMs / 1000; }, 0);
+    meta.textContent = a.tracks.length + " songs · " + Math.round(secs / 60) + " min" + (a.year > 0 ? " · " + a.year : "");
+  } else {
+    meta.textContent = here ? cur.album + (cur.year > 0 ? " · " + cur.year : "") : "1 song";
+    if (here) addBadge(meta, cur.mime);
+  }
+
   var actions = $("stage-actions");
   actions.innerHTML = "";
-  var album = $("deck-album");
-
-  if (mode === "album") {
-    var a = music.albumByKey[music.album], tracks = a.tracks;
-    var secs = tracks.reduce(function (n, t) { return n + t.durationMs / 1000; }, 0);
-    $("deck-state").textContent = here && cur ? (playing ? "ALBUM · PLAYING" : "ALBUM · PAUSED") : "ALBUM";
-    $("deck-title").textContent = a.album;
-    $("deck-title").classList.toggle("long", a.album.length > 26);
-    $("deck-artist").textContent = a.artist;
-    album.textContent = tracks.length + (tracks.length === 1 ? " song" : " songs") + " · " + Math.round(secs / 60) + " min" +
-      (a.year > 0 ? " · " + a.year : "");
-    if (here && cur) stageButton(actions, "btn", playing ? PAUSE_SVG + "Pause" : PLAY_SVG + "Play", togglePlay);
-    else stageButton(actions, "btn", PLAY_SVG + "Play", function () { playAlbum(a.key, false); });
-    stageButton(actions, "btn ghost", SHUFFLE_SVG + "Shuffle", function () { playAlbum(a.key, true); });
-    stageButton(actions, "btn ghost", BACK_SVG + (music.genre ? music.genre : "All albums"), function () {
-      music.album = null; music.view = "albums"; renderMusic(); keepPlace();
-    });
-    $("deck-next").hidden = true;
-    setStageArt(a.coverId);
-    return;
+  if (here) stageButton(actions, "btn", playing ? PAUSE_SVG + "Pause" : PLAY_SVG + "Play", togglePlay);
+  else stageButton(actions, "btn", PLAY_SVG + "Play", function () { playAlbum(key, false); });
+  if (many) stageButton(actions, "btn ghost", SHUFFLE_SVG + "Shuffle", function () { playAlbum(key, true); });
+  if (music.album === key) {
+    stageButton(actions, "btn ghost", BACK_SVG + "All albums", closeAlbum);
+  } else if (many) {
+    stageButton(actions, "btn ghost", "Go to album", here ? revealPlaying : function () { openAlbum(key); });
   }
-
-  $("deck-state").textContent = playing ? "NOW PLAYING" : "PAUSED";
-  $("deck-title").textContent = cur.title;
-  $("deck-title").classList.toggle("long", cur.title.length > 26);
-  $("deck-artist").textContent = cur.artist;
-  album.textContent = cur.album + (cur.year > 0 ? " · " + cur.year : "");
-  var badge = formatBadge(cur.mime);
-  if (badge) {
-    var b = document.createElement("span");
-    b.className = "badge";
-    b.textContent = badge;
-    album.appendChild(b);
-  }
-  stageButton(actions, "btn", playing ? PAUSE_SVG + "Pause" : PLAY_SVG + "Play", togglePlay);
-  stageButton(actions, "btn ghost", "Go to album", function () { openAlbum(cur.ak); });
   deckNext();
-  setStageArt((music.albumByKey[cur.ak] || {}).coverId || cur.albumId);
+  setStageArt(a.coverId);
+}
+
+function addBadge(host, mime) {
+  var k = formatBadge(mime);
+  if (!k) return;
+  var b = document.createElement("span");
+  b.className = "badge";
+  b.textContent = k;
+  host.appendChild(b);
+}
+
+function closeAlbum() {
+  music.album = null;
+  music.view = "albums";
+  renderMusic();
+  keepPlace();
+}
+
+/** An album opened while another one plays: its cover, name and size, Play and Shuffle, and the way back. */
+function renderAlbumStrip() {
+  var el = $("album-strip"), key = music.album, cur = currentTrack();
+  var a = key !== null ? music.albumByKey[key] : null;
+  el.hidden = !a || !cur || cur.ak === key;
+  if (el.hidden) return;
+  var secs = a.tracks.reduce(function (n, t) { return n + t.durationMs / 1000; }, 0);
+  el.replaceChild(coverEl("gs-art", a.coverId, a.album), el.querySelector(".gs-art"));
+  el.querySelector(".gs-name").textContent = a.album;
+  el.querySelector(".gs-meta").textContent = a.artist + " · " + a.tracks.length + (a.tracks.length === 1 ? " song" : " songs") +
+    " · " + Math.round(secs / 60) + " min" + (a.year > 0 ? " · " + a.year : "");
+  var play = el.querySelector(".gs-play");
+  play.innerHTML = PLAY_SVG + "Play";
+  play.onclick = function () { playAlbum(key, false); };
+  var shuffle = el.querySelector(".gs-shuffle");
+  shuffle.hidden = a.tracks.length < 2;
+  shuffle.onclick = function () { playAlbum(key, true); };
+  var back = el.querySelector(".gs-clear");
+  back.innerHTML = BACK_SVG;
+  back.onclick = closeAlbum;
+}
+
+/**
+ * Music at the album playing, its song lit and brought into view: from the cover in the player
+ * bar (on any tab), and from the banner. A search that would hide the song is cleared.
+ */
+function revealPlaying() {
+  var cur = currentTrack();
+  selectTab("music");
+  if (!cur) return;
+  var a = music.albumByKey[cur.ak], place = player.source && player.source.place;
+  if (!a || a.tracks.length < 2) { revealWhereFrom(cur, place); return; }
+  if (music.filter) { music.filter = ""; $("music-search").value = ""; }
+  music.album = cur.ak;
+  music.shown = MUSIC_PAGE;
+  renderMusic();
+  flashPlaying();
+}
+
+/**
+ * A song that is an album on its own never opens as one: Music goes back to where it was
+ * played from (Albums or Songs, and the search) and its row, or its cover, is lit.
+ */
+function revealWhereFrom(cur, place) {
+  if (place) {
+    music.view = place.view;
+    music.filter = place.filter || "";
+    $("music-search").value = music.filter;
+  }
+  music.album = null;
+  music.shown = MUSIC_PAGE;
+  if (music.view === "songs") {
+    var i = musicMatches().indexOf(cur);
+    if (i >= music.shown) music.shown = Math.ceil((i + 1) / MUSIC_PAGE) * MUSIC_PAGE;
+  }
+  renderMusic();
+  flashPlaying();
+}
+
+/** The song playing (or its album's cover) brought into view and lit; not shown, the top. */
+function flashPlaying() {
+  setTimeout(function () {
+    var el = document.querySelector("#music-list .trk.playing") || document.querySelector("#music-list .album.playing");
+    if (!el) { window.scrollTo({ top: 0, behavior: "smooth" }); return; }
+    el.scrollIntoView({ behavior: "smooth", block: "center" });
+    el.classList.remove("flash");
+    void el.offsetWidth;
+    el.classList.add("flash");
+  }, 60);
 }
 
 /** The cover on the stage and, from it, the stage's colour. Same album: nothing to do. */
@@ -4222,12 +4282,67 @@ function deckPlaying(on) {
   if (on) vizStart();
 }
 
+var CHECK_SVG = "<svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M5 12.5 10 17.5 19 7\"/></svg>";
+
+/**
+ * The queue beside the banner: the song playing, lit (a click shows it in its album), and the
+ * next ones, each with its cover, what kind of file it is, and Ready once it is in memory; a
+ * click on one plays it now.
+ */
 function deckNext() {
-  var el = $("deck-next"), n = trackAhead(1);
-  if (music.album !== null || !n) { el.hidden = true; return; }
-  el.hidden = false;
-  el.innerHTML = "<b>UP NEXT</b>";
-  el.appendChild(document.createTextNode(n.title + " · " + n.artist + (player.blobs[n.id] ? " · ready" : "")));
+  var el = $("deck-queue"), cur = currentTrack();
+  el.hidden = !cur || $("deck").hidden;
+  if (el.hidden) return;
+  el.innerHTML = "";
+  function label(text) { var l = document.createElement("div"); l.className = "sq-label"; l.textContent = text; el.appendChild(l); }
+  function row(t, k) {
+    var b = document.createElement("button");
+    b.type = "button";
+    b.className = "sq-row" + (k === 0 ? " now" : "");
+    var lead = document.createElement("span");
+    lead.className = "lead";
+    var coverId = (music.albumByKey[t.ak] || {}).coverId || t.albumId;
+    lead.dataset.coverAlbum = coverId;
+    paintCover(lead, coverId, t.album);
+    if (k === 0) lead.insertAdjacentHTML("beforeend", '<span class="eq"><b></b><b></b><b></b></span>');
+    b.appendChild(lead);
+    var txt = document.createElement("span");
+    txt.className = "txt";
+    txt.innerHTML = "<b></b><span></span>";
+    txt.firstChild.textContent = t.title;
+    txt.lastChild.textContent = t.artist + (t.ak !== cur.ak ? " · " + t.album : "");
+    b.appendChild(txt);
+    var rt = document.createElement("span");
+    rt.className = "rt";
+    rt.innerHTML = "<i></i><em></em>";
+    rt.firstChild.textContent = formatBadge(t.mime) || "";
+    if (k > 0 && player.blobs[t.id]) rt.lastChild.innerHTML = CHECK_SVG + "Ready";
+    b.appendChild(rt);
+    b.title = k === 0 ? "Show it in its album" : player.blobs[t.id] ? "Play it now (already loaded)" : "Play it now";
+    b.onclick = k === 0 ? revealPlaying : function () { jumpAhead(k); };
+    el.appendChild(b);
+  }
+  label("PLAYING");
+  row(cur, 0);
+  var next = [];
+  for (var k = 1; k <= 3; k++) { var n = trackAhead(k); if (!n) break; next.push(n); }
+  label("UP NEXT");
+  if (!next.length) {
+    var end = document.createElement("div");
+    end.className = "sq-end";
+    end.textContent = player.repeat === "off" ? "Nothing after this one" : "This one again";
+    el.appendChild(end);
+  }
+  next.forEach(function (t, i) { row(t, i + 1); });
+}
+
+/** Plays the song [k] places ahead in the queue now, as if the ones between had been skipped. */
+function jumpAhead(k) {
+  if (syncFollower()) return;
+  var n = player.order.length, p = player.pos + k;
+  if (p >= n) { if (player.repeat !== "all") return; p = p % n; }
+  player.pos = p;
+  playCurrent();
 }
 
 // ------------------------------------------------------------------ the equalizer
@@ -4454,17 +4569,11 @@ function setupPlayer() {
   $("pl-play").onclick = togglePlay;
   // The stage's cover plays: what is playing, or the album on the stage if that is another.
   $("np-art").onclick = function () {
-    var cur = currentTrack();
-    if (music.album !== null && (!cur || cur.ak !== music.album)) playAlbum(music.album, false);
+    if (!currentTrack() && music.album !== null) playAlbum(music.album, false);
     else togglePlay();
   };
-  // The little cover in the bar opens the Music tab at what is playing.
-  $("pl-art").onclick = function () {
-    music.album = null;
-    selectTab("music");
-    renderMusic();
-    $("deck").scrollIntoView({ behavior: "smooth", block: "start" });
-  };
+  // The little cover in the bar, from any tab: Music, at the album playing, the song lit.
+  $("pl-art").onclick = revealPlaying;
   $("pl-next").onclick = function () { playNext(false); };
   $("pl-prev").onclick = playPrev;
   $("pl-shuffle").onclick = function () {
@@ -4472,14 +4581,14 @@ function setupPlayer() {
     this.classList.toggle("on", player.shuffle);
     var cur = currentTrack();
     if (cur) { buildOrder(player.queue.indexOf(cur)); prefetchAhead(); }
-    deckNext();
+    renderStage();
   };
   $("pl-repeat").onclick = function () {
     player.repeat = player.repeat === "off" ? "all" : player.repeat === "all" ? "one" : "off";
     this.classList.toggle("one", player.repeat === "one");
     this.classList.toggle("on", player.repeat !== "off");
     prefetchAhead();
-    deckNext();
+    renderStage();
   };
 
   // Volume, remembered on this computer.
@@ -4993,6 +5102,8 @@ function showApp() {
     setupDrop();
     setupDock();
     setupPlayer();
+    setupBarTuck();
+    setupTopBar();
     setupSync();
     setupPhoneFiles();
     setupNotifs();
