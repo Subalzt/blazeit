@@ -218,8 +218,12 @@ private val TABS = listOf(
     "Settings" to BlazeIcons.Sliders,
 )
 private const val TAB_HOME = 0
+private val debugTab = kotlinx.coroutines.flow.MutableStateFlow(-1)
 private const val TAB_PHONES = 1
 private const val TAB_CONTROL = 2
+
+/** The Theatre style's header: the tabs as pills and the monitor switch, over the content. */
+private val TheatreHeaderHeight = 60.dp
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -248,6 +252,20 @@ private fun BlazeItUi(vm: MainViewModel) {
     val routes by peers.route.collectAsStateWithLifecycle()
 
     var tab by remember { mutableIntStateOf(TAB_HOME) }
+    // Swiping moves between the tabs. Each tab's list keeps its place while it is off screen.
+    val pager = androidx.compose.foundation.pager.rememberPagerState(initialPage = TAB_HOME) { TABS.size }
+    val lists = List(TABS.size) { androidx.compose.foundation.lazy.rememberLazyListState() }
+    // A tap on a tab slides there; a swipe that settles on a page makes it the tab.
+    // Only a tap slides the pages: while a swipe is moving them, its own landing makes the tab.
+    LaunchedEffect(tab) {
+        if (!pager.isScrollInProgress && pager.settledPage != tab)
+            pager.animateScrollToPage(tab, animationSpec = spring(dampingRatio = 0.9f, stiffness = 380f))
+    }
+    // Where the pages are right now, in tabs, for the bars to follow a swipe.
+    val pagePos by remember { derivedStateOf { pager.currentPage + pager.currentPageOffsetFraction } }
+    LaunchedEffect(pager) { snapshotFlow { pager.settledPage }.collect { tab = it } }
+    // The tab lit in the bar: mid-swipe, the one the swipe is heading to.
+    val shown = if (pager.isScrollInProgress) pager.targetPage else tab
     var showOem by remember { mutableStateOf(false) }
     val oemSteps = remember { OemBatterySetup.steps(ctx) }
     var sendTarget by remember { mutableStateOf<Peer?>(null) }
@@ -287,6 +305,8 @@ private fun BlazeItUi(vm: MainViewModel) {
 
     // A computer asking to connect is waiting on you, so jump to where the answer is.
     LaunchedEffect(requests.size) { if (requests.isNotEmpty()) { tab = TAB_HOME; showOem = false } }
+    // Debug builds: `--ei tab 0` opens that tab, for screenshots without touching the screen.
+    LaunchedEffect(Unit) { debugTab.collect { if (it >= 0) { tab = it; debugTab.value = -1 } } }
 
     val pickFiles = rememberLauncherForActivityResult(ActivityResultContracts.OpenMultipleDocuments()) { uris ->
         vm.offerPickedFiles(uris)
@@ -340,87 +360,111 @@ private fun BlazeItUi(vm: MainViewModel) {
     }
 
     val bottomInset = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
+    val statusTop = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
     val imeUp = WindowInsets.isImeVisible
-    // Glass: the content runs under a floating tab bar, which shows it through; plain: the bar
-    // is docked below the content.
-    val glass = LocalGlass.current
-    val backdrop = rememberBackdrop()
-    val barOver = glass && !imeUp && !showOem
-    val underBar = if (barOver) GlassTabBarSpace + bottomInset else 0.dp
+    // Studio: the tab bar is docked below the content, with the mini player on it; Theatre: the
+    // tabs are at the top.
+    val underBar = 0.dp
+    // Room for the monitor pill, so by default it covers nothing.
+    val monitorRoom = if (showMonitor) 48.dp else 0.dp
+    val theatreTop = statusTop + TheatreHeaderHeight + monitorRoom
+    val contentTop = if (tv && !heroUnderBar) theatreTop else 0.dp
 
-    CompositionLocalProvider(LocalBackdrop provides backdrop) {
     Box(Modifier.fillMaxSize().background(Bridge.Bg)) {
-        Column(Modifier.fillMaxSize().then(if (glass) Modifier.backdropSource(backdrop).background(Bridge.Bg) else Modifier)) {
-            Header(if (tab == TAB_HOME) "BlazeIt" else TABS[tab].first, running, showMonitor) { setMonitor(!showMonitor) }
-            // Room for the monitor pill, so by default it covers nothing.
-            if (showMonitor) Spacer(Modifier.height(48.dp))
-
-            Box(Modifier.weight(1f).imePadding()) {
-                when {
-                    showOem -> OemScreen(oemSteps, onOpen = { intent ->
-                        runCatching { openSettings.launch(intent) }.onFailure {
-                            Toast.makeText(ctx, "This phone would not open that screen", Toast.LENGTH_SHORT).show()
-                        }
-                    }, onDone = { showOem = false })
-
-                    tab == TAB_CONTROL -> ControlPane(
-                        running = running,
-                        onStart = { BridgeService.start(ctx) },
-                        modifier = Modifier.fillMaxSize().padding(bottom = underBar),
-                    )
-
-                    // Each tab keeps its own scroll position.
-                    else -> key(tab) { LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = 24.dp + underBar)) {
-                        when (tab) {
-                            TAB_HOME -> homeTab(
-                                state, running, direct, laptopLink, shared, clipStatus, requests, devices, live, vm,
-                                transfers, files, sendStatus,
-                                toggleDirect = toggleDirect,
-                                pickFiles = { pickFiles.launch(arrayOf("*/*")) },
-                                openTether = openHotspot,
-                            ) {
-                                if (running) BridgeService.stop(ctx) else BridgeService.start(ctx)
-                            }
-                            TAB_PHONES -> phonesTab(
-                                running, transfers, nearby, paired, peerStatus, routes, phoneDirect,
-                                setPhoneDirect = vm::setPhoneDirect,
-                                connect = peers::connect,
-                                forget = peers::forget,
-                                sendFilesTo = { sendTarget = it; pickForPhone.launch(arrayOf("*/*")) },
-                                sendTextTo = { p ->
-                                    if (shared.isBlank()) {
-                                        Toast.makeText(ctx, "Type something in Clipboard on Home first", Toast.LENGTH_SHORT).show()
-                                    } else peers.sendText(p, shared) { ok ->
-                                        Toast.makeText(ctx, if (ok) "Sent to ${p.name}" else "Could not reach ${p.name}", Toast.LENGTH_SHORT).show()
-                                    }
-                                },
-                            )
-                            else -> settingsTab(
-                                state, vm, theme, look, laptopLink,
-                                pickFolder = { pickFolder.launch(null) },
-                                requestNotifications = { requestNotifications.launch(android.Manifest.permission.POST_NOTIFICATIONS) },
-                                requestMusic = { requestMusic.launch(musicPermission()) },
-                                requestPhotos = {
-                                    requestPhotos.launch(
-                                        if (Build.VERSION.SDK_INT >= 33) android.Manifest.permission.READ_MEDIA_IMAGES
-                                        else android.Manifest.permission.READ_EXTERNAL_STORAGE
-                                    )
-                                },
-                                openSettings = { openSettings.launch(it) },
-                                showOem = { showOem = true },
-                            )
-                        }
-                    } }
+        Box(Modifier.fillMaxSize()) {
+            StyleBackground()
+            Column(Modifier.fillMaxSize()) {
+                if (!tv) {
+                    Header(if (shown == TAB_HOME) "Localhost 8787" else TABS[shown].first, showMonitor) { setMonitor(!showMonitor) }
+                    if (showMonitor) Spacer(Modifier.height(48.dp))
                 }
-            }
 
-            if (!glass && !imeUp && !showOem) TabBar(TABS, tab, bottomInset) { tab = it }
-            else if (!imeUp && !barOver) Spacer(Modifier.height(bottomInset))
+                Box(Modifier.weight(1f).imePadding()) {
+                    if (showOem) OemScreen(oemSteps, Modifier.padding(top = contentTop), onOpen = { intent ->
+                            runCatching { openSettings.launch(intent) }.onFailure {
+                                Toast.makeText(ctx, "This phone would not open that screen", Toast.LENGTH_SHORT).show()
+                            }
+                        }, onDone = { showOem = false })
+
+                    // The trackpad keeps its own touches; swipe on the keys under it instead.
+                    else androidx.compose.foundation.pager.HorizontalPager(
+                        pager, Modifier.fillMaxSize(), key = { it },
+                        // Settles with a soft spring rather than a hard stop.
+                        flingBehavior = androidx.compose.foundation.pager.PagerDefaults.flingBehavior(
+                            pager, snapPositionalThreshold = 0.18f,
+                            snapAnimationSpec = spring(dampingRatio = 0.86f, stiffness = 420f),
+                        ),
+                    ) { page ->
+                        val top = if (tv && page != TAB_HOME) theatreTop else 0.dp
+                        // A page on its way out sinks back a little and dims; the one coming in rises to meet you.
+                        Box(Modifier.fillMaxSize().graphicsLayer {
+                            val off = kotlin.math.abs((pager.currentPage - page) + pager.currentPageOffsetFraction).coerceIn(0f, 1f)
+                            val s = 1f - 0.07f * off
+                            scaleX = s; scaleY = s
+                            alpha = 1f - 0.45f * off
+                        }) {
+                        if (page == TAB_CONTROL) ControlPane(
+                            running = running,
+                            onStart = { BridgeService.start(ctx) },
+                            modifier = Modifier.fillMaxSize().padding(top = top, bottom = underBar),
+                            active = tab == TAB_CONTROL,
+                        )
+                        else LazyColumn(Modifier.fillMaxSize(), state = lists[page], contentPadding = PaddingValues(top = top, bottom = 28.dp + underBar)) {
+                            when (page) {
+                                TAB_HOME -> homeTab(
+                                    state, running, direct, laptopLink.mode, shared, clipStatus, requests, devices, live, vm,
+                                    transfers, files, sendStatus,
+                                    heroTop = if (tv) theatreTop else 0.dp,
+                                    toggleDirect = toggleDirect,
+                                    pickFiles = { pickFiles.launch(arrayOf("*/*")) },
+                                    openTether = openHotspot,
+                                    goTab = { tab = it },
+                                    onToggle = toggleServer,
+                                )
+                                TAB_PHONES -> phonesTab(
+                                    running, transfers, nearby, paired, peerStatus, routes, phoneDirect,
+                                    setPhoneDirect = vm::setPhoneDirect,
+                                    connect = peers::connect,
+                                    forget = peers::forget,
+                                    sendFilesTo = { sendTarget = it; pickForPhone.launch(arrayOf("*/*")) },
+                                    sendTextTo = { p ->
+                                        if (shared.isBlank()) {
+                                            Toast.makeText(ctx, "Type something in Clipboard on Home first", Toast.LENGTH_SHORT).show()
+                                        } else peers.sendText(p, shared) { ok ->
+                                            Toast.makeText(ctx, if (ok) "Sent to ${p.name}" else "Could not reach ${p.name}", Toast.LENGTH_SHORT).show()
+                                        }
+                                    },
+                                )
+                                else -> settingsTab(
+                                    state, vm, theme, look, laptopLink, direct, toggleDirect,
+                                    pickFolder = { pickFolder.launch(null) },
+                                    requestNotifications = { requestNotifications.launch(android.Manifest.permission.POST_NOTIFICATIONS) },
+                                    requestMusic = { requestMusic.launch(musicPermission()) },
+                                    requestPhotos = {
+                                        requestPhotos.launch(
+                                            if (Build.VERSION.SDK_INT >= 33) android.Manifest.permission.READ_MEDIA_IMAGES
+                                            else android.Manifest.permission.READ_EXTERNAL_STORAGE
+                                        )
+                                    },
+                                    openSettings = { openSettings.launch(it) },
+                                    showOem = { showOem = true },
+                                )
+                            }
+                        }
+                        }
+                    }
+
+                    if (tv) TheatreHeader(shown, pagePos, overHero = overHero, monitorOn = showMonitor, onMonitor = { setMonitor(!showMonitor) }) {
+                        tab = it; showOem = false
+                    }
+                }
+
+                if (bottomTabs && !imeUp && !showOem) TabBar(TABS, shown, bottomInset, position = pagePos) { tab = it }
+                else if (!imeUp) Spacer(Modifier.height(bottomInset))
+            }
         }
 
-        if (barOver) TabBar(TABS, tab, bottomInset, Modifier.align(Alignment.BottomCenter)) { tab = it }
         if (showMonitor) MonitorOverlay(monitor, running) { setMonitor(false) }
-    }
     }
 }
 

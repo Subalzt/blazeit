@@ -100,7 +100,7 @@ import kotlin.math.min
  */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-fun ControlPane(running: Boolean, onStart: () -> Unit, modifier: Modifier = Modifier) {
+fun ControlPane(running: Boolean, onStart: () -> Unit, modifier: Modifier = Modifier, active: Boolean = true) {
     val ctx = LocalContext.current
     val view = LocalView.current
     val laptops by Control.connected.collectAsStateWithLifecycle()
@@ -129,11 +129,11 @@ fun ControlPane(running: Boolean, onStart: () -> Unit, modifier: Modifier = Modi
         if (!running || laptops.isEmpty()) {
             Column(Modifier.fillMaxWidth().panel().padding(14.dp)) {
                 if (!running) {
-                    Text("Start BlazeIt, then run the helper on the laptop.", style = BodyStyle, color = Bridge.Text)
+                    Text("Start Localhost 8787, then run the helper on the laptop.", style = BodyStyle, color = Bridge.Text)
                     BridgeButton("Start", Modifier.padding(top = 10.dp), onClick = onStart)
                 } else {
                     Text(
-                        "On the laptop, run blazeit-pc.bat (the BlazeIt page has it under Laptop control). " +
+                        "On the laptop, run blazeit-pc.bat (the Localhost 8787 page has it under Laptop control). " +
                             "It finds this phone by itself and asks you to allow it here once.",
                         style = BodyStyle, color = Bridge.Text,
                     )
@@ -163,11 +163,45 @@ fun ControlPane(running: Boolean, onStart: () -> Unit, modifier: Modifier = Modi
                 Icon(BlazeIcons.Chevron, null, tint = Bridge.Muted, modifier = Modifier.size(18.dp))
             }
         }
-        Trackpad(pad, status, laptops.isNotEmpty(), Modifier.weight(1f).fillMaxWidth())
+        // Locked each time the tab opens (leaving it drops this state), so a swipe across the
+        // middle of the screen turns the page instead of moving the pointer. A tap unlocks.
+        var unlocked by remember { mutableStateOf(false) }
+        Box(Modifier.weight(1f).fillMaxWidth()) {
+            Trackpad(pad, status, laptops.isNotEmpty(), Modifier.fillMaxSize())
+            if (!unlocked) PadLock(Modifier.matchParentSize()) {
+                unlocked = true
+                view.performHapticFeedback(HapticFeedbackConstants.CONTEXT_CLICK)
+            }
+        }
 
         // With the keyboard up, the keys sit directly on top of it. Clicks live on the pad
         // itself: tap to click, two-finger tap to right-click, tap then drag to hold.
         KeyRow(pad, WindowInsets.isImeVisible)
+    }
+}
+
+/**
+ * Over the trackpad while it is locked: a padlock and what a tap does. It takes taps only, so a
+ * swipe across it goes on to the tabs.
+ */
+@Composable
+private fun PadLock(modifier: Modifier, unlock: () -> Unit) {
+    val shape = RoundedCornerShape(cardRadius)
+    Box(
+        modifier
+            .padding(horizontal = 16.dp, vertical = 8.dp)
+            .clip(shape)
+            .background(Bridge.Surface.copy(alpha = 0.94f))
+            .clickable(onClickLabel = "Unlock the trackpad", onClick = unlock),
+        contentAlignment = Alignment.Center,
+    ) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Box(Modifier.size(64.dp).clip(androidx.compose.foundation.shape.CircleShape).background(Bridge.Accent.copy(alpha = 0.14f)), contentAlignment = Alignment.Center) {
+                Icon(BlazeIcons.Lock, null, tint = Bridge.Accent, modifier = Modifier.size(30.dp))
+            }
+            Spacer(Modifier.height(14.dp))
+            Text("Tap to use the trackpad", style = TitleStyle, color = Bridge.Text)
+        }
     }
 }
 
@@ -283,6 +317,9 @@ private fun Trackpad(pad: PadState, status: String, live: Boolean, modifier: Mod
                             continue
                         }
 
+                        // Every touch on the pad is the pad's: taken here, it never turns the page
+                        // (the tabs swipe from the keys under the pad instead).
+                        event.changes.forEach { it.consume() }
                         val pressed = event.changes.filter { it.pressed }
                         if (pressed.isEmpty()) break
                         val fingers = pressed.size
@@ -452,7 +489,7 @@ private fun SeekArrow(pad: PadState, key: String, label: String, modifier: Modif
             .width(44.dp)
             .height(112.dp)
             .clip(ButtonShape)
-            .background(if (held) Bridge.Yellow else Bridge.Chip.copy(alpha = 0.7f))
+            .background(if (held) Bridge.Accent else Bridge.Chip.copy(alpha = 0.7f))
             .pointerInput(key) {
                 awaitEachGesture {
                     awaitFirstDown()
@@ -477,10 +514,10 @@ private fun SeekArrow(pad: PadState, key: String, label: String, modifier: Modif
     ) {
         Icon(
             BlazeIcons.Chevron, label,
-            tint = if (held) Bridge.OnYellow else Bridge.Text,
+            tint = if (held) Bridge.OnAccent else Bridge.Text,
             modifier = Modifier.size(24.dp).graphicsLayer { rotationZ = if (key == "left") 180f else 0f },
         )
-        Text(label, style = LabelStyle.copy(fontSize = 10.sp), color = if (held) Bridge.OnYellow else Bridge.Muted)
+        Text(label, style = LabelStyle.copy(fontSize = 10.sp), color = if (held) Bridge.OnAccent else Bridge.Muted)
     }
 }
 
@@ -497,7 +534,7 @@ private fun SpeedControl(pad: PadState, modifier: Modifier) {
     val level = SPEEDS.indexOfFirst { abs(it.second - pad.speed) < 0.01f }.coerceAtLeast(0)
     val sweep by animateFloatAsState(0.18f + 0.64f * level / (SPEEDS.size - 1), label = "needle")
     val track = Bridge.Faint
-    val fill = Bridge.Yellow
+    val fill = Bridge.Accent
     val needle = Bridge.Text
     Box(modifier.padding(8.dp)) {
         Row(
@@ -574,7 +611,7 @@ private fun KeyRow(pad: PadState, imeUp: Boolean) {
         Modifier
             .fillMaxWidth()
             // Over the phone keyboard the row needs its own ground; otherwise it floats like the rest.
-            .then(if (imeUp) Modifier.background(Bridge.Bar) else Modifier)
+            .then(if (imeUp) Modifier.background(Bridge.Bg) else Modifier)
             .padding(horizontal = 16.dp, vertical = 6.dp),
         horizontalArrangement = Arrangement.spacedBy(6.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -610,7 +647,7 @@ private fun KeyRow(pad: PadState, imeUp: Boolean) {
             ArrowKey(pad, "right", Modifier.weight(1f))
         } else {
             // The laptop's media keys: they reach whatever is playing, even in the background.
-            // Play or pause is the one reached for most, so it is the big yellow one in the middle.
+            // Play or pause is the one reached for most, so it is the big one in the middle, in the accent.
             IconKeyChip(BlazeIcons.Prev, "Previous", Modifier.weight(1f)) { pad.key("prev") }
             PlayPauseKey(pad)
             IconKeyChip(BlazeIcons.Next, "Next", Modifier.weight(1f)) { pad.key("next") }
@@ -642,17 +679,17 @@ private fun VolumeKey(pad: PadState, modifier: Modifier) {
                 .fillMaxWidth()
                 .height(40.dp)
                 .clip(ButtonShape)
-                .background(if (open) Bridge.Yellow else Bridge.Surface)
+                .background(if (open) Bridge.Accent else Bridge.Surface)
                 .clickable { open = !open },
             contentAlignment = Alignment.Center,
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(icon, "Volume", tint = if (open) Bridge.OnYellow else Bridge.Text, modifier = Modifier.size(20.dp))
+                Icon(icon, "Volume", tint = if (open) Bridge.OnAccent else Bridge.Text, modifier = Modifier.size(20.dp))
                 if (vol.level >= 0f) {
                     Spacer(Modifier.width(3.dp))
                     Text(
                         (vol.level * 100).roundToInt().toString(),
-                        style = LabelStyle.copy(fontSize = 12.sp), color = if (open) Bridge.OnYellow else Bridge.Muted,
+                        style = LabelStyle.copy(fontSize = 12.sp), color = if (open) Bridge.OnAccent else Bridge.Muted,
                     )
                 }
             }
@@ -729,26 +766,26 @@ private fun VolumeBar(pad: PadState, vol: Control.Volume) {
                     .align(Alignment.BottomCenter)
                     .fillMaxWidth()
                     .fillMaxHeight(level)
-                    .background(if (vol.muted) Bridge.Faint else Bridge.Yellow),
+                    .background(if (vol.muted) Bridge.Faint else Bridge.Accent),
             )
         }
         Box(
             Modifier
                 .size(42.dp)
                 .clip(androidx.compose.foundation.shape.CircleShape)
-                .background(if (vol.muted) Bridge.Yellow else Bridge.Chip)
+                .background(if (vol.muted) Bridge.Accent else Bridge.Chip)
                 .clickable {
                     view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
                     pad.send("vm")
                 },
             contentAlignment = Alignment.Center,
         ) {
-            Icon(BlazeIcons.Mute, if (vol.muted) "Unmute" else "Mute", tint = if (vol.muted) Bridge.OnYellow else Bridge.Text, modifier = Modifier.size(20.dp))
+            Icon(BlazeIcons.Mute, if (vol.muted) "Unmute" else "Mute", tint = if (vol.muted) Bridge.OnAccent else Bridge.Text, modifier = Modifier.size(20.dp))
         }
     }
 }
 
-/** Play or pause on the laptop: a big yellow circle, the key a remote is held for. */
+/** Play or pause on the laptop: a big circle in the accent, the key a remote is held for. */
 @Composable
 private fun PlayPauseKey(pad: PadState) {
     val view = LocalView.current
@@ -756,13 +793,13 @@ private fun PlayPauseKey(pad: PadState) {
         Modifier
             .size(54.dp)
             .clip(androidx.compose.foundation.shape.CircleShape)
-            .background(Bridge.Yellow)
+            .background(Bridge.Accent)
             .clickable {
                 view.performHapticFeedback(HapticFeedbackConstants.CONFIRM)
                 pad.key("playpause")
             },
         contentAlignment = Alignment.Center,
-    ) { Icon(BlazeIcons.PlayPause, "Play or pause", tint = Bridge.OnYellow, modifier = Modifier.size(26.dp)) }
+    ) { Icon(BlazeIcons.PlayPause, "Play or pause", tint = Bridge.OnAccent, modifier = Modifier.size(26.dp)) }
 }
 
 /** An arrow key over the phone keyboard: sent once on a tap, again and again while held. */
@@ -775,7 +812,7 @@ private fun ArrowKey(pad: PadState, key: String, modifier: Modifier) {
         modifier
             .height(40.dp)
             .clip(ButtonShape)
-            .background(if (held) Bridge.Yellow else Bridge.Surface)
+            .background(if (held) Bridge.Accent else Bridge.Surface)
             .pointerInput(key) {
                 awaitEachGesture {
                     awaitFirstDown()
@@ -795,7 +832,7 @@ private fun ArrowKey(pad: PadState, key: String, modifier: Modifier) {
     ) {
         Icon(
             BlazeIcons.Chevron, key,
-            tint = if (held) Bridge.OnYellow else Bridge.Text,
+            tint = if (held) Bridge.OnAccent else Bridge.Text,
             modifier = Modifier.size(22.dp).graphicsLayer {
                 rotationZ = when (key) { "left" -> 180f; "up" -> -90f; "down" -> 90f; else -> 0f }
             },
@@ -834,7 +871,7 @@ private fun KeyChip(label: String, modifier: Modifier = Modifier, on: Boolean = 
             .widthIn(min = 44.dp)
             .height(40.dp)
             .clip(ButtonShape)
-            .background(if (on) Bridge.Yellow else Bridge.Surface)
+            .background(if (on) Bridge.Accent else Bridge.Surface)
             .clickable {
                 view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
                 onClick()
@@ -842,7 +879,7 @@ private fun KeyChip(label: String, modifier: Modifier = Modifier, on: Boolean = 
             .padding(horizontal = 10.dp),
         contentAlignment = Alignment.Center,
     ) {
-        Text(label, style = LabelStyle, color = if (on) Bridge.OnYellow else Bridge.Text)
+        Text(label, style = LabelStyle, color = if (on) Bridge.OnAccent else Bridge.Text)
     }
 }
 
