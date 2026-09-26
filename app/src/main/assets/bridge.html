@@ -389,65 +389,178 @@
   .cover img { width: 100%; height: 100%; object-fit: cover; display: block; }
   .has-glyph { position: relative; }
   .has-glyph > img { position: absolute; inset: 0; }
-  #music-list .song { cursor: pointer; border-radius: 14px; padding: 8px 10px; }
-  #music-list .song + .song { border-top: 0; }
-  #music-list .song:hover { background: var(--surface-2); }
-  #music-list .song.accent { background: color-mix(in srgb, var(--music) 10%, transparent); }
-  #music-list .song.accent .title { color: var(--music); }
-  .song .dur { font-size: 13px; color: var(--sub); font-variant-numeric: tabular-nums; }
-  .albums { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 14px; }
-  .album { position: relative; cursor: pointer; border: 0; background: transparent; color: inherit; text-align: left; border-radius: 18px; padding: 8px; transition: background .12s; }
-  .album:hover { background: var(--surface-2); }
-  .album .art { position: relative; aspect-ratio: 1 / 1; display: grid; place-items: center; overflow: hidden; border-radius: 14px; background: var(--surface-2); color: var(--faint); font-size: 34px; }
+
+  .mu-tools { display: flex; align-items: center; gap: 12px; margin: 0 0 22px; }
+  .mu-tools input[type=search] { flex: 1 1 auto; width: auto; }
+
+  .stage { --tint: var(--accent); position: relative; overflow: hidden; display: flex; align-items: center; gap: 34px;
+    padding: 28px 32px; margin: 0 0 30px; border-radius: 22px; color: #FFFFFF; contain: layout paint;
+    background:
+      radial-gradient(90% 130% at 100% 0%, rgba(255,255,255,.10), transparent 60%),
+      linear-gradient(125deg, color-mix(in srgb, var(--tint) 88%, #FFF) 0%, color-mix(in srgb, var(--tint) 62%, #000) 48%, color-mix(in srgb, var(--tint) 22%, #000) 100%);
+    box-shadow: 0 28px 56px -30px color-mix(in srgb, var(--tint) 70%, #000); }
+  .stage-art { position: relative; flex: 0 0 auto; width: 188px; aspect-ratio: 1 / 1; overflow: hidden; cursor: pointer;
+    display: grid; place-items: center; border-radius: 12px; background: rgba(0,0,0,.28); color: rgba(255,255,255,.4); font-size: 60px;
+    box-shadow: 14px 16px 0 rgba(0,0,0,.30); transition: transform .35s cubic-bezier(.25,.8,.3,1), box-shadow .35s; }
+  .stage-art img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+  .stage-art:hover { transform: translate(-2px, -2px); box-shadow: 16px 18px 0 rgba(0,0,0,.30); }
+  .stage.paused .stage-art { transform: scale(.97); box-shadow: 10px 12px 0 rgba(0,0,0,.24); }
+  .stage-meta { flex: 1 1 auto; min-width: 0; }
+  .stage-kicker { display: flex; align-items: center; gap: 9px; font-size: 11.5px; font-weight: 800; letter-spacing: 1.8px; opacity: .9; }
+  .stage-kicker .eq { display: inline-flex; align-items: flex-end; gap: 2px; height: 11px; }
+  .stage-kicker .eq b { width: 3px; height: 35%; border-radius: 1px; background: #FFFFFF; }
+  .stage.playing .stage-kicker .eq b { animation: eq .9s ease-in-out infinite alternate; }
+  .stage.playing .stage-kicker .eq b:nth-child(2) { animation-delay: -.35s; } .stage.playing .stage-kicker .eq b:nth-child(3) { animation-delay: -.7s; }
+  .stage-kicker .eq[hidden] { display: none; }
+  .stage-title { margin-top: 10px; font-size: clamp(28px, 3.3vw, 48px); font-weight: 850; line-height: 1.14; letter-spacing: -1.2px; padding-bottom: .06em;
+    overflow-wrap: anywhere; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+    text-shadow: .035em .05em 0 rgba(0,0,0,.32); }
+  /* A long name (a soundtrack's, say) is set smaller, so two lines hold it without crowding. */
+  .stage-title.long { font-size: clamp(24px, 2.5vw, 36px); letter-spacing: -.8px; }
+  .stage-artist { margin-top: 10px; font-size: 18px; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    text-shadow: .06em .08em 0 rgba(0,0,0,.3); }
+  .stage-album { margin-top: 4px; font-size: 13.5px; opacity: .78; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .stage-album .badge { background: rgba(255,255,255,.18); color: #FFFFFF; }
+  .stage-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 18px; }
+  .stage-actions .btn { height: 40px; background: #FFFFFF; color: #111114; box-shadow: 4px 5px 0 rgba(0,0,0,.28); }
+  .stage-actions .btn:hover:not(:disabled) { transform: translate(-1px, -1px); box-shadow: 6px 7px 0 rgba(0,0,0,.28); }
+  .stage-actions .btn:active:not(:disabled) { transform: translate(2px, 3px); box-shadow: 1px 1px 0 rgba(0,0,0,.28); }
+  .stage-actions .btn.ghost { background: rgba(255,255,255,.16); color: #FFFFFF; box-shadow: none; }
+  .stage-actions .btn.ghost:hover:not(:disabled) { background: rgba(255,255,255,.26); box-shadow: none; }
+  .stage-actions svg { width: 17px; height: 17px; }
+  .deck-next { margin-top: 16px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,.16); font-size: 13px; opacity: .8;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .deck-next b { font-size: 11px; letter-spacing: 1px; margin-right: 8px; }
+
+  /* The album grid: covers on the page, lifting off their own hard shadow under the pointer. */
+  .albums { display: grid; grid-template-columns: repeat(auto-fill, minmax(164px, 1fr)); gap: 30px 22px; }
+  .album { position: relative; padding: 0; border: 0; background: none; color: inherit; text-align: left; cursor: pointer;
+    content-visibility: auto; contain-intrinsic-size: auto 232px; }
+  .album .art { position: relative; aspect-ratio: 1 / 1; display: grid; place-items: center; overflow: hidden; border-radius: 10px;
+    background: var(--surface-2); color: var(--faint); font-size: 34px; box-shadow: 0 1px 3px rgba(0,0,0,.14);
+    transition: transform .25s cubic-bezier(.25,.8,.3,1), box-shadow .25s; }
   .album .art img { width: 100%; height: 100%; object-fit: cover; display: block; }
-  .album-play { position: absolute; right: 10px; bottom: 10px; width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center;
-    background: var(--music); color: #fff; opacity: 0; transform: translateY(4px); transition: opacity .15s, transform .15s; }
+  /* A cover made from the album's name, until (or unless) the real one is found. */
+  .gen { color: #FFFFFF; font-weight: 850; letter-spacing: -.04em; text-shadow: .05em .07em 0 rgba(0,0,0,.28); }
+  .album .art.gen, .cover.gen, .stage-art.gen { color: #FFFFFF; font-weight: 850; }
+  .album .art.gen { font-size: 52px; }
+  .cover.gen { font-size: 15px; }
+  .stage-art.gen { font-size: 66px; }
+  .player .cover.gen { font-size: 18px; }
+  .album:hover .art { transform: translate(-2px, -3px); box-shadow: 6px 7px 0 color-mix(in srgb, var(--txt) 16%, transparent); }
+  .album.playing .art { transform: translate(-2px, -3px); box-shadow: 6px 7px 0 color-mix(in srgb, var(--accent) 55%, transparent); }
+  .album-play { position: absolute; right: 10px; bottom: 10px; width: 42px; height: 42px; border-radius: 50%; display: grid; place-items: center;
+    background: var(--accent); color: var(--on-accent); box-shadow: 3px 4px 0 rgba(0,0,0,.3);
+    opacity: 0; transform: translateY(3px); transition: opacity .15s, transform .2s cubic-bezier(.25,.8,.3,1); }
   .album-play svg { width: 18px; height: 18px; }
   .album:hover .album-play { opacity: 1; transform: none; }
-  .album .cap { padding: 8px 2px 0; }
-  .album .cap .t { font-size: 14px; font-weight: 650; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .album .cap { padding: 11px 2px 0; }
+  .album .cap .t { font-size: 14.5px; font-weight: 700; letter-spacing: -.1px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .album .cap .a { font-size: 12.5px; color: var(--sub); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .album-page { margin: 0 0 16px; }
-  .album-page .back { display: inline-flex; align-items: center; gap: 4px; border: 0; background: none; color: var(--blue); font-weight: 600; cursor: pointer; padding: 4px 0; }
-  .album-page .back svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
-  .album-head { display: flex; gap: 26px; align-items: flex-end; margin-top: 12px; }
-  .album-cover .cover { width: 200px; height: 200px; flex-basis: 200px; border-radius: 18px; font-size: 48px; box-shadow: 0 12px 30px rgba(0,0,0,.18); }
-  .album-info .kicker { font-size: 12px; font-weight: 750; letter-spacing: 1px; text-transform: uppercase; color: var(--sub); }
-  .album-info h2 { margin: 4px 0 0; font-size: 30px; font-weight: 800; letter-spacing: -.7px; line-height: 1.1; }
-  .album-info .by { font-size: 17px; font-weight: 600; color: var(--music); margin-top: 4px; }
-  .album-info .facts { font-size: 13px; color: var(--sub); margin-top: 6px; }
-  .album-actions { display: flex; gap: 10px; margin-top: 16px; }
-  .album-actions .btn { background: var(--music); color: #fff; }
-  .album-actions .btn.ghost { background: var(--surface-2); color: var(--music); }
-  .album-actions svg { width: 18px; height: 18px; }
 
-  /* turntable: record, sheen and arm on a 1000-unit square. Only the label turns, so
-     pausing freezes it exactly where it is. */
-  .deck { position: relative; overflow: hidden; display: flex; align-items: center; gap: 40px; padding: 28px 32px; margin-bottom: 16px; border-radius: var(--r-card); background: #121214; color: #F5F5F7; }
-  .deck-bg { position: absolute; inset: -40px; background-size: cover; background-position: center; filter: blur(60px) saturate(140%); opacity: 0; transition: opacity .6s; pointer-events: none; }
-  .deck-bg.on { opacity: .5; }
-  .tt { position: relative; flex: 0 0 auto; width: min(280px, 32vw); aspect-ratio: 1 / 1; cursor: pointer; }
-  .tt > * { position: absolute; display: block; }
-  .tt-label { left: 18.5%; top: 19%; width: 56%; height: 56%; border-radius: 50%; overflow: hidden; background: var(--accent); color: var(--on-accent);
-    display: flex; align-items: center; justify-content: center; font-weight: 800; letter-spacing: 3px; font-size: clamp(11px, 1.6vw, 16px);
-    animation: tt-spin 5.28s linear infinite; animation-play-state: paused; }
-  .tt-label img { width: 100%; height: 100%; object-fit: cover; display: block; }
-  .tt.spin .tt-label { animation-play-state: running; }
-  @keyframes tt-spin { to { transform: rotate(360deg); } }
-  .tt-record, .tt-sheen { left: 2.5%; top: 3%; width: 88%; height: 88%; pointer-events: none; }
-  .tt-arm { left: 0; top: 0; width: 100%; height: 100%; pointer-events: none; overflow: visible; }
-  #tt-arm { transform-origin: 915px 75px; transform: rotate(-5deg); transition: transform 750ms cubic-bezier(.4, 0, .2, 1); }
-  .tt.arm #tt-arm { transform: rotate(17deg); transition-duration: 900ms; }
-  .deck-meta { position: relative; flex: 1 1 auto; min-width: 0; }
-  .deck-kicker { font-size: 12px; font-weight: 750; letter-spacing: 1.4px; color: var(--accent); margin-bottom: 10px; }
-  .deck-title { font-size: clamp(24px, 2.6vw, 38px); font-weight: 800; line-height: 1.1; letter-spacing: -.8px;
-    overflow-wrap: anywhere; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
-  .deck-artist { font-size: 17px; font-weight: 650; margin-top: 8px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .deck-album { font-size: 13.5px; color: rgba(245,245,247,.62); margin-top: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .deck-album .badge { background: rgba(255,255,255,.12); color: rgba(245,245,247,.75); }
-  .deck-next { font-size: 13px; color: rgba(245,245,247,.62); margin-top: 18px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,.12);
-    overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .deck-next b { color: var(--accent); letter-spacing: 1px; font-size: 11px; margin-right: 8px; }
+  /* Tracks: an album's list, and every song. The cover, the title with its genre beside it,
+     who, then the album (every song only), the kind of file and the length on the right.
+     Hover lights the row; the one playing is lit as a whole, in the colour in use. */
+  .trk { display: grid; grid-template-columns: 46px minmax(0, 1fr) 64px 48px; align-items: center; gap: 14px; padding: 8px 12px;
+    border-radius: 10px; cursor: pointer; content-visibility: auto; contain-intrinsic-size: auto 62px; transition: background .15s; }
+  .trk.with-album { grid-template-columns: 46px minmax(0, 2fr) minmax(0, 1fr) 64px 48px; }
+  .trk + .trk { box-shadow: inset 0 1px 0 var(--line); }
+  .trk:hover, .trk:hover + .trk, .trk.playing, .trk.playing + .trk { box-shadow: none; }
+  .trk:hover { background: color-mix(in srgb, var(--txt) 6%, transparent); }
+  .trk.playing { background: color-mix(in srgb, var(--accent) 16%, transparent); }
+  .trk.playing:hover { background: color-mix(in srgb, var(--accent) 22%, transparent); }
+  .trk .cover { position: relative; width: 46px; height: 46px; flex-basis: 46px; border-radius: 7px;
+    box-shadow: 3px 4px 0 color-mix(in srgb, var(--txt) 12%, transparent); }
+  .trk .t { min-width: 0; }
+  .trk .tl { display: flex; align-items: center; gap: 8px; min-width: 0; }
+  .trk .tl b { flex: 0 1 auto; min-width: 0; font-size: 15px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .trk .badge { margin: 0; vertical-align: 0; }
+  .trk .tl .badge.genre { flex: 0 0 auto; cursor: pointer; background: color-mix(in srgb, var(--txt) 8%, transparent); color: var(--sub);
+    letter-spacing: .2px; text-transform: none; font-weight: 700; }
+  .trk .tl .badge.genre:hover { background: color-mix(in srgb, var(--accent) 18%, transparent); color: var(--accent); }
+  .trk .who { display: block; margin-top: 1px; font-size: 13px; color: var(--sub); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .trk .al { font-size: 13px; color: var(--sub); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .trk .kind { text-align: right; }
+  .trk .d { font-size: 13px; color: var(--sub); font-variant-numeric: tabular-nums; text-align: right; }
+  .trk.playing .tl b, .trk.playing .d { color: var(--accent); }
+  .trk.playing .who, .trk.playing .al { color: color-mix(in srgb, var(--accent) 55%, var(--sub)); }
+
+  /* Genres: chips over the list, the count beside each name; the one picked is filled. */
+  .genres { display: flex; gap: 8px; margin: -8px 0 24px; overflow-x: auto; padding: 2px 2px 6px; scrollbar-width: none; }
+  .genres::-webkit-scrollbar { display: none; }
+  .chip { flex: 0 0 auto; display: inline-flex; align-items: center; gap: 7px; height: 34px; padding: 0 14px; border: 0; border-radius: 17px; cursor: pointer;
+    background: var(--surface-2); color: var(--txt); font-size: 13.5px; font-weight: 600; white-space: nowrap; transition: background .15s, color .15s; }
+  .chip i { font-style: normal; font-size: 12px; font-weight: 600; color: var(--sub); font-variant-numeric: tabular-nums; }
+  .chip:hover { background: var(--surface-3); }
+  .chip.on { background: var(--accent); color: var(--on-accent); }
+  .chip.on i { color: var(--on-accent); opacity: .75; }
+  /* The filter bar stays at the top while the library scrolls under it, on a frosted strip
+     of the page's own colour, so what is picked is always in view. */
+  .mu-bar { position: sticky; top: 0; z-index: 20; margin: -10px -14px 18px; padding: 10px 14px 4px;
+    background: color-mix(in srgb, var(--bg) 86%, transparent); -webkit-backdrop-filter: blur(16px) saturate(1.5); backdrop-filter: blur(16px) saturate(1.5); }
+  :root[data-style="theatre"] .mu-bar { top: 72px; }
+  @media (max-width: 900px) { :root[data-style="theatre"] .mu-bar { top: 64px; } }
+  .mu-bar .mu-tools { margin: 0 0 10px; }
+  /* One height across the bar: the switch, the search and Rescan line up top and bottom. */
+  .mu-tools .seg, .mu-tools input[type=search], .mu-tools .btn { height: 42px; box-sizing: border-box; }
+  .mu-tools .seg { align-items: stretch; }
+  .mu-tools .btn { padding: 0 18px; flex: 0 0 auto; }
+  .mu-bar .genres { margin: 0; padding: 2px 2px 8px; }
+  .chip em { display: none; width: 14px; height: 14px; margin-left: -2px; }
+  .chip em svg { width: 14px; height: 14px; display: block; }
+  .chip.clear i { display: none; }
+  .chip.clear em { display: block; }
+
+  /* The genre picked: a strip under the bar with a cover made from its name. */
+  .genre-strip { display: flex; align-items: center; gap: 14px; margin: 0 0 22px; padding: 12px 14px; border-radius: 16px;
+    background: var(--surface); box-shadow: var(--card-shadow); }
+  .genre-strip .gs-art { width: 52px; height: 52px; flex: 0 0 52px; display: grid; place-items: center; border-radius: 10px; font-size: 20px;
+    box-shadow: 4px 5px 0 color-mix(in srgb, var(--txt) 14%, transparent); }
+  .genre-strip .gs-art.gen { color: #FFFFFF; font-weight: 850; }
+  .genre-strip .gs-text { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; }
+  .genre-strip .gs-name { font-size: 19px; font-weight: 800; letter-spacing: -.4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .genre-strip .gs-meta { font-size: 13px; color: var(--sub); }
+  .genre-strip .btn svg { width: 16px; height: 16px; }
+  .genre-strip .gs-clear { flex: 0 0 auto; width: 34px; height: 34px; display: grid; place-items: center; border: 0; border-radius: 50%; cursor: pointer;
+    background: var(--surface-2); color: var(--sub); }
+  .genre-strip .gs-clear:hover { background: var(--surface-3); color: var(--txt); }
+  .genre-strip .gs-clear svg { width: 16px; height: 16px; }
+  @media (max-width: 900px) { .genre-strip .gs-shuffle { display: none; } }
+  /* Playing together: the Sync button in the player (lit, with how many devices, while on),
+     its list of devices, and the one-click Join a browser asks for before it makes sound. */
+  #pl-sync { position: relative; }
+  #pl-sync.on { color: var(--accent); }
+  #pl-sync b { position: absolute; top: 0; right: -2px; min-width: 14px; height: 14px; padding: 0 3px; border-radius: 7px;
+    background: var(--accent); color: var(--on-accent); font: 800 9px/14px system-ui, sans-serif; text-align: center; }
+  #pl-sync b:empty { display: none; }
+  .sync-pop { position: fixed; z-index: 50; right: 18px; bottom: calc(var(--player-h, 72px) + 10px); width: 340px; max-width: calc(100vw - 24px);
+    padding: 16px 14px 12px; border-radius: 18px; background: var(--surface); box-shadow: var(--float-shadow); }
+  .sync-head b { display: block; padding: 0 6px; font-size: 16px; font-weight: 800; letter-spacing: -.2px; }
+  .sync-note { margin: 3px 6px 10px; font-size: 13px; color: var(--sub); }
+  .sync-row { display: flex; align-items: center; gap: 12px; width: 100%; padding: 9px 8px; border: 0; border-radius: 12px;
+    background: none; color: var(--txt); text-align: left; cursor: pointer; font: inherit; }
+  .sync-row:hover { background: var(--surface-2); }
+  .sync-row.self { cursor: default; }
+  .sync-row.self:hover { background: none; }
+  .sync-row .sr-ic { flex: 0 0 34px; width: 34px; height: 34px; display: grid; place-items: center; border-radius: 10px; background: var(--surface-2); }
+  .sync-row .sr-ic svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
+  .sync-row .grow { display: flex; flex-direction: column; min-width: 0; line-height: 1.3; }
+  .sync-row .grow b { font-size: 14px; font-weight: 650; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .sync-row .grow span { font-size: 12px; color: var(--sub); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .sync-row.on .switch { background: var(--good); }
+  .sync-row.on .switch::after { left: 17px; }
+  .sync-hint { margin: 8px 8px 2px; font-size: 12.5px; color: var(--sub); }
+  .sync-join { position: fixed; z-index: 60; left: 50%; top: 16px; transform: translateX(-50%); display: flex; align-items: center; gap: 14px;
+    padding: 10px 10px 10px 18px; border-radius: 16px; background: var(--surface); box-shadow: var(--float-shadow); font-size: 14px; }  /* The little visualizer in the player bar, beside the title. */
+  .pl-viz { flex: 0 0 auto; width: 46px; height: 26px; display: block; }
+  @media (max-width: 900px) {
+    .stage { flex-direction: column; align-items: flex-start; gap: 22px; padding: 22px; }
+    .stage-art { width: min(200px, 60vw); }
+    .trk, .trk.with-album { grid-template-columns: 46px minmax(0, 1fr) auto; }
+    .trk .kind { display: none; }
+    .trk .al { display: none; }
+    .pl-viz { display: none; }
+  }
 
   /* ---------------------------------------------------------------- player, along the bottom */
   .player { position: fixed; z-index: 40; left: 0; right: 0; bottom: 0;
@@ -916,53 +1029,43 @@
   </section>
 
   <section data-panel="music" hidden>
-    <div class="deck" id="deck" hidden>
-      <div class="deck-bg" id="deck-bg"></div>
-      <div class="tt" id="tt" title="Play / pause">
-        <div class="tt-label" id="tt-label">BLAZEIT</div>
-        <img class="tt-record" src="/api/music/vinyl/record.png" alt="">
-        <img class="tt-sheen" src="/api/music/vinyl/sheen.png" alt="">
-        <svg class="tt-arm" viewBox="0 0 1000 1000" aria-hidden="true">
-          <g id="tt-arm">
-            <g transform="translate(10 12)" fill="#000" fill-opacity=".4">
-              <path d="M915,75 A9,9 0 0 1 924,84 L924,386 A9,9 0 0 1 915,395 A9,9 0 0 1 906,386 L906,84 A9,9 0 0 1 915,75 Z"/>
-              <path d="M901,379 L929,379 A10,10 0 0 1 939,389 L939,443 A10,10 0 0 1 929,453 L901,453 A10,10 0 0 1 891,443 L891,389 A10,10 0 0 1 901,379 Z"/>
-            </g>
-            <path fill="#E9E9EC" d="M915,75 A9,9 0 0 1 924,84 L924,386 A9,9 0 0 1 915,395 A9,9 0 0 1 906,386 L906,84 A9,9 0 0 1 915,75 Z"/>
-            <path fill="#fff" fill-opacity=".7" d="M910.5,95 A2,2 0 0 1 912.5,97 L912.5,387 A2,2 0 0 1 910.5,389 A2,2 0 0 1 908.5,387 L908.5,97 A2,2 0 0 1 910.5,95 Z"/>
-            <path fill="#F4F4F6" d="M901,379 L929,379 A10,10 0 0 1 939,389 L939,443 A10,10 0 0 1 929,453 L901,453 A10,10 0 0 1 891,443 L891,389 A10,10 0 0 1 901,379 Z"/>
-            <path fill="#C9C9CF" d="M901,429 L929,429 A10,10 0 0 1 939,439 L939,443 A10,10 0 0 1 929,453 L901,453 A10,10 0 0 1 891,443 L891,439 A10,10 0 0 1 901,429 Z"/>
-            <path fill="#2A2A2E" d="M912,449 L918,449 A3,3 0 0 1 921,452 L921,460 A3,3 0 0 1 918,463 L912,463 A3,3 0 0 1 909,460 L909,452 A3,3 0 0 1 912,449 Z"/>
-            <circle cx="915" cy="75" r="36" fill="#26262A" stroke="#4A4A50" stroke-width="3"/>
-            <circle cx="915" cy="75" r="24" fill="#ECECEF"/>
-            <circle cx="915" cy="75" r="9" fill="#B8B8BE"/>
-          </g>
-        </svg>
+    <!-- The filter bar: sticky at the top of the tab; Albums or Songs, the search, the genres. -->
+    <div class="mu-bar" id="mu-bar">
+      <div class="mu-tools">
+        <div class="seg" id="music-view">
+          <button data-v="albums" class="on">Albums</button>
+          <button data-v="songs">Songs</button>
+        </div>
+        <input id="music-search" type="search" placeholder="Search songs, artists, albums, genres" autocomplete="off">
+        <button class="btn sm ghost" id="music-rescan">Rescan</button>
       </div>
-      <div class="deck-meta">
-        <div class="deck-kicker" id="deck-state">NOW PLAYING</div>
-        <div class="deck-title" id="deck-title"></div>
-        <div class="deck-artist" id="deck-artist"></div>
-        <div class="deck-album" id="deck-album"></div>
+      <div class="genres" id="music-genres" hidden></div>
+    </div>
+    <!-- With a genre picked: how much of it there is, and Play and Shuffle for all of it. -->
+    <div class="genre-strip" id="genre-strip" hidden>
+      <div class="gs-art"></div>
+      <div class="gs-text"><b class="gs-name"></b><span class="gs-meta"></span></div>
+      <button class="btn sm gs-play" type="button"></button>
+      <button class="btn sm ghost gs-shuffle" type="button"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7h3.5c2.5 0 3.8 1.3 5.3 4.2l.4.6c1.5 2.9 2.8 4.2 5.3 4.2H21"/><path d="M3 17h3.5c1.4 0 2.4-.4 3.3-1.2M14.2 8.2C15.1 7.4 16.1 7 17.5 7H21"/><path d="m18.5 4.5 2.5 2.5-2.5 2.5M18.5 13.5l2.5 2.5-2.5 2.5"/></svg>Shuffle</button>
+      <button class="gs-clear" type="button" title="Show all genres" aria-label="Show all genres"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M7 7l10 10M17 7 7 17"/></svg></button>
+    </div>
+    <div id="music-perm" class="banner bad" hidden>
+      Localhost 8787 needs permission to read your music. On the phone: Settings &rarr; Music &rarr; Allow music access.
+    </div>
+    <!-- The stage: the album you opened, or else what is playing. Never both. -->
+    <div class="stage" id="deck" hidden>
+      <div class="stage-art" id="np-art"></div>
+      <div class="stage-meta">
+        <div class="stage-kicker"><span class="eq" id="stage-eq"><b></b><b></b><b></b></span><span id="deck-state"></span></div>
+        <div class="stage-title" id="deck-title"></div>
+        <div class="stage-artist" id="deck-artist"></div>
+        <div class="stage-album" id="deck-album"></div>
+        <div class="stage-actions" id="stage-actions"></div>
         <div class="deck-next" id="deck-next" hidden></div>
       </div>
     </div>
-    <div class="card">
-      <div id="music-perm" class="banner bad" hidden>
-        BlazeIt needs permission to read your music. On the phone: Settings &rarr; Music &rarr; Allow music access.
-      </div>
-      <div class="music-tools">
-        <input id="music-search" type="search" placeholder="Search songs, artists, albums" autocomplete="off">
-        <div class="seg" id="music-view">
-          <button data-v="songs" class="on">Songs</button>
-          <button data-v="albums">Albums</button>
-        </div>
-        <button class="btn sm ghost" id="music-rescan">Rescan</button>
-      </div>
-      <div id="music-crumb" class="actions" style="margin:0 0 10px" hidden></div>
-      <div id="music-list"><p class="empty">Loading your library...</p></div>
-      <div id="music-more" class="actions"></div>
-    </div>
+    <div id="music-list"><p class="empty">Loading your library...</p></div>
+    <div id="music-more" class="actions"></div>
   </section>
 
   <!-- ---------------------------------------------------------- settings -->
@@ -1088,6 +1191,7 @@
       <div class="pl-title" id="pl-title"></div>
       <div class="pl-sub" id="pl-sub"></div>
     </div>
+    <canvas class="pl-viz" id="pl-viz" aria-hidden="true"></canvas>
   </div>
   <div class="pl-center">
     <div class="pl-ctrls">
@@ -3198,7 +3302,7 @@ var PREFETCH_MAX_BYTES = 250 * 1024 * 1024;
 var MUSIC_PAGE = 300;
 
 var music = { tracks: [], granted: true, loaded: false, loading: false,
-              view: "songs", album: null, filter: "", shown: MUSIC_PAGE };
+              view: "albums", album: null, genre: null, filter: "", shown: MUSIC_PAGE };
 var player = { queue: [], order: [], pos: -1, shuffle: false, repeat: "off",
                blobs: {}, prefetchCtl: null, prefetchTimer: null,
                parkTimer: null, parked: false, parkedAt: 0 };
@@ -3226,17 +3330,66 @@ function formatBadge(mime) {
  * The image goes into the page straight away: a lazy image that is not in the page is
  * never loaded at all, so waiting for it to load before adding it would wait forever.
  */
-function coverEl(cls, albumId) {
+function coverEl(cls, albumId, title) {
   var box = document.createElement("div");
   box.className = cls + " has-glyph";
-  box.textContent = "♪";
+  box.dataset.coverAlbum = albumId;
+  paintCover(box, albumId, title);
+  return box;
+}
+
+/**
+ * Fills a cover box: the album's art, and until it loads (or if there is none yet) a cover
+ * made from the album's name, its initials on a gradient of a colour the name always gives.
+ * The phone looks missing covers up by itself and says so ("cover" event); then the box is
+ * painted again with the real one.
+ */
+function paintCover(box, albumId, title, fresh) {
+  if (title === undefined) {
+    var t = music.tracks.filter(function (x) { return x.albumId === albumId; })[0];
+    title = t ? t.album : "";
+  }
+  // Only the picture and the lettering are replaced; anything else in the box (a play
+  // button) stays.
+  Array.prototype.slice.call(box.childNodes).forEach(function (n) {
+    if (n.nodeType === 3 || n.nodeName === "IMG") box.removeChild(n);
+  });
+  genCover(box, title);
   var img = document.createElement("img");
   img.loading = "lazy";
+  img.decoding = "async";
   img.alt = "";
   img.onerror = function () { img.remove(); };
-  img.src = artUrl(albumId);
-  box.appendChild(img);
-  return box;
+  img.onload = function () {
+    box.classList.remove("gen");
+    box.style.background = "";
+    Array.prototype.slice.call(box.childNodes).forEach(function (n) { if (n.nodeType === 3) box.removeChild(n); });
+  };
+  img.src = artUrl(albumId) + (fresh ? "?v=" + Date.now() : "");
+  box.insertBefore(img, box.firstChild);
+}
+
+/** A cover made from a name: two initials on a gradient whose colour comes from the name. */
+function genCover(box, title) {
+  var h = 0;
+  for (var i = 0; i < title.length; i++) h = (h * 31 + title.charCodeAt(i)) >>> 0;
+  var hue = h % 360, hue2 = (hue + 35 + (h >>> 9) % 70) % 360;
+  var words = title.replace(/[(\[][^)\]]*[)\]]/g, "").trim().split(/\s+/).filter(function (w) { return /\w/.test(w); });
+  var letters = words.length ? (words[0][0] + (words[1] ? words[1][0] : "")).toUpperCase() : "♪";
+  box.classList.add("gen");
+  box.style.background = "linear-gradient(135deg, hsl(" + hue + " 72% 60%), hsl(" + hue2 + " 62% 30%))";
+  box.insertBefore(document.createTextNode(letters), box.firstChild);
+  return "hsl(" + hue + " 60% 45%)";
+}
+
+/** The phone found a cover: every place showing that album paints it again. */
+function coverArrived(albumId) {
+  Array.prototype.forEach.call(document.querySelectorAll('[data-cover-album="' + albumId + '"]'), function (box) {
+    paintCover(box, albumId, undefined, true);
+  });
+  if (stage.art === albumId) { stage.art = undefined; setStageArt(albumId, true); }
+  var cur = currentTrack();
+  if (cur && cur.albumId === albumId) showPlayerArt(cur, true);
 }
 
 async function musicOpen() {
@@ -3251,6 +3404,7 @@ async function musicLoad(refresh) {
     var body = await res.json();
     music.granted = !!body.granted;
     music.tracks = body.tracks || [];
+    indexAlbums();
     music.loaded = true;
   } catch (e) {
     $("music-list").innerHTML = '<p class="empty">Could not load the library.</p>';
@@ -3259,95 +3413,138 @@ async function musicLoad(refresh) {
   renderMusic();
 }
 
+// ------------------------------------------------------------------ the library
+//
+// Albums as a person means them. Android files a song under an album id of its own, and
+// one song tagged a little differently (another album artist, a feature in the credit)
+// lands in an album of one beside the real one. So albums with the same name that share
+// an artist are joined into one, and each song carries the joined album's key (t.ak).
+// Albums are listed biggest first.
+//
+// Filters work the way Spotify's and Apple Music's library filters do: one bar, sticky at
+// the top, holding Albums or Songs, the genres and the search. They narrow what is under
+// them in place: a genre applies to albums and songs alike and stays while you switch
+// between them or open an album; the chip picked shows a cross to clear it, and the chips
+// are never redrawn, so the row stays where you scrolled it. With a genre picked, a strip
+// under the bar plays or shuffles just that genre.
+
+/** "Pusha T & Malice feat. Kendrick Lamar" -> ["Pusha T", "Malice", "Kendrick Lamar"]. */
+function artistParts(s) {
+  return String(s || "").split(/\s*(?:,|&|\+|\/|;|\bfeat\.?|\bft\.?|\bfeaturing\b|\bwith\b|\bx\b)\s*/i)
+    .map(function (a) { return a.trim(); }).filter(Boolean);
+}
+function albumNameKey(s) { return String(s || "").toLowerCase().replace(/[^\p{L}\p{N}]+/gu, " ").trim(); }
+
+function indexAlbums() {
+  var byId = {}, ids = [];
+  music.tracks.forEach(function (t) {
+    if (!byId[t.albumId]) { byId[t.albumId] = []; ids.push(t.albumId); }
+    byId[t.albumId].push(t);
+  });
+  // Biggest first, so the smaller pieces join the album they belong to.
+  ids.sort(function (a, b) { return byId[b].length - byId[a].length; });
+  var byName = {}, groups = [];
+  ids.forEach(function (id) {
+    var tracks = byId[id], name = albumNameKey(tracks[0].album), arts = {};
+    tracks.forEach(function (t) {
+      artistParts(t.albumArtist).concat(artistParts(t.artist)).forEach(function (a) { arts[a.toLowerCase()] = 1; });
+    });
+    var same = byName[name] || (byName[name] = []);
+    var g = same.filter(function (c) { return Object.keys(arts).some(function (a) { return c.arts[a]; }); })[0];
+    if (!g) { g = { ids: [], tracks: [], arts: {} }; same.push(g); groups.push(g); }
+    g.ids.push(id);
+    g.tracks = g.tracks.concat(tracks);
+    Object.keys(arts).forEach(function (a) { g.arts[a] = 1; });
+  });
+  music.albums = groups.map(function (g) {
+    var tracks = g.tracks.sort(function (x, y) { return (x.disc - y.disc) || (x.track - y.track) || x.title.localeCompare(y.title); });
+    var key = g.ids.slice().sort()[0];
+    tracks.forEach(function (t) { t.ak = key; });
+    return {
+      key: key,
+      coverId: g.ids[0],
+      album: tracks[0].album,
+      artist: albumArtistOf(tracks),
+      tracks: tracks,
+      year: Math.max.apply(null, tracks.map(function (t) { return t.year || 0; })),
+    };
+  }).sort(function (a, b) { return b.tracks.length - a.tracks.length || a.album.localeCompare(b.album); });
+  music.albumByKey = {};
+  music.albums.forEach(function (a) { music.albumByKey[a.key] = a; });
+  buildGenreChips();
+}
+
+/**
+ * Who an album is by: its album artist tag when the songs agree on one; else the artist on
+ * most of its songs; else, for a soundtrack or a compilation, Various Artists.
+ */
+function albumArtistOf(tracks) {
+  var count = function (pick) {
+    var n = {}, best = null;
+    tracks.forEach(function (t) { pick(t).forEach(function (a) { n[a] = (n[a] || 0) + 1; if (!best || n[a] > n[best]) best = a; }); });
+    return best ? { name: best, n: n[best] } : null;
+  };
+  var tagged = count(function (t) { return t.albumArtist ? [t.albumArtist] : []; });
+  if (tagged && tagged.n >= tracks.length / 2) return tagged.name;
+  var whole = count(function (t) { return [t.artist]; });
+  if (whole && whole.n >= tracks.length * 0.6) return whole.name;
+  var part = count(function (t) { return artistParts(t.artist); });
+  if (part && part.n >= tracks.length * 0.6) return part.name;
+  return tracks.length > 1 ? "Various Artists" : (tracks[0].artist || "");
+}
+
+function albumTracks(key) {
+  var a = music.albumByKey && music.albumByKey[key];
+  return a ? a.tracks : [];
+}
+
+function matchesSearch(t, q) {
+  return !q || (t.title + " " + t.artist + " " + t.album + " " + (t.genre || "")).toLowerCase().indexOf(q) >= 0;
+}
+
+/** The songs the Songs view shows: in the genre picked, and matching the search. */
 function musicMatches() {
   var q = music.filter.trim().toLowerCase();
-  var list = music.tracks;
-  if (music.album !== null) list = list.filter(function (t) { return t.albumId === music.album; });
-  if (!q) return list;
-  return list.filter(function (t) {
-    return (t.title + " " + t.artist + " " + t.album).toLowerCase().indexOf(q) >= 0;
+  return music.tracks.filter(function (t) {
+    return (!music.genre || t.genre === music.genre) && matchesSearch(t, q);
   });
 }
 
+var PLAY_SVG = "<svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path fill=\"currentColor\" d=\"M8 5.6v12.8a.9.9 0 0 0 1.4.8l10-6.4a.9.9 0 0 0 0-1.6l-10-6.4A.9.9 0 0 0 8 5.6Z\"/></svg>";
+var PAUSE_SVG = "<svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><rect fill=\"currentColor\" x=\"6.5\" y=\"5\" width=\"4\" height=\"14\" rx=\"1.2\"/><rect fill=\"currentColor\" x=\"13.5\" y=\"5\" width=\"4\" height=\"14\" rx=\"1.2\"/></svg>";
+var SHUFFLE_SVG = "<svg viewBox=\"0 0 24 24\" aria-hidden=\"true\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M3 7h3.5c2.5 0 3.8 1.3 5.3 4.2l.4.6c1.5 2.9 2.8 4.2 5.3 4.2H21\"/><path d=\"M3 17h3.5c1.4 0 2.4-.4 3.3-1.2M14.2 8.2C15.1 7.4 16.1 7 17.5 7H21\"/><path d=\"m18.5 4.5 2.5 2.5-2.5 2.5M18.5 13.5l2.5 2.5-2.5 2.5\"/></svg>";
+var BACK_SVG = "<svg viewBox=\"0 0 24 24\" aria-hidden=\"true\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M14.5 5.5 8 12l6.5 6.5\"/></svg>";
+var CLOSE_SVG = "<svg viewBox=\"0 0 24 24\" aria-hidden=\"true\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.4\" stroke-linecap=\"round\"><path d=\"M7 7l10 10M17 7 7 17\"/></svg>";
+
+/**
+ * Draws what is under the filter bar. The bar itself is not redrawn: its chips and buttons
+ * only change state, so nothing in it moves.
+ */
 function renderMusic() {
   $("music-perm").hidden = music.granted;
-  var host = $("music-list"), more = $("music-more"), crumb = $("music-crumb");
+  var host = $("music-list"), more = $("music-more");
   host.innerHTML = ""; more.innerHTML = "";
-
-  if (music.album !== null) {
-    var tracks = music.tracks.filter(function (t) { return t.albumId === music.album; });
-    var a = tracks[0];
-    var secs = tracks.reduce(function (n, t) { return n + t.durationMs / 1000; }, 0);
-    var years = tracks.map(function (t) { return t.year; }).filter(function (y) { return y > 0; });
-    crumb.hidden = false;
-    crumb.className = "album-page";
-    crumb.innerHTML =
-      '<button type="button" class="back" id="album-back">' +
-        '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14.5 5.5 8 12l6.5 6.5"/></svg>Albums</button>' +
-      '<div class="album-head">' +
-        '<div class="album-cover"></div>' +
-        '<div class="album-info">' +
-          '<div class="kicker">Album</div>' +
-          '<h2></h2><div class="by"></div>' +
-          '<div class="facts"></div>' +
-          '<div class="album-actions">' +
-            '<button type="button" class="btn" id="album-play">' + "<svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path fill=\"currentColor\" d=\"M8 5.6v12.8a.9.9 0 0 0 1.4.8l10-6.4a.9.9 0 0 0 0-1.6l-10-6.4A.9.9 0 0 0 8 5.6Z\"/></svg>" + 'Play</button>' +
-            '<button type="button" class="btn ghost" id="album-shuffle">' + "<svg viewBox=\"0 0 24 24\" aria-hidden=\"true\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M3 7h3.5c2.5 0 3.8 1.3 5.3 4.2l.4.6c1.5 2.9 2.8 4.2 5.3 4.2H21\"/><path d=\"M3 17h3.5c1.4 0 2.4-.4 3.3-1.2M14.2 8.2C15.1 7.4 16.1 7 17.5 7H21\"/><path d=\"m18.5 4.5 2.5 2.5-2.5 2.5M18.5 13.5l2.5 2.5-2.5 2.5\"/></svg>" + 'Shuffle</button>' +
-          '</div>' +
-        '</div>' +
-      '</div>';
-    crumb.querySelector(".album-cover").appendChild(coverEl("cover", music.album));
-    crumb.querySelector("h2").textContent = a ? a.album : "";
-    crumb.querySelector(".by").textContent = a ? a.artist : "";
-    crumb.querySelector(".facts").textContent = tracks.length + (tracks.length === 1 ? " song" : " songs") +
-      " · " + Math.round(secs / 60) + " min" + (years.length ? " · " + Math.max.apply(null, years) : "");
-    $("album-back").onclick = function () { music.album = null; music.view = "albums"; setViewButtons(); renderMusic(); };
-    $("album-play").onclick = function () { playAlbum(music.album, false); };
-    $("album-shuffle").onclick = function () { playAlbum(music.album, true); };
-  } else {
-    crumb.className = "actions";
-    crumb.hidden = true;
-  }
-
-  if (!music.granted) { host.innerHTML = ""; return; }
+  setViewButtons();
+  updateGenreChips();
+  renderGenreStrip();
+  renderStage();
+  if (!music.granted) return;
   if (!music.tracks.length) {
     host.innerHTML = '<p class="empty">No music found on the phone.</p>';
     return;
   }
-
-  if (music.view === "albums" && music.album === null) { renderAlbums(host); return; }
+  var q = music.filter.trim().toLowerCase();
+  if (music.album !== null) {
+    // An album shows all of its songs, whatever genre is picked.
+    var tracks = albumTracks(music.album);
+    renderTracks(host, q ? tracks.filter(function (t) { return t.title.toLowerCase().indexOf(q) >= 0; }) : tracks, false, tracks);
+    return;
+  }
+  if (music.view === "albums") { renderAlbums(host); return; }
 
   var list = musicMatches();
-  var cur = currentTrack();
-  list.slice(0, music.shown).forEach(function (t, i) {
-    var row = document.createElement("div");
-    row.className = "row song" + (cur && cur.id === t.id ? " accent" : "");
-    row.appendChild(coverEl("cover", t.albumId));
-    var body = document.createElement("div");
-    body.className = "body";
-    var title = document.createElement("div");
-    title.className = "title";
-    title.textContent = t.title;
-    var badge = formatBadge(t.mime);
-    if (badge) {
-      var b = document.createElement("span");
-      b.className = "badge";
-      b.textContent = badge;
-      title.appendChild(b);
-    }
-    var meta = document.createElement("div");
-    meta.className = "meta";
-    meta.textContent = t.artist + " · " + t.album + (player.blobs[t.id] ? " · ready" : "");
-    body.appendChild(title); body.appendChild(meta);
-    row.appendChild(body);
-    var dur = document.createElement("span");
-    dur.className = "dur";
-    dur.textContent = fmtTime(t.durationMs / 1000);
-    row.appendChild(dur);
-    row.onclick = function () { startQueue(list, i); };
-    host.appendChild(row);
-  });
-
+  if (!list.length) { host.innerHTML = '<p class="empty">No songs match.</p>'; return; }
+  renderTracks(host, list.slice(0, music.shown), true, list);
   if (list.length > music.shown) {
     var btn = document.createElement("button");
     btn.className = "btn sm ghost";
@@ -3357,54 +3554,252 @@ function renderMusic() {
   }
 }
 
-function renderAlbums(host) {
-  var q = music.filter.trim().toLowerCase();
-  var seen = {}, albums = [];
-  music.tracks.forEach(function (t) {
-    if (seen[t.albumId]) { seen[t.albumId].count++; return; }
-    var a = { albumId: t.albumId, album: t.album, artist: t.artist, count: 1 };
-    seen[t.albumId] = a; albums.push(a);
-  });
-  if (q) albums = albums.filter(function (a) { return (a.album + " " + a.artist).toLowerCase().indexOf(q) >= 0; });
-  var grid = document.createElement("div");
-  grid.className = "albums";
-  albums.forEach(function (a) {
-    var tile = document.createElement("button");
-    tile.type = "button";
-    tile.className = "album";
-    tile.setAttribute("aria-label", a.album + " by " + a.artist + ", " + a.count + (a.count === 1 ? " track" : " tracks"));
-    var art = coverEl("art", a.albumId);
-    var play = document.createElement("span");
-    play.className = "album-play";
-    play.title = "Play " + a.album;
-    play.innerHTML = "<svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path fill=\"currentColor\" d=\"M8 5.6v12.8a.9.9 0 0 0 1.4.8l10-6.4a.9.9 0 0 0 0-1.6l-10-6.4A.9.9 0 0 0 8 5.6Z\"/></svg>";
-    play.onclick = function (e) { e.stopPropagation(); playAlbum(a.albumId, false); };
-    art.appendChild(play);
-    tile.appendChild(art);
-    var cap = document.createElement("div");
-    cap.className = "cap";
-    cap.innerHTML = '<div class="t"></div><div class="a"></div>';
-    cap.firstChild.textContent = a.album;
-    cap.lastChild.textContent = a.artist + " · " + a.count + (a.count === 1 ? " track" : " tracks");
-    tile.appendChild(cap);
-    tile.onclick = function () { music.album = a.albumId; music.shown = MUSIC_PAGE; renderMusic(); };
-    grid.appendChild(tile);
-  });
-  host.appendChild(grid);
+/**
+ * Keeps your place when a filter changes: if you had scrolled into the list, the list
+ * starts again just under the bar; if not, nothing moves.
+ */
+function keepPlace() {
+  var bar = $("mu-bar"), panel = bar.parentNode;
+  var top = panel.getBoundingClientRect().top + window.scrollY - 8;
+  if (window.scrollY > top) window.scrollTo({ top: top });
 }
 
-function playAlbum(albumId, shuffled) {
-  var list = music.tracks.filter(function (t) { return t.albumId === albumId; })
-    .sort(function (x, y) { return (x.disc - y.disc) || (x.track - y.track); });
+/**
+ * Rows of tracks: the cover, the title with its genre beside it, who, then (every song
+ * only) the album, what kind of file, and the length. The row playing is lit as a whole.
+ */
+function renderTracks(host, shown, withAlbum, queue) {
+  var frag = document.createDocumentFragment();
+  shown.forEach(function (t) {
+    var row = document.createElement("div");
+    row.className = "trk" + (withAlbum ? " with-album" : "");
+    row.dataset.id = t.id;
+    row.setAttribute("role", "button");
+    row.tabIndex = 0;
+    row.setAttribute("aria-label", "Play " + t.title + " by " + t.artist);
+    row.appendChild(coverEl("cover", (music.albumByKey[t.ak] || {}).coverId || t.albumId, t.album));
+    var body = document.createElement("div");
+    body.className = "t";
+    var line = document.createElement("div");
+    line.className = "tl";
+    var name = document.createElement("b");
+    name.textContent = t.title;
+    line.appendChild(name);
+    if (t.genre) {
+      var g = document.createElement("span");
+      g.className = "badge genre";
+      g.textContent = t.genre;
+      g.title = "Only " + t.genre;
+      g.setAttribute("role", "button");
+      g.tabIndex = 0;
+      g.onclick = function (e) { e.stopPropagation(); pickGenre(t.genre, true); };
+      g.onkeydown = function (e) { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); e.stopPropagation(); pickGenre(t.genre, true); } };
+      line.appendChild(g);
+    }
+    var who = document.createElement("span");
+    who.className = "who";
+    who.textContent = t.artist;
+    body.appendChild(line);
+    body.appendChild(who);
+    row.appendChild(body);
+    if (withAlbum) {
+      var al = document.createElement("span");
+      al.className = "al";
+      al.textContent = t.album;
+      al.title = "Open " + t.album;
+      al.setAttribute("role", "button");
+      al.tabIndex = 0;
+      al.onclick = function (e) { e.stopPropagation(); openAlbum(t.ak); };
+      al.onkeydown = function (e) { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); e.stopPropagation(); openAlbum(t.ak); } };
+      row.appendChild(al);
+    }
+    var kind = document.createElement("span");
+    kind.className = "kind";
+    var k = formatBadge(t.mime);
+    if (k) kind.innerHTML = '<span class="badge">' + k + "</span>";
+    row.appendChild(kind);
+    var d = document.createElement("span");
+    d.className = "d";
+    d.textContent = fmtTime(t.durationMs / 1000);
+    row.appendChild(d);
+    row.onclick = function () { startQueue(queue, queue.indexOf(t)); };
+    row.onkeydown = function (e) { if (e.target === row && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); startQueue(queue, queue.indexOf(t)); } };
+    frag.appendChild(row);
+  });
+  host.appendChild(frag);
+  markPlaying();
+}
+
+// ---- genres
+
+function genreCounts() {
+  var seen = {}, list = [];
+  music.tracks.forEach(function (t) {
+    if (!t.genre) return;
+    if (!seen[t.genre]) { seen[t.genre] = { name: t.genre, count: 0 }; list.push(seen[t.genre]); }
+    seen[t.genre].count++;
+  });
+  return list.sort(function (a, b) { return b.count - a.count || a.name.localeCompare(b.name); });
+}
+
+/** The chips, built once per library load; after that only their state changes. */
+function buildGenreChips() {
+  var host = $("music-genres");
+  var list = genreCounts();
+  host.innerHTML = "";
+  host.hidden = list.length < 2;
+  if (host.hidden) return;
+  [{ name: null, count: music.tracks.length }].concat(list).forEach(function (g) {
+    var b = document.createElement("button");
+    b.type = "button";
+    b.className = "chip";
+    b.dataset.genre = g.name || "";
+    b.innerHTML = "<span></span><i></i><em aria-hidden=\"true\">" + CLOSE_SVG + "</em>";
+    b.firstChild.textContent = g.name || "All";
+    b.children[1].textContent = g.count;
+    b.onclick = function () { pickGenre(g.name, false); };
+    host.appendChild(b);
+  });
+}
+
+function updateGenreChips() {
+  Array.prototype.forEach.call($("music-genres").children, function (b) {
+    var on = (b.dataset.genre || null) === music.genre;
+    b.classList.toggle("on", on);
+    b.classList.toggle("clear", on && !!music.genre);
+    b.title = on && music.genre ? "Show all genres" : "";
+  });
+  // The chip picked is brought into view, without moving the page.
+  var on = $("music-genres").querySelector(".chip.on");
+  if (on && on.scrollIntoView) on.scrollIntoView({ block: "nearest", inline: "nearest" });
+}
+
+/**
+ * Picks a genre, or clears it (the same chip again, or All). The view stays as it is,
+ * Albums or Songs; an open album closes, since the genre is about the whole library. From a
+ * song's badge ([fromBadge]) the Songs view is shown, where that song is.
+ */
+function pickGenre(name, fromBadge) {
+  music.genre = music.genre === name ? null : name;
+  music.album = null;
+  music.shown = MUSIC_PAGE;
+  if (fromBadge && music.genre) music.view = "songs";
+  renderMusic();
+  keepPlace();
+}
+
+function genreTracks(name) {
+  return music.tracks.filter(function (t) { return t.genre === name; });
+}
+
+function playGenre(name, shuffled) {
+  var list = genreTracks(name);
   if (!list.length) return;
   player.shuffle = !!shuffled;
   $("pl-shuffle").classList.toggle("on", player.shuffle);
   startQueue(list, shuffled ? Math.floor(Math.random() * list.length) : 0);
 }
 
+/** Under the bar while a genre is picked: how much of it there is, and Play and Shuffle for all of it. */
+function renderGenreStrip() {
+  var el = $("genre-strip"), name = music.genre;
+  el.hidden = !name || music.album !== null;
+  if (el.hidden) return;
+  var tracks = genreTracks(name), albums = {}, secs = 0;
+  tracks.forEach(function (t) { albums[t.ak] = 1; secs += t.durationMs / 1000; });
+  var mins = Math.round(secs / 60), n = Object.keys(albums).length;
+  var art = el.querySelector(".gs-art");
+  art.innerHTML = "";
+  genCover(art, name);
+  el.querySelector(".gs-name").textContent = name;
+  el.querySelector(".gs-meta").textContent = tracks.length + (tracks.length === 1 ? " song" : " songs") + " · " +
+    n + (n === 1 ? " album" : " albums") + " · " + (mins >= 60 ? Math.floor(mins / 60) + " h " + (mins % 60) + " min" : mins + " min");
+  var cur = currentTrack(), here = cur && cur.genre === name, playing = here && isPlaying();
+  var play = el.querySelector(".gs-play");
+  play.innerHTML = (playing ? PAUSE_SVG + "Pause" : PLAY_SVG + "Play");
+  play.onclick = function () { if (here) togglePlay(); else playGenre(name, false); };
+  el.querySelector(".gs-shuffle").onclick = function () { playGenre(name, true); };
+  el.querySelector(".gs-clear").onclick = function () { pickGenre(name, false); };
+}
+
+// ---- albums
+
+function renderAlbums(host) {
+  var q = music.filter.trim().toLowerCase();
+  var albums = music.albums.map(function (a) {
+    var n = music.genre ? a.tracks.filter(function (t) { return t.genre === music.genre; }).length : a.tracks.length;
+    return { a: a, n: n };
+  }).filter(function (x) {
+    return x.n > 0 && (!q || (x.a.album + " " + x.a.artist).toLowerCase().indexOf(q) >= 0 ||
+      x.a.tracks.some(function (t) { return matchesSearch(t, q); }));
+  });
+  // Biggest first: in a genre, by how much of the album is in it.
+  if (music.genre) albums.sort(function (x, y) { return y.n - x.n || y.a.tracks.length - x.a.tracks.length; });
+  if (!albums.length) { host.innerHTML = '<p class="empty">No albums match.</p>'; return; }
+  var grid = document.createElement("div");
+  grid.className = "albums";
+  albums.forEach(function (x) {
+    var a = x.a, total = a.tracks.length;
+    var tile = document.createElement("button");
+    tile.type = "button";
+    tile.className = "album";
+    tile.dataset.album = a.key;
+    tile.setAttribute("aria-label", a.album + " by " + a.artist + ", " + total + (total === 1 ? " track" : " tracks"));
+    var art = coverEl("art", a.coverId, a.album);
+    var play = document.createElement("span");
+    play.className = "album-play";
+    play.title = "Play " + a.album;
+    play.innerHTML = PLAY_SVG;
+    play.onclick = function (e) { e.stopPropagation(); playAlbum(a.key, false); };
+    art.appendChild(play);
+    tile.appendChild(art);
+    var cap = document.createElement("div");
+    cap.className = "cap";
+    cap.innerHTML = '<div class="t"></div><div class="a"></div>';
+    cap.firstChild.textContent = a.album;
+    cap.lastChild.textContent = a.artist + " · " + (music.genre && x.n < total ? x.n + " of " + total : total) + (total === 1 ? " track" : " tracks");
+    tile.appendChild(cap);
+    tile.onclick = function () { openAlbum(a.key); };
+    grid.appendChild(tile);
+  });
+  host.appendChild(grid);
+  markPlaying();
+}
+
+function openAlbum(key) {
+  if (!music.albumByKey[key]) return;
+  music.album = key;
+  music.shown = MUSIC_PAGE;
+  renderMusic();
+  keepPlace();
+}
+
+/** The playing track and album take the colour; nothing is redrawn. */
+function markPlaying() {
+  var cur = currentTrack(), audio = $("audio");
+  document.body.classList.toggle("music-on", !!cur && isPlaying());
+  Array.prototype.forEach.call(document.querySelectorAll("#music-list .trk"), function (r) {
+    r.classList.toggle("playing", !!cur && String(cur.id) === r.dataset.id);
+  });
+  Array.prototype.forEach.call(document.querySelectorAll("#music-list .album"), function (r) {
+    r.classList.toggle("playing", !!cur && cur.ak === r.dataset.album);
+  });
+  if (music.genre) renderGenreStrip();
+}
+
+function playAlbum(key, shuffled) {
+  var list = albumTracks(key);
+  if (!list.length) return;
+  player.shuffle = !!shuffled;
+  $("pl-shuffle").classList.toggle("on", player.shuffle);
+  startQueue(list, shuffled ? Math.floor(Math.random() * list.length) : 0);
+}
+
+/** Albums or Songs lit as the view is; with an album open, Albums (it is where you came from). */
 function setViewButtons() {
+  var v = music.album !== null ? "albums" : music.view;
   Array.prototype.forEach.call($("music-view").children, function (b) {
-    b.classList.toggle("on", b.dataset.v === music.view);
+    b.classList.toggle("on", b.dataset.v === v);
   });
 }
 
@@ -3456,7 +3851,7 @@ function playCurrent() {
   var p = audio.play();
   if (p && p.catch) p.catch(function () {});
   showPlayer(t);
-  renderMusic();
+  markPlaying();
   // Give the current track a head start before pulling the next ones, so prefetching
   // never competes with the first seconds of what you are actually listening to.
   clearTimeout(player.prefetchTimer);
@@ -3490,80 +3885,239 @@ async function prefetchAhead() {
       if (ctl.signal.aborted) return;
       player.blobs[tr.id] = URL.createObjectURL(blob);
       deckNext();
-      if (music.view === "songs" || music.album !== null) renderMusic();
     } catch (e) {
       if (ctl.signal.aborted) return;
     }
   }
 }
 
-// ------------------------------------------------------------------ turntable
+// ------------------------------------------------------------------ the stage
 //
-// Sequenced like a real turntable, with the Vinyl Glass widget's timings:
-//   pause -> freeze the disc now, lift the arm 650 ms later. Cancelled if play resumes,
-//            because changing tracks blips through "paused" for a moment.
-//   play  -> lower the arm, start the disc 900 ms later, once the arm has landed.
-//            If the arm never left, the disc just carries on.
-var deck = { spinTimer: 0, armTimer: 0, albumId: null };
-var ARM_OUT_MS = 650, SPIN_START_MS = 900;
+// One panel at the top of Music: the album you opened, with Play and Shuffle; or, on the
+// albums and songs, what is playing. Its colour comes from the cover (artTint).
+var stage = { art: undefined };
 
-function deckPlaying(on) {
-  var tt = $("tt");
-  $("deck-state").textContent = on ? "NOW PLAYING" : "PAUSED";
-  if (!on) {
-    clearTimeout(deck.spinTimer);
-    tt.classList.remove("spin");
-    clearTimeout(deck.armTimer);
-    deck.armTimer = setTimeout(function () { tt.classList.remove("arm"); }, ARM_OUT_MS);
-    return;
-  }
-  clearTimeout(deck.armTimer);
-  if (tt.classList.contains("arm")) { tt.classList.add("spin"); return; }
-  tt.classList.add("arm");
-  clearTimeout(deck.spinTimer);
-  deck.spinTimer = setTimeout(function () { tt.classList.add("spin"); }, SPIN_START_MS);
+function stageButton(host, cls, html, onClick) {
+  var b = document.createElement("button");
+  b.type = "button";
+  b.className = cls;
+  b.innerHTML = html;
+  b.onclick = onClick;
+  host.appendChild(b);
 }
 
-function showDeck(t) {
-  $("deck").hidden = false;
-  $("deck-title").textContent = t.title;
-  $("deck-artist").textContent = t.artist;
+/**
+ * The stage: the album opened; or, with no filter on (no genre, no search), what is
+ * playing. A filtered list starts right under the bar, so filtering never pushes it down.
+ */
+function renderStage() {
+  var el = $("deck"), cur = currentTrack(), audio = $("audio");
+  var playing = !!cur && isPlaying();
+  var unfiltered = !music.genre && !music.filter.trim();
+  var mode = music.album !== null ? "album" : cur && unfiltered ? "track" : null;
+  el.hidden = !mode;
+  if (!mode) return;
+  var here = mode === "track" || (cur && cur.ak === music.album);
+  el.classList.toggle("playing", playing && here);
+  el.classList.toggle("paused", mode === "track" && !playing);
+  $("stage-eq").hidden = !(here && cur);
+  var actions = $("stage-actions");
+  actions.innerHTML = "";
   var album = $("deck-album");
-  album.textContent = t.album + (t.year > 0 ? " · " + t.year : "");
-  var badge = formatBadge(t.mime);
+
+  if (mode === "album") {
+    var a = music.albumByKey[music.album], tracks = a.tracks;
+    var secs = tracks.reduce(function (n, t) { return n + t.durationMs / 1000; }, 0);
+    $("deck-state").textContent = here && cur ? (playing ? "ALBUM · PLAYING" : "ALBUM · PAUSED") : "ALBUM";
+    $("deck-title").textContent = a.album;
+    $("deck-title").classList.toggle("long", a.album.length > 26);
+    $("deck-artist").textContent = a.artist;
+    album.textContent = tracks.length + (tracks.length === 1 ? " song" : " songs") + " · " + Math.round(secs / 60) + " min" +
+      (a.year > 0 ? " · " + a.year : "");
+    if (here && cur) stageButton(actions, "btn", playing ? PAUSE_SVG + "Pause" : PLAY_SVG + "Play", togglePlay);
+    else stageButton(actions, "btn", PLAY_SVG + "Play", function () { playAlbum(a.key, false); });
+    stageButton(actions, "btn ghost", SHUFFLE_SVG + "Shuffle", function () { playAlbum(a.key, true); });
+    stageButton(actions, "btn ghost", BACK_SVG + (music.genre ? music.genre : "All albums"), function () {
+      music.album = null; music.view = "albums"; renderMusic(); keepPlace();
+    });
+    $("deck-next").hidden = true;
+    setStageArt(a.coverId);
+    return;
+  }
+
+  $("deck-state").textContent = playing ? "NOW PLAYING" : "PAUSED";
+  $("deck-title").textContent = cur.title;
+  $("deck-title").classList.toggle("long", cur.title.length > 26);
+  $("deck-artist").textContent = cur.artist;
+  album.textContent = cur.album + (cur.year > 0 ? " · " + cur.year : "");
+  var badge = formatBadge(cur.mime);
   if (badge) {
     var b = document.createElement("span");
     b.className = "badge";
     b.textContent = badge;
     album.appendChild(b);
   }
-  // The cover becomes the record's label. Same album, same label: no flicker between its tracks.
-  if (deck.albumId !== t.albumId) {
-    deck.albumId = t.albumId;
-    var label = $("tt-label"), bg = $("deck-bg");
-    label.textContent = "BLAZEIT";
-    bg.classList.remove("on");
-    var url = artUrl(t.albumId);
-    var img = new Image();
-    img.alt = "";
-    img.onload = function () {
-      if (deck.albumId !== t.albumId) return;
-      label.textContent = "";
-      label.appendChild(img);
-      bg.style.backgroundImage = "url('" + url + "')";
-      bg.classList.add("on");
-    };
-    img.src = url;
-  }
+  stageButton(actions, "btn", playing ? PAUSE_SVG + "Pause" : PLAY_SVG + "Play", togglePlay);
+  stageButton(actions, "btn ghost", "Go to album", function () { openAlbum(cur.ak); });
   deckNext();
+  setStageArt((music.albumByKey[cur.ak] || {}).coverId || cur.albumId);
+}
+
+/** The cover on the stage and, from it, the stage's colour. Same album: nothing to do. */
+function setStageArt(albumId, fresh) {
+  if (stage.art === albumId) return;
+  stage.art = albumId;
+  var art = $("np-art"), el = $("deck");
+  // The made-up cover and its colour first; the real one, and its colour, when it loads.
+  art.innerHTML = "";
+  var first = music.tracks.filter(function (x) { return x.albumId === albumId; })[0];
+  el.style.setProperty("--tint", genCover(art, first ? first.album : ""));
+  var img = new Image();
+  img.alt = "";
+  img.onload = function () {
+    if (stage.art !== albumId) return;
+    art.innerHTML = "";
+    art.classList.remove("gen");
+    art.style.background = "";
+    art.appendChild(img);
+    var c = artTint(img);
+    if (c) el.style.setProperty("--tint", c);
+  };
+  img.src = artUrl(albumId) + (fresh ? "?v=" + Date.now() : "");
+}
+
+/** The small cover in the player bar, made-up until the real one loads. */
+function showPlayerArt(t, fresh) {
+  var art = $("pl-art");
+  art.innerHTML = "";
+  art.classList.remove("gen");
+  genCover(art, t.album);
+  var img = new Image();
+  img.onload = function () { art.innerHTML = ""; art.classList.remove("gen"); art.style.background = ""; art.appendChild(img); };
+  img.src = artUrl(t.albumId) + (fresh ? "?v=" + Date.now() : "");
+}
+
+/**
+ * The colour a cover is: drawn at 16 by 16, every pixel weighted by how vivid and how light
+ * it is, so the gold of a ring counts and the black around it does not. Lifted to a mid
+ * tone, so white type reads on it. A cover with no colour at all gives a graphite.
+ */
+function artTint(img) {
+  try {
+    var c = document.createElement("canvas");
+    c.width = c.height = 16;
+    var g = c.getContext("2d");
+    g.drawImage(img, 0, 0, 16, 16);
+    var d = g.getImageData(0, 0, 16, 16).data;
+    var r = 0, gr = 0, b = 0, w = 0;
+    for (var i = 0; i < d.length; i += 4) {
+      var mx = Math.max(d[i], d[i + 1], d[i + 2]), mn = Math.min(d[i], d[i + 1], d[i + 2]);
+      var sat = mx ? (mx - mn) / mx : 0, lum = mx / 255;
+      var k = sat * sat * (lum > 0.18 ? lum : lum * 0.2);
+      r += d[i] * k; gr += d[i + 1] * k; b += d[i + 2] * k; w += k;
+    }
+    if (w < 0.6) return "rgb(72, 72, 80)";
+    r /= w; gr /= w; b /= w;
+    var top = Math.max(r, gr, b), lift = top < 170 ? 170 / top : 1;
+    return "rgb(" + Math.min(255, Math.round(r * lift)) + ", " + Math.min(255, Math.round(gr * lift)) + ", " + Math.min(255, Math.round(b * lift)) + ")";
+  } catch (e) { return null; }
+}
+
+function deckPlaying(on) {
+  renderStage();
+  markPlaying();
+  if (on) vizStart();
 }
 
 function deckNext() {
   var el = $("deck-next"), n = trackAhead(1);
-  el.hidden = !n;
-  if (!n) return;
+  if (music.album !== null || !n) { el.hidden = true; return; }
+  el.hidden = false;
   el.innerHTML = "<b>UP NEXT</b>";
   el.appendChild(document.createTextNode(n.title + " · " + n.artist + (player.blobs[n.id] ? " · ready" : "")));
+}
+
+// ------------------------------------------------------------------ the equalizer
+//
+// A few bars beside the title in the player bar, moving with what is actually playing: the
+// audio element runs through Web Audio's analyser on its way out, and each frame its
+// spectrum is folded into bands spaced the way hearing is, low on the left. Bars rise at
+// once and fall slowly; they draw only while something plays, and settle when it stops.
+var VIZ_BANDS = 7;
+var viz = { ctx: null, an: null, data: null, levels: new Float32Array(VIZ_BANDS), raf: 0, color: "#FA2D48", failed: false };
+
+/**
+ * Sets up the analyser the first time music is started (it must be from a click: a browser
+ * keeps audio contexts silent until someone has pressed something), and wakes it after.
+ */
+function vizEnsure() {
+  if (viz.failed) return;
+  if (!viz.ctx && navigator.userActivation && !navigator.userActivation.hasBeenActive) return;
+  if (viz.ctx) {
+    if (viz.ctx.state === "suspended") viz.ctx.resume().catch(function () {});
+    return;
+  }
+  var AC = window.AudioContext || window.webkitAudioContext;
+  if (!AC) { viz.failed = true; return; }
+  try {
+    var ctx = new AC();
+    var src = ctx.createMediaElementSource($("audio"));
+    var an = ctx.createAnalyser();
+    an.fftSize = 1024;
+    an.smoothingTimeConstant = 0.7;
+    src.connect(an);
+    an.connect(ctx.destination);
+    viz.ctx = ctx; viz.an = an; viz.data = new Uint8Array(an.frequencyBinCount);
+    if (ctx.state === "suspended") ctx.resume().catch(function () {});
+  } catch (e) { viz.failed = true; }
+}
+
+function vizStart() {
+  viz.color = (getComputedStyle(document.documentElement).getPropertyValue("--accent") || "").trim() || "#FA2D48";
+  if (!viz.raf) viz.raf = requestAnimationFrame(vizFrame);
+}
+
+function vizFrame() {
+  viz.raf = 0;
+  var audio = $("audio");
+  var playing = syncMember() ? isPlaying() : !audio.paused && !audio.ended;
+  var lv = viz.levels, moving = false;
+  if (playing && viz.an) {
+    viz.an.getByteFrequencyData(viz.data);
+    var binHz = viz.ctx.sampleRate / viz.an.fftSize, n = viz.data.length;
+    for (var i = 0; i < VIZ_BANDS; i++) {
+      var f0 = 60 * Math.pow(12000 / 60, i / VIZ_BANDS), f1 = 60 * Math.pow(12000 / 60, (i + 1) / VIZ_BANDS);
+      var b0 = Math.min(n - 1, Math.floor(f0 / binHz)), b1 = Math.min(n, Math.max(b0 + 1, Math.ceil(f1 / binHz)));
+      var sum = 0;
+      for (var k = b0; k < b1; k++) sum += viz.data[k];
+      var v = Math.min(1, Math.pow(sum / (b1 - b0) / 255, 1.4) * (1 + i / VIZ_BANDS * 0.8));
+      lv[i] = v > lv[i] ? v : lv[i] * 0.86 + v * 0.14;
+    }
+  } else {
+    for (var j = 0; j < VIZ_BANDS; j++) lv[j] *= 0.86;
+  }
+  for (var m = 0; m < VIZ_BANDS; m++) if (lv[m] > 0.02) { moving = true; break; }
+  if (!$("player").hidden) drawViz($("pl-viz"), lv);
+  if (playing || moving) viz.raf = requestAnimationFrame(vizFrame);
+}
+
+function drawViz(c, lv) {
+  var w = c.clientWidth, h = c.clientHeight;
+  if (!w || !h) return;
+  var dpr = window.devicePixelRatio || 1;
+  if (c.width !== Math.round(w * dpr)) { c.width = Math.round(w * dpr); c.height = Math.round(h * dpr); }
+  var g = c.getContext("2d");
+  g.setTransform(dpr, 0, 0, dpr, 0, 0);
+  g.clearRect(0, 0, w, h);
+  var slot = w / VIZ_BANDS, bw = Math.max(2, slot * 0.55);
+  g.fillStyle = viz.color;
+  for (var i = 0; i < VIZ_BANDS; i++) {
+    var bh = Math.max(2, lv[i] * h);
+    var x = i * slot + (slot - bw) / 2;
+    g.beginPath();
+    if (g.roundRect) g.roundRect(x, h - bh, bw, bh, [1.5, 1.5, 0, 0]); else g.rect(x, h - bh, bw, bh);
+    g.fill();
+  }
 }
 
 function showPlayer(t) {
@@ -3571,12 +4125,8 @@ function showPlayer(t) {
   pl.hidden = false;
   $("pl-title").textContent = t.title;
   $("pl-sub").textContent = t.artist + " · " + t.album;
-  var art = $("pl-art");
-  art.innerHTML = "♪";
-  var img = new Image();
-  img.onload = function () { art.innerHTML = ""; art.appendChild(img); };
-  img.src = artUrl(t.albumId);
-  showDeck(t);
+  showPlayerArt(t);
+  renderStage();
   setPlayerSpace();
   document.body.style.paddingBottom = (pl.offsetHeight + 110) + "px";
 
@@ -3696,10 +4246,17 @@ function setupPlayer() {
   });
 
   $("pl-play").onclick = togglePlay;
-  $("tt").onclick = togglePlay;
-  // The little cover in the bar opens the turntable.
+  // The stage's cover plays: what is playing, or the album on the stage if that is another.
+  $("np-art").onclick = function () {
+    var cur = currentTrack();
+    if (music.album !== null && (!cur || cur.ak !== music.album)) playAlbum(music.album, false);
+    else togglePlay();
+  };
+  // The little cover in the bar opens the Music tab at what is playing.
   $("pl-art").onclick = function () {
+    music.album = null;
     selectTab("music");
+    renderMusic();
     $("deck").scrollIntoView({ behavior: "smooth", block: "start" });
   };
   $("pl-next").onclick = function () { playNext(false); };
@@ -3742,17 +4299,17 @@ function setupPlayer() {
   // Keyboard, when you are not typing: space plays and pauses, arrows seek.
   document.addEventListener("keydown", function (e) {
     var tag = (document.activeElement && document.activeElement.tagName) || "";
-    if (tag === "INPUT" || tag === "TEXTAREA" || !currentTrack() || !$("viewer").hidden) return;
+    if (tag === "INPUT" || tag === "TEXTAREA" || (!currentTrack() && !syncMember()) || !$("viewer").hidden) return;
     if (e.code === "Space") { e.preventDefault(); togglePlay(); }
-    else if (e.code === "ArrowRight") { audio.currentTime = Math.min(audio.currentTime + 10, audio.duration || 1e9); }
-    else if (e.code === "ArrowLeft") { audio.currentTime = Math.max(audio.currentTime - 10, 0); }
+    else if (e.code === "ArrowRight") { if (syncMember()) syncSeek(syncPos() + 10); else audio.currentTime = Math.min(audio.currentTime + 10, audio.duration || 1e9); }
+    else if (e.code === "ArrowLeft") { if (syncMember()) syncSeek(syncPos() - 10); else audio.currentTime = Math.max(audio.currentTime - 10, 0); }
   });
 
   // Hardware media keys and the OS media overlay.
   if ("mediaSession" in navigator) {
     try {
       navigator.mediaSession.setActionHandler("play", resume);
-      navigator.mediaSession.setActionHandler("pause", function () { audio.pause(); });
+      navigator.mediaSession.setActionHandler("pause", function () { if (syncMember()) syncSetPlaying(false); else audio.pause(); });
       navigator.mediaSession.setActionHandler("nexttrack", function () { playNext(false); });
       navigator.mediaSession.setActionHandler("previoustrack", playPrev);
       navigator.mediaSession.setActionHandler("seekto", function (d) { if (d.seekTime != null) audio.currentTime = d.seekTime; });
