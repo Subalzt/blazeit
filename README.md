@@ -45,8 +45,8 @@ tops out near 40 MB/s, and the app says so when that happens. The router here ru
 
 Pick one in *Settings → Appearance*; the phone and every open laptop page switch together.
 
-- **Theatre**: a dark night-blue banner at the top, the tabs as pills along the top edge,
-  wide cards. Shown in all the pictures above.
+- **Theatre**: a night-blue banner across the top, edge to edge, with the tabs as pills over
+  it; wide cards. Shown in all the pictures above.
 - **Studio**: white or black, big bold titles, the tabs along the bottom on the phone and in a
   sidebar on the laptop.
 
@@ -115,11 +115,19 @@ folder as a zip. Read-only, and off until you allow it on the phone.
 ### 7. Your music, from the phone
 
 The page's **Music** tab opens on your albums, largest first, each with its cover (albums
-without one get one found online or drawn for them). Pick a genre to see and play only that
-genre. Songs stream straight from the phone, so FLAC and everything else starts at once, and
-skipping is instant. Media keys and the Windows media overlay work.
+without one get one found online or drawn for them). Songs stream straight from the phone, so
+FLAC and everything else starts at once, and skipping is instant. Media keys and the Windows
+media overlay work.
 
-| Albums | An album |
+- **The banner** at the top always shows what is playing: its album, and beside it the next
+  three songs with their covers and file type, marked *Ready* once they are loaded. Click one to
+  play it now.
+- **Play** on an album plays it in order, **Shuffle** shuffles; a song you click plays on
+  through the list it is in. The banner says where the music comes from.
+- **The cover in the player bar** takes you to the song in its album, or, for a single, back to
+  where you played it.
+
+| Playing, with what is next | An album |
 | --- | --- |
 | <img src="docs/images/web-music.png" width="420"> | <img src="docs/images/web-album.png" width="420"> |
 
@@ -201,6 +209,12 @@ connection. Starting it again replaces the running copy. Windows only for now.
 3. Flip the switch on **Home** and open the address it shows on the laptop. Tap **Allow**.
 4. For full speed and the extras, get **blazeit-pc.bat** from the page's **Settings** and run it.
 5. For the most speed, plug in a USB-C cable and turn on USB tethering, or use the hotspot.
+
+Settings on the phone, top to bottom:
+
+| Look and receiving | Speed | Laptop access and music | Keep running and pairing |
+| --- | --- | --- | --- |
+| <img src="docs/images/phone-settings.png" width="190"> | <img src="docs/images/phone-settings-2.png" width="190"> | <img src="docs/images/phone-settings-3.png" width="190"> | <img src="docs/images/phone-settings-4.png" width="190"> |
 
 ## Faster over the air
 
