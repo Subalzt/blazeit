@@ -94,13 +94,14 @@
   svg.i { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; flex: 0 0 auto; }
 
   /* ---------------------------------------------------------------- app icons: colour says what a thing is */
-  .appicon { width: 40px; height: 40px; flex: 0 0 40px; border-radius: 12px; display: grid; place-items: center; color: #fff; background: var(--blue); }
+  /* Quiet by design: the glyph in its colour on a faint wash of the same, no fill, no gloss, no glow. */
+  .appicon { width: 40px; height: 40px; flex: 0 0 40px; border-radius: 12px; display: grid; place-items: center;
+    color: var(--tint, var(--blue)); background: color-mix(in srgb, var(--tint, var(--blue)) 15%, transparent); }
   .appicon svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
   .appicon.sm { width: 34px; height: 34px; flex-basis: 34px; border-radius: 10px; }
   .appicon.sm svg { width: 19px; height: 19px; }
   .blue { --tint: var(--blue); } .green { --tint: var(--good); } .orange { --tint: var(--orange); }
-  .purple { --tint: var(--purple); } .red { --tint: var(--bad); } .yellow { --tint: var(--orange); } .grey { --tint: var(--faint); }
-  .appicon[class*=" "] { background: var(--tint, var(--blue)); }
+  .purple { --tint: var(--purple); } .red { --tint: var(--bad); } .yellow { --tint: var(--orange); } .grey { --tint: var(--sub); }
 
   /* ---------------------------------------------------------------- shell */
   .side {
@@ -149,8 +150,22 @@
   .card { background: var(--surface); border-radius: var(--r-card); padding: 20px 22px; box-shadow: var(--shadow); min-width: 0; }
   .bar { display: flex; align-items: center; gap: 10px; margin: 30px 6px 10px; font-size: 14px; font-weight: 650; color: var(--sub); }
   .bar .act { margin-left: auto; color: var(--blue); cursor: pointer; font-weight: 600; }
-  .card-title { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
+  .card-title { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; min-height: 36px; }
   .card-title h3 { margin: 0; font-size: 17px; font-weight: 700; letter-spacing: -.2px; }
+  /* In a card's title the icon is only its glyph, in its colour: no tile behind it. */
+  .card-title .appicon { width: 24px; height: 24px; flex-basis: 24px; border-radius: 0; background: none; }
+  .card-title .appicon svg { width: 22px; height: 22px; stroke-width: 1.8; }
+  /* Files as Finder draws them: a sheet, its corner turned down, the kind of file printed on it. */
+  .ficon { position: relative; flex: 0 0 30px; width: 30px; height: 38px; margin: 0 5px; display: flex; align-items: flex-end; justify-content: center;
+    padding-bottom: 6px; border-radius: 5px; background: color-mix(in srgb, var(--txt) 8%, var(--surface));
+    clip-path: polygon(0 0, calc(100% - 9px) 0, 100% 9px, 100% 100%, 0 100%); }
+  .ficon::before { content: ""; position: absolute; inset: 0; border-radius: 5px; box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--txt) 15%, transparent); }
+  .ficon::after { content: ""; position: absolute; top: 0; right: 0; width: 9px; height: 9px; border-bottom-left-radius: 3px;
+    background: color-mix(in srgb, var(--txt) 16%, var(--surface)); }
+  .ficon b { position: relative; font-size: 8.5px; font-weight: 800; letter-spacing: .2px; line-height: 1; padding: 2px 3px; border-radius: 3px;
+    color: var(--tint); background: color-mix(in srgb, var(--tint) 14%, transparent); }
+  .ficon-dir { flex: 0 0 40px; width: 40px; height: 40px; display: grid; place-items: center; color: var(--blue); }
+  .ficon-dir svg { width: 34px; height: 34px; fill: color-mix(in srgb, var(--blue) 20%, transparent); stroke: currentColor; stroke-width: 1.5; stroke-linejoin: round; }
   .card-title p { margin: 1px 0 0; font-size: 13px; color: var(--sub); }
   .grid2 { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; }
   @media (min-width: 1180px) { .grid2 { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } }
@@ -282,8 +297,9 @@
   .drop { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; border: 2px dashed var(--surface-3); border-radius: 20px;
     padding: 34px 18px; text-align: center; cursor: pointer; transition: border-color .12s, background .12s; min-height: 220px; }
   .drop:hover, .drop.over { border-color: var(--good); background: color-mix(in srgb, var(--good) 7%, transparent); }
-  .drop .appicon { width: 54px; height: 54px; flex-basis: 54px; border-radius: 16px; margin-bottom: 14px; }
-  .drop .appicon svg { width: 28px; height: 28px; }
+  .drop .appicon { width: 54px; height: 54px; flex-basis: 54px; border-radius: 16px; margin-bottom: 10px; background: none; color: var(--sub); transition: color .15s; }
+  .drop .appicon svg { width: 34px; height: 34px; stroke-width: 1.6; }
+  .drop:hover .appicon, .drop.over .appicon { color: var(--good); }
   .drop .big { font-size: 18px; font-weight: 700; letter-spacing: -.2px; }
   .drop-actions { display: flex; gap: 8px; margin-top: 16px; }
   .banner { padding: 12px 16px; border-radius: var(--r); font-size: 14px; font-weight: 550; background: color-mix(in srgb, var(--good) 13%, transparent); color: var(--txt); }
@@ -914,8 +930,6 @@
   * { scrollbar-width: thin; scrollbar-color: color-mix(in srgb, var(--txt) 22%, transparent) transparent; }
 
   .card { box-shadow: var(--card-shadow); }
-  .appicon { background-image: linear-gradient(180deg, rgba(255,255,255,.2), rgba(255,255,255,0) 60%);
-    box-shadow: 0 6px 14px -7px color-mix(in srgb, var(--tint, var(--blue)) 85%, transparent), inset 0 1px 0 rgba(255,255,255,.22); }
   .logo .mark { box-shadow: 0 4px 10px -4px rgba(0,0,0,.35); }
   .btn { transition: filter .15s, background .15s, transform .18s cubic-bezier(.25,.8,.3,1), box-shadow .2s; }
   /* Flat as the phone's: a quiet shadow for lift, never a coloured glow. */
@@ -926,7 +940,6 @@
   .tabs button:active { transform: scale(.97); }
   #files .row, #transfers .row { border-radius: 12px; padding-left: 8px; padding-right: 8px; transition: background .15s; }
   #files .row:hover { background: color-mix(in srgb, var(--txt) 4%, transparent); }
-  #files .row .appicon, #fs-list .appicon { box-shadow: 0 5px 12px -6px color-mix(in srgb, var(--tint, var(--blue)) 90%, transparent); }
   .drop { transition: border-color .15s, background .15s, transform .25s cubic-bezier(.25,.8,.3,1); }
   .drop:hover, .drop.over { transform: translateY(-2px); }
   .status-line .who b, .status-line .rate b { text-shadow: 0 3px 18px rgba(0,0,0,.28), 0 1px 2px rgba(0,0,0,.18); }
@@ -1316,6 +1329,41 @@ var ICONS = {
   file: '<path d="M13.5 3.5H7A1.5 1.5 0 0 0 5.5 5v14A1.5 1.5 0 0 0 7 20.5h10a1.5 1.5 0 0 0 1.5-1.5V8.5Z"/><path d="M13.5 3.5v5h5"/>',
 };
 /** A small app icon: colour says what it is at a glance, as on the phone. */
+/**
+ * A file as Finder and Files draw it: a sheet with its corner turned down and its kind printed
+ * on it (JPG, PDF, MP4...) in a colour for that kind. A folder is a folder.
+ */
+var FILE_TINTS = [
+  [/^(jpe?g|png|gif|webp|heic|heif|bmp|svg|dng|tiff?|avif)$/, "var(--purple)"],
+  [/^(mp4|mkv|mov|webm|avi|m4v|3gp)$/, "var(--bad)"],
+  [/^(mp3|flac|wav|m4a|aac|ogg|opus|wma|alac)$/, "#FF2D55"],
+  [/^pdf$/, "#E5484D"],
+  [/^(docx?|odt|rtf|pages|txt|md)$/, "var(--blue)"],
+  [/^(xlsx?|csv|ods|numbers)$/, "var(--good)"],
+  [/^(pptx?|odp|key)$/, "var(--orange)"],
+  [/^(apk|aab|exe|msi|bat|jar)$/, "var(--good)"],
+];
+var MIME_TINTS = { image: "var(--purple)", video: "var(--bad)", audio: "#FF2D55" };
+
+function fileIcon(name, mime, dir) {
+  var s = document.createElement("span");
+  if (dir) {
+    s.className = "ficon-dir";
+    s.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true">' + ICONS.folder + "</svg>";
+    return s;
+  }
+  var ext = ((/\.([a-z0-9]{1,5})$/i.exec(name || "") || [])[1] || "").toLowerCase();
+  var kind = (mime || "").split("/")[0];
+  var tint = MIME_TINTS[kind] || "var(--sub)";
+  for (var i = 0; i < FILE_TINTS.length; i++) if (FILE_TINTS[i][0].test(ext)) { tint = FILE_TINTS[i][1]; break; }
+  s.className = "ficon";
+  s.style.setProperty("--tint", tint);
+  s.setAttribute("aria-hidden", "true");
+  s.innerHTML = "<b></b>";
+  s.firstChild.textContent = ext ? ext.toUpperCase().slice(0, 4) : (MIME_TINTS[kind] ? kind.slice(0, 3).toUpperCase() : "FILE");
+  return s;
+}
+
 function appIcon(kind, color) {
   var s = document.createElement("span");
   s.className = "appicon sm " + color;
@@ -1672,7 +1720,7 @@ function renderClip() {
     box.appendChild(img); box.appendChild(cap);
   } else {
     var row = document.createElement("div"); row.className = "file";
-    row.appendChild(appIcon("file", "orange"));
+    row.appendChild(fileIcon(m.name, m.mime));
     var body = document.createElement("div"); body.className = "grow";
     var b = document.createElement("b"); b.textContent = m.name;
     var s = document.createElement("span"); s.textContent = "File · " + bytes(m.size);
@@ -1802,7 +1850,7 @@ function renderHistory() {
       var img = document.createElement("img"); img.alt = ""; img.loading = "lazy";
       img.src = "/api/clipboard/history/" + m.v + "/blob";
       row.appendChild(img);
-    } else if (m.kind === "file") row.appendChild(appIcon("file", "orange"));
+    } else if (m.kind === "file") row.appendChild(fileIcon(m.name, m.mime));
     var body = document.createElement("div"); body.className = "h-body";
     var b = document.createElement("b");
     b.textContent = m.kind === "text" ? m.text.trim().replace(/\s+/g, " ") : m.name;
@@ -2786,10 +2834,7 @@ function renderFiles() {
     d.className = "row";
 
     var mime = f.mime || "";
-    d.appendChild(mime.indexOf("image/") === 0 ? appIcon("image", "purple")
-      : mime.indexOf("video/") === 0 ? appIcon("video", "red")
-      : mime.indexOf("audio/") === 0 ? appIcon("music", "red")
-      : appIcon("file", f.origin === "PHONE" ? "green" : "orange"));
+    d.appendChild(fileIcon(f.name, mime));
 
     var body = document.createElement("div");
     body.className = "body";
@@ -2886,12 +2931,12 @@ function renderFs(d) {
       box.appendChild(appIcon(e.mime.indexOf("video/") === 0 ? "video" : "image", e.mime.indexOf("video/") === 0 ? "red" : "purple"));
       var img = document.createElement("img");
       img.loading = "lazy"; img.alt = "";
-      img.onerror = function () { img.remove(); };
+      img.onerror = function () { box.replaceWith(fileIcon(e.name, e.mime)); };
       img.src = "/api/fs/thumb?path=" + encodeURIComponent(path) + "&v=2"; // v: bumped when thumbnails change, past the day-long cache
       box.appendChild(img);
       row.appendChild(box);
     } else {
-      row.appendChild(appIcon(e.dir ? "folder" : e.mime.indexOf("audio/") === 0 ? "music" : "file", e.dir ? "orange" : "grey"));
+      row.appendChild(fileIcon(e.name, e.mime, e.dir));
     }
     var body = document.createElement("div");
     body.className = "body";
