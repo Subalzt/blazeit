@@ -1475,6 +1475,8 @@ private fun LazyListScope.settingsTab(
     theme: String,
     look: dev.periy.bridge.Look,
     laptopLink: MainViewModel.LaptopLink,
+    direct: DirectLink.State,
+    toggleDirect: () -> Unit,
     pickFolder: () -> Unit,
     requestNotifications: () -> Unit,
     requestMusic: () -> Unit,
@@ -1530,6 +1532,7 @@ private fun LazyListScope.settingsTab(
                 SegmentedRow(listOf("Direct link", "Hotspot"), modes.indexOf(laptopLink.mode)) { vm.setLaptopLink(mode = modes[it]) }
             }
             if (laptopLink.mode == "hotspot") HotspotFields(laptopLink, vm) { vm.tetherSettingsIntent()?.let(openSettings) }
+            else DirectRow(direct, state.hotspotActive, toggleDirect) { vm.tetherSettingsIntent()?.let(openSettings) }
             SettingRow("Connections per file")
             Box(Modifier.padding(start = 16.dp, end = 16.dp, bottom = 14.dp)) {
                 SegmentedRow(listOf("1", "2", "4", "8"), listOf(1, 2, 4, 8).indexOf(state.uploadStreams)) {

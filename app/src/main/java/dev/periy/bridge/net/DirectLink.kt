@@ -134,6 +134,7 @@ class DirectLink(ctx: Context) {
 
             override fun onFailed(reason: Int) {
                 reservation = null
+                Log.w(TAG, "Local-only hotspot refused: reason $reason")
                 set(State.Failed(
                     when (reason) {
                         ERROR_TETHERING_DISALLOWED -> "Hotspots are blocked on this phone by its settings or admin"
@@ -160,7 +161,7 @@ class DirectLink(ctx: Context) {
                 wm.startLocalOnlyHotspot(callback, main)
             }
         } catch (e: SecurityException) {
-            set(State.Failed("Allow BlazeIt to find nearby devices, then try again"))
+            set(State.Failed("Allow Localhost 8787 to find nearby devices, then try again"))
         } catch (t: Throwable) {
             Log.w(TAG, "Local-only hotspot failed to start", t)
             set(State.Failed(t.message ?: "The phone could not start the link"))
@@ -179,7 +180,8 @@ class DirectLink(ctx: Context) {
         val (ssid, pass, security) = if (Build.VERSION.SDK_INT >= 30) {
             val c = r.softApConfiguration
             Triple(
-                c.wifiSsid?.toString()?.removeSurrounding("\"") ?: c.ssid.orEmpty(),
+                if (Build.VERSION.SDK_INT >= 33) c.wifiSsid?.toString()?.removeSurrounding("\"") ?: c.ssid.orEmpty()
+                else c.ssid.orEmpty(),
                 c.passphrase.orEmpty(),
                 if (c.securityType == SoftApConfiguration.SECURITY_TYPE_WPA3_SAE) "WPA3" else "WPA2",
             )
