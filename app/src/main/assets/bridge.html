@@ -352,26 +352,44 @@
   #fs-list .row.file:hover { background: var(--surface-2); }
 
   /* The preview: a file from the phone, full size, before it is downloaded. */
-  /* Notifications: the list on its tab, and the cards that pop up as new ones arrive. */
-  .notif { display: flex; gap: 12px; padding: 14px 4px; min-width: 0; }
+  /* Notifications, as Apple draws them: the app's icon as a rounded square, the app and the time
+     on one quiet line (the time on the right), the title, the text. The controls appear under the
+     pointer, where the time was; on a touch screen they stay. The list on the Alerts tab is one
+     rounded card each, folded to a line; the pop-ups are frosted banners of two lines, their reply
+     and buttons shown when the pointer is on them. */
+  .notif { position: relative; display: flex; gap: 12px; padding: 14px 4px; min-width: 0; }
   .notif + .notif { border-top: 1px solid var(--line); }
-  .notif > img { width: 38px; height: 38px; flex: 0 0 38px; border-radius: 10px; background: var(--surface-2); }
+  .notif > img { width: 40px; height: 40px; flex: 0 0 40px; border-radius: 11px; background: var(--surface-2);
+    outline: 1px solid color-mix(in srgb, var(--txt) 10%, transparent); outline-offset: -1px; }
   .notif .n-body { flex: 1 1 auto; min-width: 0; }
-  .notif .n-head { display: flex; gap: 8px; align-items: baseline; font-size: 12.5px; color: var(--sub); }
+  .notif .n-head { display: flex; gap: 8px; align-items: center; min-height: 22px; font-size: 12.5px; color: var(--sub); }
   .notif .n-head .grow { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .notif .n-title { font-weight: 650; font-size: 14.5px; margin-top: 1px; overflow-wrap: anywhere; }
-  .notif .n-text { font-size: 14px; color: var(--txt); white-space: pre-wrap; overflow-wrap: anywhere; margin-top: 2px;
+  .notif .n-app { font-weight: 600; letter-spacing: .1px; }
+  .notif .n-time { flex: 0 0 auto; font-variant-numeric: tabular-nums; transition: opacity .15s; }
+  .notif .n-ctl { display: flex; align-items: center; gap: 2px; margin: -4px -4px -4px 0; }
+  .notif .n-ctl:empty { display: none; }
+  .notif .n-title { font-weight: 650; font-size: 14.5px; margin-top: 2px; overflow-wrap: anywhere; }
+  .notif .n-text { font-size: 14px; color: var(--txt); white-space: pre-wrap; overflow-wrap: anywhere; margin-top: 2px; line-height: 1.4;
     display: -webkit-box; -webkit-line-clamp: 5; -webkit-box-orient: vertical; overflow: hidden; }
-  .notif .n-acts { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; align-items: center; }
+  .notif .n-acts { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; align-items: center; }
   .notif .n-reply { display: flex; gap: 6px; flex: 1 1 220px; min-width: 0; }
-  .notif .n-reply input { flex: 1; min-width: 0; height: 34px; padding: 0 12px; border-radius: 17px; font-size: 14px; }
-  .notif .n-x { border: 0; background: none; color: var(--sub); cursor: pointer; font-size: 19px; line-height: 1; padding: 2px 6px; border-radius: 8px; }
-  .notif .n-x:hover { background: var(--surface-2); color: var(--bad); }
-  /* On the tab, as Android draws them: each its own rounded card, folded to one line, a tap to open. */
-  #notif-list .notif { background: var(--surface-2); border-radius: 22px; padding: 12px 14px; }
+  .notif .n-reply input { flex: 1; min-width: 0; height: 34px; padding: 0 14px; border-radius: 17px; font-size: 14px; }
+  .notif .n-x, .notif .n-more { flex: 0 0 auto; width: 28px; height: 28px; padding: 0; border: 0; border-radius: 50%; cursor: pointer;
+    display: grid; place-items: center; color: var(--sub); background: transparent; transition: background .15s, color .15s; }
+  .notif .n-x svg { width: 12px; height: 12px; }
+  .notif .n-x:hover { background: color-mix(in srgb, var(--txt) 10%, transparent); color: var(--txt); }
+  .notif .n-more svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; transition: transform .2s ease; }
+  .notif .n-more:hover { background: color-mix(in srgb, var(--txt) 10%, transparent); color: var(--txt); }
+  .notif.open .n-more svg { transform: rotate(180deg); }
+  @media (hover: hover) {
+    .notif .n-ctl { position: absolute; top: 8px; right: 10px; margin: 0; opacity: 0; transition: opacity .15s; }
+    .notif:hover .n-ctl, .notif:focus-within .n-ctl { opacity: 1; }
+    .notif:hover .n-time, .notif:focus-within .n-time { opacity: 0; }
+  }
+  #notif-list .notif { background: var(--surface-2); border-radius: 20px; padding: 12px 14px; transition: background .15s; }
+  #notif-list .notif:hover { background: color-mix(in srgb, var(--txt) 4%, var(--surface-2)); }
   #notif-list .notif + .notif { border-top: 0; margin-top: 8px; }
-  #notif-list .notif > img { width: 36px; height: 36px; flex-basis: 36px; border-radius: 50%; }
-  #notif-list .n-group { margin: 18px 6px 8px; font-size: 12.5px; font-weight: 700; letter-spacing: .4px; text-transform: uppercase; color: var(--sub); }
+  #notif-list .n-group { margin: 20px 6px 8px; font-size: 12px; font-weight: 700; letter-spacing: .5px; text-transform: uppercase; color: var(--sub); }
   #notif-list .n-group:first-child { margin-top: 0; }
   #notif-list .n-group + .notif { margin-top: 0; }
   .notif.foldable { cursor: pointer; }
@@ -379,15 +397,18 @@
   .notif.foldable:not(.open) .n-text { -webkit-line-clamp: 1; white-space: normal; }
   .notif.foldable:not(.open) .n-acts { display: none; }
   .notif.open .n-text { -webkit-line-clamp: unset; display: block; }
-  .notif .n-more { flex: 0 0 auto; align-self: center; width: 28px; height: 22px; padding: 0; border: 0; border-radius: 11px; cursor: pointer;
-    display: grid; place-items: center; color: var(--txt); background: color-mix(in srgb, var(--txt) 9%, transparent); }
-  .notif .n-more svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; transition: transform .2s ease; }
-  .notif.open .n-more svg { transform: rotate(180deg); }
-  .toasts { position: fixed; z-index: 55; top: 14px; right: 14px; width: min(380px, calc(100vw - 28px)); display: flex; flex-direction: column; gap: 10px; pointer-events: none; }
-  .toasts .notif { pointer-events: auto; background: var(--surface); border-radius: 18px; box-shadow: var(--float-shadow); padding: 12px 12px 12px 14px;
-    animation: toast-in .18s ease-out; }
+  .toasts { position: fixed; z-index: 55; top: 14px; right: 14px; width: min(360px, calc(100vw - 28px)); display: flex; flex-direction: column; gap: 10px; pointer-events: none; }
+  .toasts .notif { pointer-events: auto; border-radius: 20px; padding: 12px 14px;
+    background: color-mix(in srgb, var(--surface) 88%, transparent); -webkit-backdrop-filter: blur(24px) saturate(1.8); backdrop-filter: blur(24px) saturate(1.8);
+    box-shadow: var(--float-shadow), inset 0 0 0 1px color-mix(in srgb, var(--txt) 9%, transparent);
+    animation: toast-in .34s cubic-bezier(.2,.9,.3,1.15); }
   .toasts .notif + .notif { border-top: 0; }
-  @keyframes toast-in { from { opacity: 0; transform: translateY(-8px); } }
+  .toasts .notif .n-text { -webkit-line-clamp: 2; white-space: normal; }
+  @media (hover: hover) {
+    .toasts .notif .n-acts { display: none; }
+    .toasts .notif:hover .n-acts, .toasts .notif:focus-within .n-acts { display: flex; }
+  }
+  @keyframes toast-in { from { opacity: 0; transform: translateX(28px) scale(.98); } }
   /* Solid, as Photos is: nothing of the page shows through behind the picture. */
   .viewer { position: fixed; inset: 0; z-index: 60; background: #0b0b0d; color: #fff; display: flex; flex-direction: column; }
   .viewer[hidden] { display: none; }
@@ -1915,17 +1936,24 @@ function notifEl(n, inToast) {
   d.appendChild(icon);
   var body = document.createElement("div"); body.className = "n-body";
   var head = document.createElement("div"); head.className = "n-head";
-  var app = document.createElement("span"); app.className = "grow"; app.textContent = n.app + " · " + when(n.at);
+  // The app on the left, the time on the right; the controls take the time's place under the pointer.
+  var app = document.createElement("span"); app.className = "grow n-app"; app.textContent = n.app;
   head.appendChild(app);
+  var time = document.createElement("span"); time.className = "n-time"; time.textContent = when(n.at);
+  head.appendChild(time);
+  var ctl = document.createElement("span"); ctl.className = "n-ctl";
+  head.appendChild(ctl);
   var x = document.createElement("button"); x.className = "n-x"; x.type = "button";
-  x.title = inToast ? "Close" : "Dismiss, on the phone too"; x.textContent = "\u00d7";
+  x.setAttribute("aria-label", inToast ? "Close" : "Dismiss");
+  x.innerHTML = CLOSE_SVG;
+  x.title = inToast ? "Close" : "Dismiss, on the phone too";
   x.onclick = function () {
     if (inToast) { d.remove(); return; }
     api("/api/notifications/dismiss", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ key: n.key }) });
   };
   // The phone will not let this one go (a running service): nothing to dismiss.
   if (!inToast && n.clearable === false) x.hidden = true;
-  head.appendChild(x);
+  ctl.appendChild(x);
   body.appendChild(head);
   if (n.title) { var ti = document.createElement("div"); ti.className = "n-title"; ti.textContent = n.title; body.appendChild(ti); }
   if (n.text) { var tx = document.createElement("div"); tx.className = "n-text"; tx.textContent = n.text; body.appendChild(tx); }
@@ -1963,7 +1991,7 @@ function notifEl(n, inToast) {
     d.classList.toggle("open", !!notifOpen[n.key]);
     var more = document.createElement("button"); more.className = "n-more"; more.type = "button";
     more.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9.5l6 6 6-6"/></svg>';
-    head.insertBefore(more, x);
+    ctl.insertBefore(more, x);
     var sync = function () { more.title = d.classList.contains("open") ? "Fold" : "Open"; more.setAttribute("aria-expanded", d.classList.contains("open")); };
     sync();
     d.addEventListener("click", function (e) {
