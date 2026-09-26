@@ -182,6 +182,7 @@ class MainActivity : ComponentActivity() {
         if (dev.periy.bridge.BuildConfig.DEBUG) {
             intent.getStringExtra("style")?.let { vm.setStyle(it) }
             intent.getStringExtra("accent")?.let { vm.setAccent(it) }
+            intent.getStringExtra("theme")?.let { vm.setTheme(it) }
             intent.getIntExtra("tab", -1).let { if (it >= 0) debugTab.value = it }
             // `--ez directtest true|false` starts or stops the direct link without a laptop joining it.
             if (intent.hasExtra("directtest")) (application as dev.periy.bridge.BridgeApp).container.direct.let {
